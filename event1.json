@@ -1,0 +1,14 @@
+{
+    "eventType": "START",
+    "eventTime": "2024-03-11T10:05:00.000Z",
+    "run": {
+        "runId": "1e59a106-5b8b-4bdc-b639-21ed689dcef3"
+    },
+    "job": {
+        "namespace": "banking",
+        "name": "account-summarization"
+    },
+    "inputs": [],
+    "producer": "https://github.com/OpenLineage/OpenLineage/blob/v1-0-0/client",
+    "schemaURL": "https://openlineage.io/spec/1-0-5/OpenLineage.json#/definitions/RunEvent"
+}

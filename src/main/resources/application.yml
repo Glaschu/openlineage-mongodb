@@ -1,0 +1,5 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://${MONGODB_HOST:localhost}:27017/openlineage
+      auto-index-creation: true
