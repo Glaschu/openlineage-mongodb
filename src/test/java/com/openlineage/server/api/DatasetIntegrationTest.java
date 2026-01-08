@@ -19,10 +19,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -31,87 +29,97 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@EnableAutoConfiguration(exclude = {MongoAutoConfiguration.class, MongoDataAutoConfiguration.class, org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = { MongoAutoConfiguration.class, MongoDataAutoConfiguration.class,
+                org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class })
 public class DatasetIntegrationTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper mapper;
+        @Autowired
+        private ObjectMapper mapper;
 
-    @MockBean
-    private DatasetRepository datasetRepo;
+        @MockBean
+        private DatasetRepository datasetRepo;
 
-    @MockBean
-    private com.openlineage.server.storage.NamespaceRepository nsRepo;
+        @MockBean
+        private com.openlineage.server.storage.NamespaceRepository nsRepo;
 
-    @MockBean
-    private com.openlineage.server.storage.JobRepository jobRepo;
+        @MockBean
+        private com.openlineage.server.storage.JobRepository jobRepo;
 
-    @MockBean
-    private com.openlineage.server.storage.LineageEventRepository eventRepo;
+        @MockBean
+        private com.openlineage.server.storage.LineageEventRepository eventRepo;
 
-    @MockBean
-    private TagRepository tagRepo;
+        @MockBean
+        private TagRepository tagRepo;
 
-    private final String NAMESPACE = "default";
-    private final String DATASET_NAME = "my-dataset";
+        // Inject mocks for new repositories to avoid initialization errors
+        @MockBean
+        private com.openlineage.server.storage.InputDatasetFacetRepository inputRepo;
 
-    @BeforeEach
-    public void setup() {
-        when(datasetRepo.save(any())).thenAnswer(i -> i.getArgument(0));
-    }
+        @MockBean
+        private com.openlineage.server.storage.OutputDatasetFacetRepository outputRepo;
 
-    @Test
-    public void testCreateDataset() throws Exception {
-        DatasetDocument doc = new DatasetDocument(NAMESPACE, DATASET_NAME, "source", Collections.emptyList(), Collections.emptyMap(), ZonedDateTime.now());
-        doc.setDescription("Description");
-            
-        when(datasetRepo.findById(any())).thenReturn(Optional.empty()); // simulate create
-        
-        mockMvc.perform(put("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"physicalName\": \"p\", \"sourceName\": \"s\", \"description\": \"Description\"}"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value(DATASET_NAME))
-                .andExpect(jsonPath("$.description").value("Description"));
-    }
+        private final String NAMESPACE = "default";
+        private final String DATASET_NAME = "my-dataset";
 
-    @Test
-    public void testGetDataset() throws Exception {
-        DatasetDocument doc = new DatasetDocument(NAMESPACE, DATASET_NAME, "source", Collections.emptyList(), Collections.emptyMap(), ZonedDateTime.now());
-        doc.setDescription("Existing Description");
+        @BeforeEach
+        public void setup() {
+                when(datasetRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+        }
 
-        when(datasetRepo.findById(any())).thenReturn(Optional.of(doc));
+        @Test
+        public void testCreateDataset() throws Exception {
+                DatasetDocument doc = new DatasetDocument(NAMESPACE, DATASET_NAME, "source", Collections.emptyList(),
+                                ZonedDateTime.now());
+                doc.setDescription("Description");
 
-        mockMvc.perform(get("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value(DATASET_NAME))
-                .andExpect(jsonPath("$.description").value("Existing Description"));
-    }
+                when(datasetRepo.findById(any())).thenReturn(Optional.empty()); // simulate create
 
-    @Test
-    public void testDeleteDataset() throws Exception {
-        when(datasetRepo.existsById(any())).thenReturn(true);
-        
-        mockMvc.perform(delete("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME))
-                .andExpect(status().isNoContent());
+                mockMvc.perform(put("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"physicalName\": \"p\", \"sourceName\": \"s\", \"description\": \"Description\"}"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.name").value(DATASET_NAME))
+                                .andExpect(jsonPath("$.description").value("Description"));
+        }
 
-        verify(datasetRepo).deleteById(any());
-    }
+        @Test
+        public void testGetDataset() throws Exception {
+                DatasetDocument doc = new DatasetDocument(NAMESPACE, DATASET_NAME, "source", Collections.emptyList(),
+                                ZonedDateTime.now());
+                doc.setDescription("Existing Description");
 
-    @Test
-    public void testTagDataset() throws Exception {
-        DatasetDocument doc = new DatasetDocument(NAMESPACE, DATASET_NAME, "source", Collections.emptyList(), Collections.emptyMap(), ZonedDateTime.now());
-        
-        when(datasetRepo.findById(any())).thenReturn(Optional.of(doc));
+                when(datasetRepo.findById(any())).thenReturn(Optional.of(doc));
 
-        mockMvc.perform(post("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME + "/tags/PII"))
-                .andExpect(status().isCreated());
-        
-        // Use Mockito verify to check if tags were added
-        // Since the doc is modified in place in the controller and saved
-        verify(datasetRepo).save(any());
-    }
+                mockMvc.perform(get("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.name").value(DATASET_NAME))
+                                .andExpect(jsonPath("$.description").value("Existing Description"));
+        }
+
+        @Test
+        public void testDeleteDataset() throws Exception {
+                when(datasetRepo.existsById(any())).thenReturn(true);
+
+                mockMvc.perform(delete("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME))
+                                .andExpect(status().isNoContent());
+
+                verify(datasetRepo).deleteById(any());
+        }
+
+        @Test
+        public void testTagDataset() throws Exception {
+                DatasetDocument doc = new DatasetDocument(NAMESPACE, DATASET_NAME, "source", Collections.emptyList(),
+                                ZonedDateTime.now());
+
+                when(datasetRepo.findById(any())).thenReturn(Optional.of(doc));
+
+                mockMvc.perform(post("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME + "/tags/PII"))
+                                .andExpect(status().isCreated());
+
+                verify(datasetRepo).save(any());
+                verify(tagRepo).save(any());
+        }
 }
