@@ -93,11 +93,22 @@ public class LineageService {
                         new MarquezId(event.job().namespace(), event.job().name()),
                         event.eventTime(),
                         event.eventType(),
+                        event.inputs(),
+                        event.outputs(),
                         (java.util.Map<String, com.openlineage.server.domain.Facet>) (java.util.Map) event.run()
                                 .facets()));
 
         runDoc.setEventType(event.eventType());
         runDoc.setEventTime(event.eventTime());
+
+        String type = event.eventType().toUpperCase();
+        if ("START".equals(type)) {
+            runDoc.setStartTime(event.eventTime());
+        }
+        if ("COMPLETE".equals(type) || "FAIL".equals(type) || "ABORT".equals(type)) {
+            runDoc.setEndTime(event.eventTime());
+        }
+
         runDoc.setUpdatedAt(event.eventTime());
 
         runRepository.save(runDoc);

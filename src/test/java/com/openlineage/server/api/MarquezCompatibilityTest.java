@@ -11,8 +11,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.openlineage.server.storage.DatasetRepository;
+import com.openlineage.server.storage.JobRepository;
+import com.openlineage.server.storage.LineageEventRepository;
+import com.openlineage.server.storage.NamespaceRepository;
 
 import java.time.ZonedDateTime;
 import java.util.Collections;
@@ -20,10 +26,7 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import com.openlineage.server.storage.JobRepository;
-import com.openlineage.server.storage.DatasetRepository;
-import com.openlineage.server.storage.NamespaceRepository;
-import com.openlineage.server.storage.LineageEventRepository;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -33,95 +36,131 @@ import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@EnableAutoConfiguration(exclude = {MongoAutoConfiguration.class, MongoDataAutoConfiguration.class, org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = { MongoAutoConfiguration.class, MongoDataAutoConfiguration.class,
+                org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class })
 public class MarquezCompatibilityTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper mapper;
+        @Autowired
+        private ObjectMapper mapper;
 
-    @org.springframework.boot.test.mock.mockito.MockBean
-    private LineageEventRepository eventRepo;
+        @MockBean
+        private LineageEventRepository eventRepo;
 
-    @org.springframework.boot.test.mock.mockito.MockBean
-    private NamespaceRepository nsRepo;
-    
-    @org.springframework.boot.test.mock.mockito.MockBean
-    private JobRepository jobRepo;
+        @MockBean
+        private NamespaceRepository nsRepo;
 
-    @org.springframework.boot.test.mock.mockito.MockBean
-    private DatasetRepository datasetRepo;
+        @MockBean
+        private JobRepository jobRepo;
 
-    @org.springframework.boot.test.mock.mockito.MockBean
-    private com.openlineage.server.storage.TagRepository tagRepo;
+        @MockBean
+        private DatasetRepository datasetRepo;
 
-    @org.junit.jupiter.api.BeforeEach
-    public void setup() {
-        // Basic mocks
-        when(nsRepo.findById(any())).thenReturn(java.util.Optional.empty()); // New namespaces are allowed
-        when(nsRepo.save(any())).thenAnswer(i -> i.getArgument(0));
-        
-        when(jobRepo.save(any())).thenAnswer(i -> i.getArgument(0));
-        // For read verification
-        when(jobRepo.findById(any())).thenReturn(java.util.Optional.of(new com.openlineage.server.storage.JobDocument("ns-1", "job-1", Collections.emptyMap(), Collections.emptySet(), Collections.emptySet(), ZonedDateTime.now())));
-        
-        when(datasetRepo.save(any())).thenAnswer(i -> i.getArgument(0));
-        
-        when(eventRepo.save(any())).thenAnswer(i -> i.getArgument(0));
-        
-        // Mock finding run for lifecycle
-        com.openlineage.server.storage.LineageEventDocument mockRun = new com.openlineage.server.storage.LineageEventDocument();
-        RunEvent mockEvent = new RunEvent("START", ZonedDateTime.now(), 
-            new RunEvent.Run("run-123", Collections.emptyMap()), 
-            new Job("ns-1", "job-1", Collections.emptyMap()), 
-            Collections.emptyList(), Collections.emptyList(), 
-            "producer-1", null);
-        mockRun.setEvent(mockEvent);
+        @MockBean
+        private com.openlineage.server.storage.TagRepository tagRepo;
 
-        when(eventRepo.findByRunId("run-123")).thenReturn(java.util.Collections.singletonList(mockRun));
-    }
+        @MockBean
+        private com.openlineage.server.storage.RunRepository runRepo;
 
-    @Test
-    public void testMarquezFlow() throws Exception {
-        // 1. Ingest an Event (Standard OpenLineage)
-        RunEvent event = new RunEvent("START", ZonedDateTime.now(), 
-            new RunEvent.Run("run-123", Collections.emptyMap()), 
-            new Job("ns-1", "job-1", Collections.emptyMap()), 
-            Collections.emptyList(), Collections.emptyList(), 
-            "producer-1", null);
+        @MockBean
+        private com.openlineage.server.storage.DataSourceRepository dataSourceRepo;
 
-        mockMvc.perform(post("/api/v1/lineage")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(event)))
-                .andExpect(status().isCreated());
+        @MockBean
+        private com.openlineage.server.storage.InputDatasetFacetRepository inputRepo;
 
-        // 2. Verify Job Endpoint (Read) - Check for latestRun
-        mockMvc.perform(get("/api/v1/namespaces/ns-1/jobs/job-1"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id.name").value("job-1"));
-                // .andExpect(jsonPath("$.latestRun").exists()); // Requires JobController to find the run. 
-                // JobController usage of repository.findByEventJobNamespaceAndEventJobName needs to work.
-                // In setup(), eventRepo.findByEventRunRunId is mocked, but findByEventJob... is not?
+        @MockBean
+        private com.openlineage.server.storage.OutputDatasetFacetRepository outputRepo;
+
+        @MockBean
+        private com.openlineage.server.service.FacetMergeService facetMergeService;
+
+        @MockBean
+        private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+
+        @org.junit.jupiter.api.BeforeEach
+        public void setup() {
+                // Basic mocks
+                when(nsRepo.findById(any())).thenReturn(java.util.Optional.empty()); // New namespaces are allowed
+                when(nsRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+
+                when(jobRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+                // For read verification
+                when(jobRepo.findById(any())).thenReturn(java.util.Optional.of(
+                                new com.openlineage.server.storage.JobDocument("ns-1", "job-1", Collections.emptyMap(),
+                                                Collections.emptySet(), Collections.emptySet(), ZonedDateTime.now())));
+
+                when(datasetRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+
+                when(eventRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+
+                // Mock finding run for lifecycle
+                com.openlineage.server.storage.LineageEventDocument mockRun = new com.openlineage.server.storage.LineageEventDocument();
+                RunEvent mockEvent = new RunEvent("START", ZonedDateTime.now(),
+                                new RunEvent.Run("run-123", Collections.emptyMap()),
+                                new Job("ns-1", "job-1", Collections.emptyMap()),
+                                Collections.emptyList(), Collections.emptyList(),
+                                "producer-1", null);
+                mockRun.setEvent(mockEvent);
+
+                when(eventRepo.findByRunId("run-123")).thenReturn(java.util.Collections.singletonList(mockRun));
+        }
+
+        @Test
+        public void testMarquezFlow() throws Exception {
+                // 1. Ingest an Event (Standard OpenLineage)
+                RunEvent event = new RunEvent("START", ZonedDateTime.now(),
+                                new RunEvent.Run("run-123", Collections.emptyMap()),
+                                new Job("ns-1", "job-1", Collections.emptyMap()),
+                                Collections.emptyList(), Collections.emptyList(),
+                                "producer-1", null);
+
+                mockMvc.perform(post("/api/v1/lineage")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(mapper.writeValueAsString(event)))
+                                .andExpect(status().isCreated());
+
+                // 2. Verify Job Endpoint (Read) - Check for latestRun
+                mockMvc.perform(get("/api/v1/namespaces/ns-1/jobs/job-1"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id.name").value("job-1"));
+                // .andExpect(jsonPath("$.latestRun").exists()); // Requires JobController to
+                // find the run.
+                // JobController usage of repository.findByEventJobNamespaceAndEventJobName
+                // needs to work.
+                // In setup(), eventRepo.findByEventRunRunId is mocked, but findByEventJob... is
+                // not?
                 // I need to mock findByEventJobNamespaceAndEventJobName in setup() or here.
 
-        // 3. Verify Run Lifecycle (Complete)
-        mockMvc.perform(post("/api/v1/jobs/runs/run-123/complete"))
-                .andExpect(status().isOk());
+                // Mock RunRepo for retrieval
+                when(runRepo.findById("run-123")).thenReturn(java.util.Optional.of(
+                                new com.openlineage.server.storage.RunDocument(
+                                                "run-123",
+                                                new com.openlineage.server.storage.MarquezId("ns-1", "job-1"),
+                                                ZonedDateTime.now(),
+                                                "COMPLETE",
+                                                Collections.emptyList(),
+                                                Collections.emptyList(),
+                                                Collections.emptyMap())));
 
-        // 4. Verify Facets exist on run (using getRunFacets) and support type=job
-        mockMvc.perform(get("/api/v1/jobs/runs/run-123/facets"))
-                .andExpect(status().isOk());
-        
-        mockMvc.perform(get("/api/v1/jobs/runs/run-123/facets?type=job"))
-                .andExpect(status().isOk());
+                // 3. Verify Run Lifecycle (Complete)
+                mockMvc.perform(post("/api/v1/jobs/runs/run-123/complete"))
+                                .andExpect(status().isOk());
 
-        // 5. Test Namespace Update (Marquez API)
-        when(nsRepo.save(any())).thenReturn(new com.openlineage.server.storage.NamespaceRegistryDocument("ns-1", "data-eng", null, false, "desc"));
-        mockMvc.perform(put("/api/v1/namespaces/ns-1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"ownerTeam\": \"data-eng\"}"))
-                .andExpect(status().isOk());
-    }
+                // 4. Verify Facets exist on run (using getRunFacets) and support type=job
+                mockMvc.perform(get("/api/v1/jobs/runs/run-123/facets"))
+                                .andExpect(status().isOk());
+
+                mockMvc.perform(get("/api/v1/jobs/runs/run-123/facets?type=job"))
+                                .andExpect(status().isOk());
+
+                // 5. Test Namespace Update (Marquez API)
+                when(nsRepo.save(any())).thenReturn(new com.openlineage.server.storage.NamespaceRegistryDocument("ns-1",
+                                "data-eng", null, false, "desc"));
+                mockMvc.perform(put("/api/v1/namespaces/ns-1")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"ownerTeam\": \"data-eng\"}"))
+                                .andExpect(status().isOk());
+        }
 }

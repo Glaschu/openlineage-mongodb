@@ -26,7 +26,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@EnableAutoConfiguration(exclude = {MongoAutoConfiguration.class, MongoDataAutoConfiguration.class, org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = { MongoAutoConfiguration.class, MongoDataAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class })
 public class NamespaceIntegrationTest {
 
     @Autowired
@@ -36,9 +37,15 @@ public class NamespaceIntegrationTest {
     private ObjectMapper mapper;
 
     @MockBean
+    private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+
+    @MockBean
     private NamespaceRepository nsRepo;
 
-    // Mock other repos to satisfy LineageService dependency if needed, 
+    @MockBean
+    private com.openlineage.server.storage.DataSourceRepository dataSourceRepo;
+
+    // Mock other repos to satisfy LineageService dependency if needed,
     // though we are testing specific controllers here.
     @MockBean
     private com.openlineage.server.storage.LineageEventRepository eventRepo;
@@ -48,6 +55,12 @@ public class NamespaceIntegrationTest {
     private com.openlineage.server.storage.DatasetRepository datasetRepo;
     @MockBean
     private com.openlineage.server.storage.TagRepository tagRepo;
+    @MockBean
+    private com.openlineage.server.storage.RunRepository runRepo;
+    @MockBean
+    private com.openlineage.server.storage.InputDatasetFacetRepository inputRepo;
+    @MockBean
+    private com.openlineage.server.storage.OutputDatasetFacetRepository outputRepo;
 
     @BeforeEach
     public void setup() {
@@ -59,7 +72,7 @@ public class NamespaceIntegrationTest {
     public void testCreateNoDescription() throws Exception {
         String nsName = "NO_DESCRIPTION";
         NamespaceRegistryDocument doc = new NamespaceRegistryDocument(nsName, "owner", null, false, null);
-        
+
         // Mock save returning the doc with timestamps
         when(nsRepo.save(any())).thenReturn(doc);
         when(nsRepo.findById(nsName)).thenReturn(Optional.of(doc));
@@ -79,13 +92,13 @@ public class NamespaceIntegrationTest {
     public void testChangeOwner() throws Exception {
         String nsName = "HOME_NAMESPACE";
         NamespaceRegistryDocument initialDoc = new NamespaceRegistryDocument(nsName, "daniel", null, false, "desc");
-        
+
         when(nsRepo.findById(nsName)).thenReturn(Optional.of(initialDoc));
         when(nsRepo.save(any())).thenAnswer(i -> i.getArgument(0)); // Return what's saved
 
         // Update Owner
         NamespaceRegistryDocument updateDoc = new NamespaceRegistryDocument(nsName, "willy", null, false, "desc");
-        
+
         mockMvc.perform(put("/api/v1/namespaces/" + nsName)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(updateDoc)))
@@ -101,7 +114,7 @@ public class NamespaceIntegrationTest {
         NamespaceRegistryDocument doc = new NamespaceRegistryDocument(nsName, "owner", null, false, "desc");
         doc.setCreatedAt(ZonedDateTime.now());
         doc.setUpdatedAt(ZonedDateTime.now());
-        
+
         when(nsRepo.findById(nsName)).thenReturn(Optional.of(doc));
 
         mockMvc.perform(get("/api/v1/namespaces/" + nsName))
@@ -115,7 +128,7 @@ public class NamespaceIntegrationTest {
     @Test
     public void testDeleteNamespace() throws Exception {
         String nsName = "DELETE_TEST";
-        
+
         when(nsRepo.existsById(nsName)).thenReturn(true);
         doNothing().when(nsRepo).deleteById(nsName);
 

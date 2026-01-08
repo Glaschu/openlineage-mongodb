@@ -1,6 +1,7 @@
 package com.openlineage.server.storage;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.ZonedDateTime;
@@ -16,6 +17,7 @@ public class DatasetDocument {
     private java.util.Set<String> tags = new java.util.HashSet<>();
     private String description;
     private ZonedDateTime updatedAt;
+    @Indexed
     private ZonedDateTime createdAt;
 
     public DatasetDocument() {

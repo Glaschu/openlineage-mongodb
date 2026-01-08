@@ -29,7 +29,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@EnableAutoConfiguration(exclude = {MongoAutoConfiguration.class, MongoDataAutoConfiguration.class, org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = { MongoAutoConfiguration.class, MongoDataAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class })
 public class JobIntegrationTest {
 
     @Autowired
@@ -39,7 +40,13 @@ public class JobIntegrationTest {
     private ObjectMapper mapper;
 
     @MockBean
+    private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+
+    @MockBean
     private JobRepository jobRepo;
+
+    @MockBean
+    private com.openlineage.server.storage.DataSourceRepository dataSourceRepo;
 
     @MockBean
     private com.openlineage.server.storage.NamespaceRepository nsRepo;
@@ -53,6 +60,15 @@ public class JobIntegrationTest {
     @MockBean
     private TagRepository tagRepo;
 
+    @MockBean
+    private com.openlineage.server.storage.RunRepository runRepo;
+
+    @MockBean
+    private com.openlineage.server.storage.InputDatasetFacetRepository inputRepo;
+
+    @MockBean
+    private com.openlineage.server.storage.OutputDatasetFacetRepository outputRepo;
+
     private final String NAMESPACE = "default";
     private final String JOB_NAME = "my-job";
 
@@ -64,7 +80,7 @@ public class JobIntegrationTest {
     @Test
     public void testCreateJob() throws Exception {
         when(jobRepo.findById(any())).thenReturn(Optional.empty()); // simulate create
-        
+
         mockMvc.perform(put("/api/v1/namespaces/" + NAMESPACE + "/jobs/" + JOB_NAME)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"description\": \"Job Description\", \"location\": \"https://github.com/repo\"}"))
@@ -76,7 +92,8 @@ public class JobIntegrationTest {
 
     @Test
     public void testGetJob() throws Exception {
-        JobDocument doc = new JobDocument(NAMESPACE, JOB_NAME, Collections.emptyMap(), Collections.emptySet(), Collections.emptySet(), ZonedDateTime.now());
+        JobDocument doc = new JobDocument(NAMESPACE, JOB_NAME, Collections.emptyMap(), Collections.emptySet(),
+                Collections.emptySet(), ZonedDateTime.now());
         doc.setDescription("Existing Description");
         doc.setLocation("location");
 
@@ -92,7 +109,7 @@ public class JobIntegrationTest {
     @Test
     public void testDeleteJob() throws Exception {
         when(jobRepo.existsById(any())).thenReturn(true);
-        
+
         mockMvc.perform(delete("/api/v1/namespaces/" + NAMESPACE + "/jobs/" + JOB_NAME))
                 .andExpect(status().isNoContent());
 

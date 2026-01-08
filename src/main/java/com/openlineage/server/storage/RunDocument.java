@@ -1,15 +1,20 @@
 package com.openlineage.server.storage;
 
+import com.openlineage.server.domain.Dataset;
 import com.openlineage.server.domain.Facet;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 @Document(collection = "runs")
+@org.springframework.data.mongodb.core.index.CompoundIndexes({
+        @org.springframework.data.mongodb.core.index.CompoundIndex(name = "job_run_idx", def = "{'job.namespace': 1, 'job.name': 1, 'eventTime': -1}")
+})
 public class RunDocument {
 
     @Id
@@ -20,6 +25,11 @@ public class RunDocument {
 
     private ZonedDateTime eventTime;
     private String eventType; // START, RUNNING, COMPLETE, FAIL, ABORT
+    private ZonedDateTime startTime;
+    private ZonedDateTime endTime;
+
+    private List<Dataset> inputs;
+    private List<Dataset> outputs;
 
     private Map<String, Facet> runFacets;
 
@@ -30,11 +40,13 @@ public class RunDocument {
     }
 
     public RunDocument(String runId, MarquezId job, ZonedDateTime eventTime, String eventType,
-            Map<String, Facet> runFacets) {
+            List<Dataset> inputs, List<Dataset> outputs, Map<String, Facet> runFacets) {
         this.runId = runId;
         this.job = job;
         this.eventTime = eventTime;
         this.eventType = eventType;
+        this.inputs = inputs;
+        this.outputs = outputs;
         this.runFacets = runFacets;
         this.createdAt = ZonedDateTime.now();
         this.updatedAt = ZonedDateTime.now();
@@ -70,6 +82,38 @@ public class RunDocument {
 
     public void setEventType(String eventType) {
         this.eventType = eventType;
+    }
+
+    public ZonedDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(ZonedDateTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public ZonedDateTime getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(ZonedDateTime endTime) {
+        this.endTime = endTime;
+    }
+
+    public List<Dataset> getInputs() {
+        return inputs;
+    }
+
+    public void setInputs(List<Dataset> inputs) {
+        this.inputs = inputs;
+    }
+
+    public List<Dataset> getOutputs() {
+        return outputs;
+    }
+
+    public void setOutputs(List<Dataset> outputs) {
+        this.outputs = outputs;
     }
 
     public Map<String, Facet> getRunFacets() {

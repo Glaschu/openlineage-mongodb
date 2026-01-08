@@ -1,12 +1,13 @@
 package com.openlineage.server.storage;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
 
 @Document(collection = "namespace_registry")
 public class NamespaceRegistryDocument {
-    
+
     @Id
     private String namespace;
     private String ownerTeam;
@@ -14,12 +15,15 @@ public class NamespaceRegistryDocument {
     private boolean isLocked;
 
     private String description;
+    @Indexed
     private java.time.ZonedDateTime createdAt;
     private java.time.ZonedDateTime updatedAt;
 
-    public NamespaceRegistryDocument() {}
+    public NamespaceRegistryDocument() {
+    }
 
-    public NamespaceRegistryDocument(String namespace, String ownerTeam, List<String> allowedProducers, boolean isLocked, String description) {
+    public NamespaceRegistryDocument(String namespace, String ownerTeam, List<String> allowedProducers,
+            boolean isLocked, String description) {
         this.namespace = namespace;
         this.ownerTeam = ownerTeam;
         this.allowedProducers = allowedProducers;
@@ -61,10 +65,27 @@ public class NamespaceRegistryDocument {
         isLocked = locked;
     }
 
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    public java.time.ZonedDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(java.time.ZonedDateTime createdAt) { this.createdAt = createdAt; }
-    public java.time.ZonedDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(java.time.ZonedDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public java.time.ZonedDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(java.time.ZonedDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public java.time.ZonedDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(java.time.ZonedDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

@@ -25,7 +25,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@EnableAutoConfiguration(exclude = {MongoAutoConfiguration.class, MongoDataAutoConfiguration.class, org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = { MongoAutoConfiguration.class, MongoDataAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class })
 public class TagIntegrationTest {
 
     @Autowired
@@ -45,6 +46,16 @@ public class TagIntegrationTest {
     @MockBean
     private com.openlineage.server.storage.DatasetRepository datasetRepo;
     @MockBean
+    private com.openlineage.server.storage.DataSourceRepository dataSourceRepo;
+    @MockBean
+    private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+    @MockBean
+    private com.openlineage.server.storage.RunRepository runRepo;
+    @MockBean
+    private com.openlineage.server.storage.InputDatasetFacetRepository inputRepo;
+    @MockBean
+    private com.openlineage.server.storage.OutputDatasetFacetRepository outputRepo;
+    @MockBean
     private com.openlineage.server.storage.NamespaceRepository nsRepo;
 
     @BeforeEach
@@ -59,7 +70,7 @@ public class TagIntegrationTest {
         TagDocument doc = new TagDocument(tagName, description, java.time.ZonedDateTime.now());
 
         when(tagRepo.save(any())).thenReturn(doc);
-        
+
         // Use PUT to create/update
         mockMvc.perform(put("/api/v1/tags/" + tagName)
                 .contentType(MediaType.APPLICATION_JSON)

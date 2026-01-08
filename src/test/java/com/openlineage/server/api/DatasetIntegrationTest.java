@@ -40,7 +40,13 @@ public class DatasetIntegrationTest {
         private ObjectMapper mapper;
 
         @MockBean
+        private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+
+        @MockBean
         private DatasetRepository datasetRepo;
+
+        @MockBean
+        private com.openlineage.server.storage.DataSourceRepository dataSourceRepo;
 
         @MockBean
         private com.openlineage.server.storage.NamespaceRepository nsRepo;
@@ -53,6 +59,9 @@ public class DatasetIntegrationTest {
 
         @MockBean
         private TagRepository tagRepo;
+
+        @MockBean
+        private com.openlineage.server.storage.RunRepository runRepo;
 
         // Inject mocks for new repositories to avoid initialization errors
         @MockBean
