@@ -17,7 +17,9 @@ public class RunEventController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public void postEvent(@RequestBody RunEvent event) {
-        lineageService.ingestEvent(event);
+    public void postEvent(
+            @RequestBody RunEvent event,
+            @RequestHeader(value = "x-user", required = false) String user) {
+        lineageService.ingestEvent(event, user);
     }
 }

@@ -45,6 +45,11 @@ public class LineageService {
 
     @Transactional
     public void ingestEvent(RunEvent event) {
+        ingestEvent(event, null);
+    }
+
+    @Transactional
+    public void ingestEvent(RunEvent event, String owner) {
         String producer = event.producer();
         Set<String> namespacesToCheck = new HashSet<>();
 
@@ -69,13 +74,20 @@ public class LineageService {
         }
 
         // Extract all involved namespaces
+        String jobNamespace = null;
         if (event.job() != null && event.job().namespace() != null) {
-            namespacesToCheck.add(event.job().namespace());
+            jobNamespace = event.job().namespace();
+            namespacesToCheck.add(jobNamespace);
             upsertJob(event.job(), event.eventTime(), jobInputs, jobOutputs);
             upsertRun(event);
         }
 
-        // Governance Check
+        // Governance Check - Job Namespace Ownership (x-user)
+        if (owner != null && jobNamespace != null) {
+            validateJobNamespaceOwnership(jobNamespace, owner);
+        }
+
+        // Legacy Governance Check (Producer Validation)
         for (String ns : namespacesToCheck) {
             validateOrRegisterNamespace(ns, producer);
         }
@@ -84,6 +96,65 @@ public class LineageService {
         LineageEventDocument doc = new LineageEventDocument(event);
         eventRepository.save(doc);
         log.info("Ingested event for run: {}", event.run().runId());
+    }
+
+    private void validateJobNamespaceOwnership(String namespace, String owner) {
+        Optional<NamespaceRegistryDocument> nsDocOpt = namespaceRepository.findById(namespace);
+
+        if (nsDocOpt.isPresent()) {
+            NamespaceRegistryDocument nsDoc = nsDocOpt.get();
+            // Check if Unclaimed
+            if ("Unclaimed".equals(nsDoc.getOwnerTeam())) {
+                // Take over ownership
+                nsDoc.setOwnerTeam(owner);
+                namespaceRepository.save(nsDoc);
+                log.info("User '{}' claimed ownership of namespace '{}'", owner, namespace);
+            } else if (nsDoc.getOwnerTeam() != null && !nsDoc.getOwnerTeam().equals(owner)) {
+                log.warn("Access Denied: Owner '{}' is not allowed for namespace '{}' (owned by '{}')", owner,
+                        namespace, nsDoc.getOwnerTeam());
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        String.format("User '%s' is not authorized to access namespace '%s' owned by '%s'", owner,
+                                namespace, nsDoc.getOwnerTeam()));
+            }
+        } else {
+            // New namespace claiming
+            NamespaceRegistryDocument newNs = new NamespaceRegistryDocument(
+                    namespace,
+                    owner, // Set owner from header
+                    null,
+                    false,
+                    null);
+            namespaceRepository.save(newNs);
+            log.info("Auto-registered new namespace '{}' with owner '{}'", namespace, owner);
+        }
+    }
+
+    private void validateOrRegisterNamespace(String namespace, String producer) {
+        // If we just created it in validateJobNamespaceOwnership, it might be in
+        // cache/context,
+        // but since we look up by ID again, it should be fine.
+        Optional<NamespaceRegistryDocument> nsDocOpt = namespaceRepository.findById(namespace);
+
+        if (nsDocOpt.isPresent()) {
+            NamespaceRegistryDocument nsDoc = nsDocOpt.get();
+            if (nsDoc.isLocked()) {
+                if (nsDoc.getAllowedProducers() == null || !nsDoc.getAllowedProducers().contains(producer)) {
+                    log.warn("Access Denied: Producer '{}' is not allowed for namespace '{}'", producer, namespace);
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            String.format("Producer '%s' is not allowed to write to locked namespace '%s'", producer,
+                                    namespace));
+                }
+            }
+        } else {
+            NamespaceRegistryDocument newNs = new NamespaceRegistryDocument(
+                    namespace,
+                    "Unclaimed",
+                    null,
+                    false,
+                    null);
+            namespaceRepository.save(newNs);
+            log.info("Auto-registered new namespace: {}", namespace);
+        }
     }
 
     private void upsertRun(RunEvent event) {
@@ -191,28 +262,4 @@ public class LineageService {
         }
     }
 
-    private void validateOrRegisterNamespace(String namespace, String producer) {
-        Optional<NamespaceRegistryDocument> nsDocOpt = namespaceRepository.findById(namespace);
-
-        if (nsDocOpt.isPresent()) {
-            NamespaceRegistryDocument nsDoc = nsDocOpt.get();
-            if (nsDoc.isLocked()) {
-                if (nsDoc.getAllowedProducers() == null || !nsDoc.getAllowedProducers().contains(producer)) {
-                    log.warn("Access Denied: Producer '{}' is not allowed for namespace '{}'", producer, namespace);
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                            String.format("Producer '%s' is not allowed to write to locked namespace '%s'", producer,
-                                    namespace));
-                }
-            }
-        } else {
-            NamespaceRegistryDocument newNs = new NamespaceRegistryDocument(
-                    namespace,
-                    "Unclaimed",
-                    null,
-                    false,
-                    null);
-            namespaceRepository.save(newNs);
-            log.info("Auto-registered new namespace: {}", namespace);
-        }
-    }
 }
