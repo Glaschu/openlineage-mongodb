@@ -2,9 +2,7 @@ package com.openlineage.server.service;
 
 import com.openlineage.server.domain.Dataset;
 import com.openlineage.server.storage.DataSourceDocument;
-import com.openlineage.server.storage.DataSourceRepository;
 import com.openlineage.server.storage.DatasetDocument;
-import com.openlineage.server.storage.DatasetRepository;
 import com.openlineage.server.storage.MarquezId;
 import org.springframework.stereotype.Service;
 
@@ -15,15 +13,12 @@ import java.util.stream.Collectors;
 @Service
 public class DatasetService {
 
-    private final DatasetRepository datasetRepository;
-    private final DataSourceRepository dataSourceRepository;
+    private final org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
     private final FacetMergeService facetMergeService;
 
-    public DatasetService(DatasetRepository datasetRepository,
-            DataSourceRepository dataSourceRepository,
+    public DatasetService(org.springframework.data.mongodb.core.MongoTemplate mongoTemplate,
             FacetMergeService facetMergeService) {
-        this.datasetRepository = datasetRepository;
-        this.dataSourceRepository = dataSourceRepository;
+        this.mongoTemplate = mongoTemplate;
         this.facetMergeService = facetMergeService;
     }
 
@@ -38,22 +33,22 @@ public class DatasetService {
                         .collect(Collectors.toList());
             }
         }
-        final List<Object> fields = extractedFields;
         String sourceName = dataset.namespace();
 
-        DatasetDocument doc = datasetRepository.findById(new MarquezId(dataset.namespace(), dataset.name()))
-                .orElseGet(() -> {
-                    DatasetDocument newDoc = new DatasetDocument(dataset.namespace(), dataset.name(), sourceName,
-                            fields, eventTime);
-                    newDoc.setCreatedAt(eventTime);
-                    return newDoc;
-                });
+        org.springframework.data.mongodb.core.query.Query query = org.springframework.data.mongodb.core.query.Query
+                .query(org.springframework.data.mongodb.core.query.Criteria.where("_id")
+                        .is(new MarquezId(dataset.namespace(), dataset.name())));
 
-        doc.setSourceName(sourceName);
-        if (fields != null)
-            doc.setFields(fields);
-        doc.setUpdatedAt(eventTime);
-        datasetRepository.save(doc);
+        org.springframework.data.mongodb.core.query.Update update = new org.springframework.data.mongodb.core.query.Update()
+                .setOnInsert("createdAt", eventTime)
+                .set("updatedAt", eventTime)
+                .set("sourceName", sourceName);
+
+        if (extractedFields != null) {
+            update.set("fields", extractedFields);
+        }
+
+        mongoTemplate.upsert(query, update, DatasetDocument.class);
 
         // 2. Merge Facets into Split Collections
         if (isInput) {
@@ -64,8 +59,14 @@ public class DatasetService {
     }
 
     public void upsertDataSource(String namespace, ZonedDateTime eventTime) {
-        if (!dataSourceRepository.existsById(namespace)) {
-            dataSourceRepository.save(new DataSourceDocument(namespace, namespace, eventTime));
-        }
+        org.springframework.data.mongodb.core.query.Query query = org.springframework.data.mongodb.core.query.Query
+                .query(org.springframework.data.mongodb.core.query.Criteria.where("_id").is(namespace));
+
+        org.springframework.data.mongodb.core.query.Update update = new org.springframework.data.mongodb.core.query.Update()
+                .setOnInsert("name", namespace)
+                .setOnInsert("createdAt", eventTime)
+                .set("updatedAt", eventTime); // Ensure we update the last seen time as well
+
+        mongoTemplate.upsert(query, update, DataSourceDocument.class);
     }
 }

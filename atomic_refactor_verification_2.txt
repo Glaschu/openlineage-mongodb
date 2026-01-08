@@ -1,0 +1,175 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/usr/local/Cellar/maven/3.9.11/libexec/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -----------------------< com.openlineage:server >-----------------------
+[INFO] Building openlineage-server 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ server ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ server ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ server ---
+[INFO] skip non existing resourceDirectory /Users/workbarclays/Documents/olb/openlineage-mongodb/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ server ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- surefire:3.1.2:test (default-test) @ server ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.openlineage.server.api.GovernanceIntegrationTest
+14:51:46.414 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.openlineage.server.api.GovernanceIntegrationTest]: GovernanceIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+14:51:46.680 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.openlineage.server.OpenLineageServerApplication for test class com.openlineage.server.api.GovernanceIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.1)
+
+2026-01-08T14:51:47.129Z  INFO 94352 --- [           main] c.o.s.api.GovernanceIntegrationTest      : Starting GovernanceIntegrationTest using Java 24.0.2 with PID 94352 (started by workbarclays in /Users/workbarclays/Documents/olb/openlineage-mongodb)
+2026-01-08T14:51:47.130Z  INFO 94352 --- [           main] c.o.s.api.GovernanceIntegrationTest      : No active profile set, falling back to 1 default profile: "default"
+WARNING: A Java agent has been loaded dynamically (/Users/workbarclays/.m2/repository/net/bytebuddy/byte-buddy-agent/1.14.10/byte-buddy-agent-1.14.10.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by net.bytebuddy.dynamic.loading.ClassInjector$UsingUnsafe$Dispatcher$CreationAction (file:/Users/workbarclays/.m2/repository/net/bytebuddy/byte-buddy/1.14.10/byte-buddy-1.14.10.jar)
+WARNING: Please consider reporting this to the maintainers of class net.bytebuddy.dynamic.loading.ClassInjector$UsingUnsafe$Dispatcher$CreationAction
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by org.apache.tomcat.jni.Library in an unnamed module (file:/Users/workbarclays/.m2/repository/org/apache/tomcat/embed/tomcat-embed-core/10.1.17/tomcat-embed-core-10.1.17.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+2026-01-08T14:51:52.099Z  INFO 94352 --- [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-01-08T14:51:52.101Z  INFO 94352 --- [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-01-08T14:51:52.103Z  INFO 94352 --- [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-01-08T14:51:52.138Z  INFO 94352 --- [           main] c.o.s.api.GovernanceIntegrationTest      : Started GovernanceIntegrationTest in 5.337 seconds (process running for 6.828)
+2026-01-08T14:51:52.329Z  WARN 94352 --- [           main] c.o.server.service.GovernanceService     : Access Denied: Owner 'eve' is not allowed for namespace 'owned-ns' (owned by 'bob')
+2026-01-08T14:51:52.362Z  INFO 94352 --- [           main] c.o.server.service.LineageService        : Ingested event for run: 6ad8c99d-31bb-49fb-8f57-202646a50c6b
+2026-01-08T14:51:52.377Z  INFO 94352 --- [           main] c.o.server.service.GovernanceService     : User 'charlie' claimed ownership of namespace 'legacy-ns'
+2026-01-08T14:51:52.377Z  INFO 94352 --- [           main] c.o.server.service.LineageService        : Ingested event for run: 7eb0c894-a8fd-456a-9eaa-331e7f4099a1
+2026-01-08T14:51:52.413Z  INFO 94352 --- [           main] c.o.server.service.GovernanceService     : Auto-registered new namespace 'new-ns' with owner 'alice'
+2026-01-08T14:51:52.414Z  INFO 94352 --- [           main] c.o.server.service.LineageService        : Ingested event for run: 2380985a-9fce-46f0-bd79-2619084dd03b
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.221 s -- in com.openlineage.server.api.GovernanceIntegrationTest
+[INFO] Running com.openlineage.server.api.ColumnLineageTest
+JSON: {"id":"name","type":"type","name":"name","physicalName":"phys","createdAt":null,"updatedAt":null,"namespace":"ns","sourceName":"source","fields":[],"tags":[],"lastModifiedAt":null,"description":"desc","facets":{"columnLineage":{"fields":{"col1":{"inputFields":[{"namespace":"ns","name":"name","field":"col"}],"transformationDescription":"desc","transformationType":"type"}}}}}
+Field JSON: {"namespace":"ns","dataset":"ds","column":"colName","field":"colName","type":"column","fieldType":"VARCHAR"}
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.029 s -- in com.openlineage.server.api.ColumnLineageTest
+[INFO] Running com.openlineage.server.api.JobIntegrationTest
+2026-01-08T14:51:52.463Z  INFO 94352 --- [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.openlineage.server.api.JobIntegrationTest]: JobIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-01-08T14:51:52.474Z  INFO 94352 --- [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.openlineage.server.OpenLineageServerApplication for test class com.openlineage.server.api.JobIntegrationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.186 s -- in com.openlineage.server.api.JobIntegrationTest
+[INFO] Running com.openlineage.server.api.StatsIntegrationTest
+2026-01-08T14:51:52.649Z  INFO 94352 --- [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.openlineage.server.api.StatsIntegrationTest]: StatsIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-01-08T14:51:52.654Z  INFO 94352 --- [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.openlineage.server.OpenLineageServerApplication for test class com.openlineage.server.api.StatsIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.1)
+
+2026-01-08T14:51:52.725Z  INFO 94352 --- [           main] c.o.server.api.StatsIntegrationTest      : Starting StatsIntegrationTest using Java 24.0.2 with PID 94352 (started by workbarclays in /Users/workbarclays/Documents/olb/openlineage-mongodb)
+2026-01-08T14:51:52.725Z  INFO 94352 --- [           main] c.o.server.api.StatsIntegrationTest      : No active profile set, falling back to 1 default profile: "default"
+2026-01-08T14:51:53.450Z  INFO 94352 --- [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-01-08T14:51:53.451Z  INFO 94352 --- [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-01-08T14:51:53.453Z  INFO 94352 --- [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-01-08T14:51:53.472Z  INFO 94352 --- [           main] c.o.server.api.StatsIntegrationTest      : Started StatsIntegrationTest in 0.813 seconds (process running for 8.161)
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.887 s -- in com.openlineage.server.api.StatsIntegrationTest
+[INFO] Running com.openlineage.server.api.SearchIntegrationTest
+2026-01-08T14:51:53.540Z  INFO 94352 --- [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.openlineage.server.api.SearchIntegrationTest]: SearchIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-01-08T14:51:53.546Z  INFO 94352 --- [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.openlineage.server.OpenLineageServerApplication for test class com.openlineage.server.api.SearchIntegrationTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.1)
+
+2026-01-08T14:51:53.580Z  INFO 94352 --- [           main] c.o.server.api.SearchIntegrationTest     : Starting SearchIntegrationTest using Java 24.0.2 with PID 94352 (started by workbarclays in /Users/workbarclays/Documents/olb/openlineage-mongodb)
+2026-01-08T14:51:53.581Z  INFO 94352 --- [           main] c.o.server.api.SearchIntegrationTest     : No active profile set, falling back to 1 default profile: "default"
+2026-01-08T14:51:53.910Z  INFO 94352 --- [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-01-08T14:51:53.910Z  INFO 94352 --- [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-01-08T14:51:53.910Z  INFO 94352 --- [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-01-08T14:51:53.920Z  INFO 94352 --- [           main] c.o.server.api.SearchIntegrationTest     : Started SearchIntegrationTest in 0.369 seconds (process running for 8.609)
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.444 s -- in com.openlineage.server.api.SearchIntegrationTest
+[INFO] Running com.openlineage.server.api.MarquezCompatibilityTest
+2026-01-08T14:51:53.985Z  INFO 94352 --- [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.openlineage.server.api.MarquezCompatibilityTest]: MarquezCompatibilityTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-01-08T14:51:53.990Z  INFO 94352 --- [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.openlineage.server.OpenLineageServerApplication for test class com.openlineage.server.api.MarquezCompatibilityTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.1)
+
+2026-01-08T14:51:54.024Z  INFO 94352 --- [           main] c.o.server.api.MarquezCompatibilityTest  : Starting MarquezCompatibilityTest using Java 24.0.2 with PID 94352 (started by workbarclays in /Users/workbarclays/Documents/olb/openlineage-mongodb)
+2026-01-08T14:51:54.025Z  INFO 94352 --- [           main] c.o.server.api.MarquezCompatibilityTest  : No active profile set, falling back to 1 default profile: "default"
+2026-01-08T14:51:54.311Z  INFO 94352 --- [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-01-08T14:51:54.311Z  INFO 94352 --- [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-01-08T14:51:54.311Z  INFO 94352 --- [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 0 ms
+2026-01-08T14:51:54.315Z  INFO 94352 --- [           main] c.o.server.api.MarquezCompatibilityTest  : Started MarquezCompatibilityTest in 0.32 seconds (process running for 9.004)
+2026-01-08T14:51:54.345Z  INFO 94352 --- [           main] c.o.server.service.GovernanceService     : Auto-registered new namespace: ns-1
+2026-01-08T14:51:54.346Z  INFO 94352 --- [           main] c.o.server.service.LineageService        : Ingested event for run: run-123
+2026-01-08T14:51:54.378Z  INFO 94352 --- [           main] c.o.server.service.LineageService        : Ingested event for run: run-123
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.410 s -- in com.openlineage.server.api.MarquezCompatibilityTest
+[INFO] Running com.openlineage.server.api.NamespaceIntegrationTest
+2026-01-08T14:51:54.394Z  INFO 94352 --- [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.openlineage.server.api.NamespaceIntegrationTest]: NamespaceIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-01-08T14:51:54.395Z  INFO 94352 --- [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.openlineage.server.OpenLineageServerApplication for test class com.openlineage.server.api.NamespaceIntegrationTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.066 s -- in com.openlineage.server.api.NamespaceIntegrationTest
+[INFO] Running com.openlineage.server.api.RunIntegrationTest
+2026-01-08T14:51:54.467Z  INFO 94352 --- [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.openlineage.server.api.RunIntegrationTest]: RunIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-01-08T14:51:54.471Z  INFO 94352 --- [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.openlineage.server.OpenLineageServerApplication for test class com.openlineage.server.api.RunIntegrationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.070 s -- in com.openlineage.server.api.RunIntegrationTest
+[INFO] Running com.openlineage.server.api.DatasetIntegrationTest
+2026-01-08T14:51:54.535Z  INFO 94352 --- [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.openlineage.server.api.DatasetIntegrationTest]: DatasetIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-01-08T14:51:54.537Z  INFO 94352 --- [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.openlineage.server.OpenLineageServerApplication for test class com.openlineage.server.api.DatasetIntegrationTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.069 s -- in com.openlineage.server.api.DatasetIntegrationTest
+[INFO] Running com.openlineage.server.api.RunEventIntegrationTest
+2026-01-08T14:51:54.605Z  INFO 94352 --- [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.openlineage.server.api.RunEventIntegrationTest]: RunEventIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-01-08T14:51:54.608Z  INFO 94352 --- [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.openlineage.server.OpenLineageServerApplication for test class com.openlineage.server.api.RunEventIntegrationTest
+2026-01-08T14:51:54.624Z  INFO 94352 --- [           main] c.o.server.service.GovernanceService     : Auto-registered new namespace: default
+2026-01-08T14:51:54.625Z  INFO 94352 --- [           main] c.o.server.service.LineageService        : Ingested event for run: adf686fc-8569-4292-b2fe-5af1d56edd08
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.025 s -- in com.openlineage.server.api.RunEventIntegrationTest
+[INFO] Running com.openlineage.server.api.TagIntegrationTest
+2026-01-08T14:51:54.632Z  INFO 94352 --- [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.openlineage.server.api.TagIntegrationTest]: TagIntegrationTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-01-08T14:51:54.636Z  INFO 94352 --- [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.openlineage.server.OpenLineageServerApplication for test class com.openlineage.server.api.TagIntegrationTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.049 s -- in com.openlineage.server.api.TagIntegrationTest
+[INFO] Running com.openlineage.server.service.LineageServiceTest
+2026-01-08T14:51:54.802Z  INFO 94352 --- [           main] c.o.server.service.LineageService        : Ingested event for run: runId
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.121 s -- in com.openlineage.server.service.LineageServiceTest
+[INFO] Running com.openlineage.server.domain.FacetSerializationTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.019 s -- in com.openlineage.server.domain.FacetSerializationTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 31, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  11.700 s
+[INFO] Finished at: 2026-01-08T14:51:54Z
+[INFO] ------------------------------------------------------------------------

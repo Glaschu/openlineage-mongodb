@@ -1,5 +1,24 @@
+server:
+  shutdown: graceful
+
 spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
   data:
     mongodb:
       uri: mongodb://${MONGODB_HOST:localhost}:27017/openlineage
       auto-index-creation: true
+      connection-pool:
+        min-size: 5
+        max-size: 50
+        max-wait-time: 2000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
+openlineage:
+  governance:
+    cache-ttl-ms: 60000

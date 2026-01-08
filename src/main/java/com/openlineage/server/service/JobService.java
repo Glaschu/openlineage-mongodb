@@ -2,54 +2,41 @@ package com.openlineage.server.service;
 
 import com.openlineage.server.domain.Job;
 import com.openlineage.server.storage.JobDocument;
-import com.openlineage.server.storage.JobRepository;
 import com.openlineage.server.storage.MarquezId;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
-import java.util.HashSet;
 import java.util.Set;
 
 @Service
 public class JobService {
 
-    private final JobRepository jobRepository;
+    private final org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
 
-    public JobService(JobRepository jobRepository) {
-        this.jobRepository = jobRepository;
+    public JobService(org.springframework.data.mongodb.core.MongoTemplate mongoTemplate) {
+        this.mongoTemplate = mongoTemplate;
     }
 
     public void upsertJob(Job job, ZonedDateTime eventTime, Set<MarquezId> inputs, Set<MarquezId> outputs) {
-        JobDocument doc = jobRepository.findById(new MarquezId(job.namespace(), job.name()))
-                .orElseGet(() -> {
-                    JobDocument newDoc = new JobDocument(job.namespace(), job.name(), job.facets(), inputs, outputs,
-                            eventTime);
-                    newDoc.setCreatedAt(eventTime);
-                    return newDoc;
-                });
+        org.springframework.data.mongodb.core.query.Query query = org.springframework.data.mongodb.core.query.Query
+                .query(org.springframework.data.mongodb.core.query.Criteria.where("_id")
+                        .is(new MarquezId(job.namespace(), job.name())));
 
-        if (doc.getInputs() == null)
-            doc.setInputs(new HashSet<>());
-        if (doc.getOutputs() == null)
-            doc.setOutputs(new HashSet<>());
+        org.springframework.data.mongodb.core.query.Update update = new org.springframework.data.mongodb.core.query.Update()
+                .setOnInsert("createdAt", eventTime)
+                .set("updatedAt", eventTime);
 
-        if (!inputs.isEmpty())
-            doc.getInputs().addAll(inputs);
-        if (!outputs.isEmpty())
-            doc.getOutputs().addAll(outputs);
-
-        boolean changed = false;
-        if (doc.getUpdatedAt().isBefore(eventTime)) {
-            doc.setUpdatedAt(eventTime);
-            changed = true;
+        if (inputs != null && !inputs.isEmpty()) {
+            update.addToSet("inputs").each(inputs.toArray());
         }
+        if (outputs != null && !outputs.isEmpty()) {
+            update.addToSet("outputs").each(outputs.toArray());
+        }
+
         if (job.facets() != null && !job.facets().isEmpty()) {
-            doc.setFacets(job.facets()); // simple replace for job facets
-            changed = true;
+            update.set("facets", job.facets());
         }
 
-        if (changed) {
-            jobRepository.save(doc);
-        }
+        mongoTemplate.upsert(query, update, JobDocument.class);
     }
 }

@@ -3,45 +3,49 @@ package com.openlineage.server.service;
 import com.openlineage.server.domain.RunEvent;
 import com.openlineage.server.storage.MarquezId;
 import com.openlineage.server.storage.RunDocument;
-import com.openlineage.server.storage.RunRepository;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
 
 @Service
 public class RunService {
 
-    private final RunRepository runRepository;
+    private final org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
 
-    public RunService(RunRepository runRepository) {
-        this.runRepository = runRepository;
+    public RunService(org.springframework.data.mongodb.core.MongoTemplate mongoTemplate) {
+        this.mongoTemplate = mongoTemplate;
     }
 
     public void upsertRun(RunEvent event) {
-        RunDocument runDoc = runRepository.findById(event.run().runId())
-                .orElse(new RunDocument(
-                        event.run().runId(),
-                        new MarquezId(event.job().namespace(), event.job().name()),
-                        event.eventTime(),
-                        event.eventType(),
-                        event.inputs(),
-                        event.outputs(),
-                        (Map<String, com.openlineage.server.domain.Facet>) (Map) event.run()
-                                .facets()));
+        String runId = event.run().runId();
+        org.springframework.data.mongodb.core.query.Query query = org.springframework.data.mongodb.core.query.Query
+                .query(org.springframework.data.mongodb.core.query.Criteria.where("_id").is(runId));
 
-        runDoc.setEventType(event.eventType());
-        runDoc.setEventTime(event.eventTime());
+        org.springframework.data.mongodb.core.query.Update update = new org.springframework.data.mongodb.core.query.Update()
+                .setOnInsert("jobId", new MarquezId(event.job().namespace(), event.job().name()))
+                .set("eventType", event.eventType())
+                .set("eventTime", event.eventTime())
+                .set("updatedAt", event.eventTime());
+
+        if (event.inputs() != null && !event.inputs().isEmpty()) {
+            update.addToSet("inputs").each(event.inputs().toArray());
+        }
+        if (event.outputs() != null && !event.outputs().isEmpty()) {
+            update.addToSet("outputs").each(event.outputs().toArray());
+        }
+
+        if (event.run().facets() != null && !event.run().facets().isEmpty()) {
+            // Facets logic: replace atomic or merge? For Run, replacing run facets map is
+            // standard as they naturally specific to the run state.
+            update.set("facets", event.run().facets());
+        }
 
         String type = event.eventType().toUpperCase();
         if ("START".equals(type)) {
-            runDoc.setStartTime(event.eventTime());
+            update.set("startTime", event.eventTime());
         }
         if ("COMPLETE".equals(type) || "FAIL".equals(type) || "ABORT".equals(type)) {
-            runDoc.setEndTime(event.eventTime());
+            update.set("endTime", event.eventTime());
         }
 
-        runDoc.setUpdatedAt(event.eventTime());
-
-        runRepository.save(runDoc);
+        mongoTemplate.upsert(query, update, RunDocument.class);
     }
 }

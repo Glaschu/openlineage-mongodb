@@ -95,7 +95,9 @@ public class RunEventIntegrationTest {
 
                 // Verify that the event was processed by the service (which saves to eventRepo)
                 verify(eventRepo).save(any());
-                // Verify other interactions could be added, e.g., runRepo.save
-                verify(runRepo).save(any());
+                // Verify atomic upsert via mongoTemplate
+                verify(mongoTemplate, org.mockito.Mockito.atLeastOnce()).upsert(
+                                any(org.springframework.data.mongodb.core.query.Query.class),
+                                any(org.springframework.data.mongodb.core.query.Update.class), (Class<?>) any());
         }
 }
