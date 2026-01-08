@@ -26,24 +26,26 @@ public class FacetMergeService {
     }
 
     public void mergeInputFacets(String namespace, String name, Map<String, Facet> newFacets, ZonedDateTime eventTime) {
-        MarquezId id = new MarquezId(namespace, name);
-        InputDatasetFacetDocument doc = inputRepository.findById(id)
-                .orElse(new InputDatasetFacetDocument(id, new HashMap<>(), eventTime));
-
-        mergeFacets(doc.getFacets(), newFacets);
-        doc.setUpdatedAt(eventTime);
-        inputRepository.save(doc);
+        upsertFacet(namespace, name, newFacets, eventTime, inputRepository,
+                (id, time) -> new InputDatasetFacetDocument(id, new HashMap<>(), time));
     }
 
     public void mergeOutputFacets(String namespace, String name, Map<String, Facet> newFacets,
             ZonedDateTime eventTime) {
+        upsertFacet(namespace, name, newFacets, eventTime, outputRepository,
+                (id, time) -> new OutputDatasetFacetDocument(id, new HashMap<>(), time));
+    }
+
+    private <T extends com.openlineage.server.storage.DatasetFacet> void upsertFacet(String namespace, String name,
+            Map<String, Facet> newFacets, ZonedDateTime eventTime,
+            org.springframework.data.repository.CrudRepository<T, MarquezId> repository,
+            java.util.function.BiFunction<MarquezId, ZonedDateTime, T> factory) {
         MarquezId id = new MarquezId(namespace, name);
-        OutputDatasetFacetDocument doc = outputRepository.findById(id)
-                .orElse(new OutputDatasetFacetDocument(id, new HashMap<>(), eventTime));
+        T doc = repository.findById(id).orElse(factory.apply(id, eventTime));
 
         mergeFacets(doc.getFacets(), newFacets);
         doc.setUpdatedAt(eventTime);
-        outputRepository.save(doc);
+        repository.save(doc);
     }
 
     private void mergeFacets(Map<String, Facet> existing, Map<String, Facet> incoming) {

@@ -8,7 +8,7 @@ import java.time.ZonedDateTime;
 import java.util.Map;
 
 @Document(collection = "input_dataset_input_facets")
-public class InputDatasetFacetDocument {
+public class InputDatasetFacetDocument implements DatasetFacet {
 
     @Id
     private MarquezId datasetId; // Namespace + Name
