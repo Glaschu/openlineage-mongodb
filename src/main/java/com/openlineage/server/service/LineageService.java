@@ -1,9 +1,9 @@
 package com.openlineage.server.service;
 
 import com.openlineage.server.domain.RunEvent;
-import com.openlineage.server.storage.LineageEventDocument;
-import com.openlineage.server.storage.LineageEventRepository;
-import com.openlineage.server.storage.MarquezId;
+import com.openlineage.server.storage.document.LineageEventDocument;
+import com.openlineage.server.storage.repository.LineageEventRepository;
+import com.openlineage.server.storage.document.MarquezId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

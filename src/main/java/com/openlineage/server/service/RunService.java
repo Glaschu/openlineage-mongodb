@@ -1,8 +1,8 @@
 package com.openlineage.server.service;
 
 import com.openlineage.server.domain.RunEvent;
-import com.openlineage.server.storage.MarquezId;
-import com.openlineage.server.storage.RunDocument;
+import com.openlineage.server.storage.document.MarquezId;
+import com.openlineage.server.storage.document.RunDocument;
 import org.springframework.stereotype.Service;
 
 @Service

@@ -1,7 +1,7 @@
 package com.openlineage.server.service;
 
-import com.openlineage.server.storage.NamespaceRegistryDocument;
-import com.openlineage.server.storage.NamespaceRepository;
+import com.openlineage.server.storage.document.NamespaceRegistryDocument;
+import com.openlineage.server.storage.repository.NamespaceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

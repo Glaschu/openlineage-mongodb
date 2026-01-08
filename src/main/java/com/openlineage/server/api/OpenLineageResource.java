@@ -5,7 +5,8 @@ import com.openlineage.server.api.models.LineageResponse.Node;
 import com.openlineage.server.api.models.LineageResponse.Edge;
 import com.openlineage.server.api.models.LineageResponse.JobData;
 import com.openlineage.server.api.models.LineageResponse.DatasetData;
-import com.openlineage.server.storage.*;
+import com.openlineage.server.storage.document.*;
+import com.openlineage.server.storage.repository.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -22,17 +23,20 @@ public class OpenLineageResource {
     private final LineageEventRepository eventRepository;
     private final InputDatasetFacetRepository inputFacetRepository;
     private final OutputDatasetFacetRepository outputFacetRepository;
+    private final com.openlineage.server.mapper.LineageNodeMapper lineageNodeMapper;
 
     public OpenLineageResource(JobRepository jobRepository,
             DatasetRepository datasetRepository,
             LineageEventRepository eventRepository,
             InputDatasetFacetRepository inputFacetRepository,
-            OutputDatasetFacetRepository outputFacetRepository) {
+            OutputDatasetFacetRepository outputFacetRepository,
+            com.openlineage.server.mapper.LineageNodeMapper lineageNodeMapper) {
         this.jobRepository = jobRepository;
         this.datasetRepository = datasetRepository;
         this.eventRepository = eventRepository;
         this.inputFacetRepository = inputFacetRepository;
         this.outputFacetRepository = outputFacetRepository;
+        this.lineageNodeMapper = lineageNodeMapper;
     }
 
     @GetMapping("/lineage")
@@ -102,12 +106,7 @@ public class OpenLineageResource {
         }
 
         // Map to JobData
-        JobData data = new JobData(
-                job.getId().getName(), "JOB", job.getId().getName(), job.getId().getName(),
-                job.getUpdatedAt(), job.getUpdatedAt(), job.getId().getNamespace(),
-                toStringSet(job.getInputs()), toStringSet(job.getInputs()), // inputs/inputUuids placeholder
-                toStringSet(job.getOutputs()), toStringSet(job.getOutputs()), // outputs/outputUuids placeholder
-                job.getLocation(), job.getDescription(), job.getFacets());
+        JobData data = lineageNodeMapper.mapJob(job);
 
         nodes.add(new Node(jobNodeId, "JOB", data, inEdges, outEdges));
     }
@@ -155,19 +154,9 @@ public class OpenLineageResource {
         });
 
         // Map to DatasetData
-        DatasetData data = new DatasetData(
-                ds.getId().getName(), "DB_TABLE", ds.getId().getName(), ds.getId().getName(),
-                ds.getUpdatedAt(), ds.getUpdatedAt(), ds.getId().getNamespace(),
-                ds.getSourceName(), ds.getFields() == null ? Collections.emptyList() : ds.getFields(), ds.getTags(),
-                ds.getUpdatedAt(), ds.getDescription(), mergedFacets);
+        DatasetData data = lineageNodeMapper.mapDataset(ds, mergedFacets);
 
         nodes.add(new Node(dsNodeId, "DATASET", data, inEdges, outEdges));
-    }
-
-    private Set<String> toStringSet(Set<MarquezId> ids) {
-        if (ids == null)
-            return Collections.emptySet();
-        return ids.stream().map(id -> "dataset:" + id.getNamespace() + ":" + id.getName()).collect(Collectors.toSet());
     }
 
     private MarquezId parseNodeId(String nodeId) {
@@ -217,24 +206,14 @@ public class OpenLineageResource {
                     && node.data() instanceof com.openlineage.server.api.models.LineageResponse.DatasetData) {
                 com.openlineage.server.api.models.LineageResponse.DatasetData dsData = (com.openlineage.server.api.models.LineageResponse.DatasetData) node
                         .data();
-                // dsData now contains facets!
-                if (dsData.facets() != null && dsData.facets().containsKey("schema")) {
-                    com.openlineage.server.domain.Facet schemaFacet = dsData.facets().get("schema");
-                    if (schemaFacet instanceof com.openlineage.server.domain.SchemaDatasetFacet) {
-                        List<com.openlineage.server.domain.SchemaDatasetFacet.SchemaField> fields = ((com.openlineage.server.domain.SchemaDatasetFacet) schemaFacet)
-                                .fields();
-                        if (fields != null) {
-                            for (com.openlineage.server.domain.SchemaDatasetFacet.SchemaField field : fields) {
-                                String fieldNodeId = "datasetField:" + dsData.namespace() + ":" + dsData.name() + ":"
-                                        + field.name();
-                                fieldNodeIds.add(fieldNodeId);
-                                com.openlineage.server.api.models.LineageResponse.DatasetFieldData fieldData = new com.openlineage.server.api.models.LineageResponse.DatasetFieldData(
-                                        dsData.namespace(), dsData.name(), field.name(), field.name(), "column",
-                                        field.type());
-                                nodeDataMap.put(fieldNodeId, fieldData);
-                            }
-                        }
-                    }
+
+                List<com.openlineage.server.api.models.LineageResponse.DatasetFieldData> fields = lineageNodeMapper
+                        .mapSchemaToFields(dsData);
+                for (com.openlineage.server.api.models.LineageResponse.DatasetFieldData fieldData : fields) {
+                    String fieldNodeId = "datasetField:" + dsData.namespace() + ":" + dsData.name() + ":"
+                            + fieldData.field();
+                    fieldNodeIds.add(fieldNodeId);
+                    nodeDataMap.put(fieldNodeId, fieldData);
                 }
             }
         }

@@ -1,8 +1,8 @@
 package com.openlineage.server.service;
 
 import com.openlineage.server.domain.Job;
-import com.openlineage.server.storage.JobDocument;
-import com.openlineage.server.storage.MarquezId;
+import com.openlineage.server.storage.document.JobDocument;
+import com.openlineage.server.storage.document.MarquezId;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;

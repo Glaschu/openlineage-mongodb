@@ -2,10 +2,10 @@ package com.openlineage.server.api;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import com.openlineage.server.storage.JobRepository;
-import com.openlineage.server.storage.DatasetRepository;
-import com.openlineage.server.storage.NamespaceRepository;
-import com.openlineage.server.storage.LineageEventDocument;
+import com.openlineage.server.storage.repository.JobRepository;
+import com.openlineage.server.storage.repository.DatasetRepository;
+import com.openlineage.server.storage.repository.NamespaceRepository;
+import com.openlineage.server.storage.document.LineageEventDocument;
 
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -186,9 +186,9 @@ public class StatsController {
 
         private Class<?> getCollectionClass(String name) {
                 return switch (name) {
-                        case "jobs" -> com.openlineage.server.storage.JobDocument.class;
-                        case "datasets" -> com.openlineage.server.storage.DatasetDocument.class;
-                        case "sources" -> com.openlineage.server.storage.NamespaceRegistryDocument.class;
+                        case "jobs" -> com.openlineage.server.storage.document.JobDocument.class;
+                        case "datasets" -> com.openlineage.server.storage.document.DatasetDocument.class;
+                        case "sources" -> com.openlineage.server.storage.document.NamespaceRegistryDocument.class;
                         default -> throw new IllegalArgumentException("Unknown collection: " + name);
                 };
         }

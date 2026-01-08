@@ -1,4 +1,4 @@
-package com.openlineage.server.storage;
+package com.openlineage.server.storage.document;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;

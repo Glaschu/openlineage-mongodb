@@ -1,8 +1,8 @@
 package com.openlineage.server.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.openlineage.server.storage.TagDocument;
-import com.openlineage.server.storage.TagRepository;
+import com.openlineage.server.storage.document.TagDocument;
+import com.openlineage.server.storage.repository.TagRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,23 +40,23 @@ public class TagIntegrationTest {
 
     // Mock other repos to satisfy LineageService dependency if needed
     @MockBean
-    private com.openlineage.server.storage.LineageEventRepository eventRepo;
+    private com.openlineage.server.storage.repository.LineageEventRepository eventRepo;
     @MockBean
-    private com.openlineage.server.storage.JobRepository jobRepo;
+    private com.openlineage.server.storage.repository.JobRepository jobRepo;
     @MockBean
-    private com.openlineage.server.storage.DatasetRepository datasetRepo;
+    private com.openlineage.server.storage.repository.DatasetRepository datasetRepo;
     @MockBean
-    private com.openlineage.server.storage.DataSourceRepository dataSourceRepo;
+    private com.openlineage.server.storage.repository.DataSourceRepository dataSourceRepo;
     @MockBean
     private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
     @MockBean
-    private com.openlineage.server.storage.RunRepository runRepo;
+    private com.openlineage.server.storage.repository.RunRepository runRepo;
     @MockBean
-    private com.openlineage.server.storage.InputDatasetFacetRepository inputRepo;
+    private com.openlineage.server.storage.repository.InputDatasetFacetRepository inputRepo;
     @MockBean
-    private com.openlineage.server.storage.OutputDatasetFacetRepository outputRepo;
+    private com.openlineage.server.storage.repository.OutputDatasetFacetRepository outputRepo;
     @MockBean
-    private com.openlineage.server.storage.NamespaceRepository nsRepo;
+    private com.openlineage.server.storage.repository.NamespaceRepository nsRepo;
 
     @BeforeEach
     public void setup() {

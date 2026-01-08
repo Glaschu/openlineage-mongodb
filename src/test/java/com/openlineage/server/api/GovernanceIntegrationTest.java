@@ -3,9 +3,9 @@ package com.openlineage.server.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openlineage.server.domain.Job;
 import com.openlineage.server.domain.RunEvent;
-import com.openlineage.server.storage.JobRepository;
-import com.openlineage.server.storage.NamespaceRegistryDocument;
-import com.openlineage.server.storage.NamespaceRepository;
+import com.openlineage.server.storage.repository.JobRepository;
+import com.openlineage.server.storage.document.NamespaceRegistryDocument;
+import com.openlineage.server.storage.repository.NamespaceRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -49,19 +49,19 @@ public class GovernanceIntegrationTest {
     private JobRepository jobRepo;
 
     @MockBean
-    private com.openlineage.server.storage.LineageEventRepository eventRepo;
+    private com.openlineage.server.storage.repository.LineageEventRepository eventRepo;
     @MockBean
-    private com.openlineage.server.storage.DatasetRepository datasetRepo;
+    private com.openlineage.server.storage.repository.DatasetRepository datasetRepo;
     @MockBean
-    private com.openlineage.server.storage.RunRepository runRepo;
+    private com.openlineage.server.storage.repository.RunRepository runRepo;
     @MockBean
-    private com.openlineage.server.storage.DataSourceRepository dataSourceRepo;
+    private com.openlineage.server.storage.repository.DataSourceRepository dataSourceRepo;
     @MockBean
-    private com.openlineage.server.storage.TagRepository tagRepo;
+    private com.openlineage.server.storage.repository.TagRepository tagRepo;
     @MockBean
-    private com.openlineage.server.storage.InputDatasetFacetRepository inputRepo;
+    private com.openlineage.server.storage.repository.InputDatasetFacetRepository inputRepo;
     @MockBean
-    private com.openlineage.server.storage.OutputDatasetFacetRepository outputRepo;
+    private com.openlineage.server.storage.repository.OutputDatasetFacetRepository outputRepo;
 
     @Test
     public void testClaimNewNamespace() throws Exception {

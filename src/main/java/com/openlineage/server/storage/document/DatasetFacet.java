@@ -1,4 +1,4 @@
-package com.openlineage.server.storage;
+package com.openlineage.server.storage.document;
 
 import com.openlineage.server.domain.Facet;
 

@@ -2,7 +2,7 @@ package com.openlineage.server.service;
 
 import com.openlineage.server.domain.Job;
 import com.openlineage.server.domain.RunEvent;
-import com.openlineage.server.storage.LineageEventRepository;
+import com.openlineage.server.storage.repository.LineageEventRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

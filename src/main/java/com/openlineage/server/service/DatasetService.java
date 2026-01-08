@@ -1,9 +1,9 @@
 package com.openlineage.server.service;
 
 import com.openlineage.server.domain.Dataset;
-import com.openlineage.server.storage.DataSourceDocument;
-import com.openlineage.server.storage.DatasetDocument;
-import com.openlineage.server.storage.MarquezId;
+import com.openlineage.server.storage.document.DataSourceDocument;
+import com.openlineage.server.storage.document.DatasetDocument;
+import com.openlineage.server.storage.document.MarquezId;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;

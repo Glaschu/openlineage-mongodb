@@ -3,8 +3,8 @@ package com.openlineage.server.api;
 import com.openlineage.server.api.models.SearchFilter;
 import com.openlineage.server.api.models.SearchResult;
 import com.openlineage.server.api.models.SearchSort;
-import com.openlineage.server.storage.DatasetDocument;
-import com.openlineage.server.storage.JobDocument;
+import com.openlineage.server.storage.document.DatasetDocument;
+import com.openlineage.server.storage.document.JobDocument;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -25,9 +25,11 @@ import java.util.stream.Stream;
 public class SearchController {
 
     private final MongoTemplate mongoTemplate;
+    private final com.openlineage.server.mapper.SearchMapper searchMapper;
 
-    public SearchController(MongoTemplate mongoTemplate) {
+    public SearchController(MongoTemplate mongoTemplate, com.openlineage.server.mapper.SearchMapper searchMapper) {
         this.mongoTemplate = mongoTemplate;
+        this.searchMapper = searchMapper;
     }
 
     public record SearchResponse(int totalCount, List<SearchResult> results) {
@@ -54,11 +56,7 @@ public class SearchController {
             jobQuery.limit(limit);
             List<JobDocument> jobs = mongoTemplate.find(jobQuery, JobDocument.class);
             allResults.addAll(jobs.stream()
-                    .map(j -> SearchResult.job(
-                            j.getId().getName(),
-                            j.getId().getNamespace(),
-                            j.getUpdatedAt(),
-                            j.getDescription()))
+                    .map(searchMapper::toSearchResult)
                     .toList());
         }
 
@@ -67,11 +65,7 @@ public class SearchController {
             datasetQuery.limit(limit);
             List<DatasetDocument> datasets = mongoTemplate.find(datasetQuery, DatasetDocument.class);
             allResults.addAll(datasets.stream()
-                    .map(d -> SearchResult.dataset(
-                            d.getId().getName(),
-                            d.getId().getNamespace(),
-                            d.getUpdatedAt(),
-                            d.getDescription()))
+                    .map(searchMapper::toSearchResult)
                     .toList());
         }
 

@@ -3,9 +3,9 @@ package com.openlineage.server.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openlineage.server.api.models.SearchFilter;
 import com.openlineage.server.api.models.SearchSort;
-import com.openlineage.server.storage.DatasetDocument;
-import com.openlineage.server.storage.JobDocument;
-import com.openlineage.server.storage.MarquezId;
+import com.openlineage.server.storage.document.DatasetDocument;
+import com.openlineage.server.storage.document.JobDocument;
+import com.openlineage.server.storage.document.MarquezId;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -43,23 +43,23 @@ public class SearchIntegrationTest {
 
     // Repositories to mock for context loading
     @MockBean
-    private com.openlineage.server.storage.JobRepository jobRepo;
+    private com.openlineage.server.storage.repository.JobRepository jobRepo;
     @MockBean
-    private com.openlineage.server.storage.DatasetRepository datasetRepo;
+    private com.openlineage.server.storage.repository.DatasetRepository datasetRepo;
     @MockBean
-    private com.openlineage.server.storage.NamespaceRepository nsRepo;
+    private com.openlineage.server.storage.repository.NamespaceRepository nsRepo;
     @MockBean
-    private com.openlineage.server.storage.LineageEventRepository eventRepo;
+    private com.openlineage.server.storage.repository.LineageEventRepository eventRepo;
     @MockBean
-    private com.openlineage.server.storage.RunRepository runRepo;
+    private com.openlineage.server.storage.repository.RunRepository runRepo;
     @MockBean
-    private com.openlineage.server.storage.TagRepository tagRepo;
+    private com.openlineage.server.storage.repository.TagRepository tagRepo;
     @MockBean
-    private com.openlineage.server.storage.DataSourceRepository dataSourceRepo;
+    private com.openlineage.server.storage.repository.DataSourceRepository dataSourceRepo;
     @MockBean
-    private com.openlineage.server.storage.InputDatasetFacetRepository inputRepo;
+    private com.openlineage.server.storage.repository.InputDatasetFacetRepository inputRepo;
     @MockBean
-    private com.openlineage.server.storage.OutputDatasetFacetRepository outputRepo;
+    private com.openlineage.server.storage.repository.OutputDatasetFacetRepository outputRepo;
     @MockBean
     private com.openlineage.server.service.LineageService lineageService;
 

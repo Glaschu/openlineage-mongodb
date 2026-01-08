@@ -35,28 +35,28 @@ public class StatsIntegrationTest {
         private MongoTemplate mongoTemplate;
 
         @MockBean
-        private com.openlineage.server.storage.JobRepository jobRepo;
+        private com.openlineage.server.storage.repository.JobRepository jobRepo;
         @MockBean
-        private com.openlineage.server.storage.DatasetRepository datasetRepo;
+        private com.openlineage.server.storage.repository.DatasetRepository datasetRepo;
         @MockBean
-        private com.openlineage.server.storage.NamespaceRepository nsRepo;
+        private com.openlineage.server.storage.repository.NamespaceRepository nsRepo;
         @MockBean
-        private com.openlineage.server.storage.RunRepository runRepo;
+        private com.openlineage.server.storage.repository.RunRepository runRepo;
         @MockBean
-        private com.openlineage.server.storage.LineageEventRepository eventRepo;
+        private com.openlineage.server.storage.repository.LineageEventRepository eventRepo;
         // Other required mocks to start context
         @MockBean
         private com.openlineage.server.service.LineageService lineageService;
         @MockBean
-        private com.openlineage.server.storage.DataSourceRepository dataSourceRepo;
+        private com.openlineage.server.storage.repository.DataSourceRepository dataSourceRepo;
         @MockBean
-        private com.openlineage.server.storage.InputDatasetFacetRepository inputRepo;
+        private com.openlineage.server.storage.repository.InputDatasetFacetRepository inputRepo;
         @MockBean
-        private com.openlineage.server.storage.OutputDatasetFacetRepository outputRepo;
+        private com.openlineage.server.storage.repository.OutputDatasetFacetRepository outputRepo;
         @MockBean
         private com.openlineage.server.service.FacetMergeService facetMergeService;
         @MockBean
-        private com.openlineage.server.storage.TagRepository tagRepo;
+        private com.openlineage.server.storage.repository.TagRepository tagRepo;
 
         @Test
         public void testGetLineageEventStats() throws Exception {
@@ -67,7 +67,7 @@ public class StatsIntegrationTest {
 
                 AggregationResults<Document> results = new AggregationResults<>(List.of(doc1), new Document());
 
-                when(mongoTemplate.aggregate(any(), eq(com.openlineage.server.storage.LineageEventDocument.class),
+                when(mongoTemplate.aggregate(any(), eq(com.openlineage.server.storage.document.LineageEventDocument.class),
                                 eq(Document.class)))
                                 .thenReturn(results);
 
@@ -81,12 +81,12 @@ public class StatsIntegrationTest {
         @Test
         public void testGetJobStats() throws Exception {
                 // Mock count and aggregation
-                when(mongoTemplate.count(any(), eq(com.openlineage.server.storage.JobDocument.class))).thenReturn(10L);
+                when(mongoTemplate.count(any(), eq(com.openlineage.server.storage.document.JobDocument.class))).thenReturn(10L);
 
                 Document doc1 = new Document("_id", "2023-01-01T10:00:00Z").append("count", 2L);
                 AggregationResults<Document> results = new AggregationResults<>(List.of(doc1), new Document());
 
-                when(mongoTemplate.aggregate(any(), eq(com.openlineage.server.storage.JobDocument.class),
+                when(mongoTemplate.aggregate(any(), eq(com.openlineage.server.storage.document.JobDocument.class),
                                 eq(Document.class)))
                                 .thenReturn(results);
 
