@@ -162,9 +162,12 @@ public class StatsController {
 
                 Map<String, Long> counts = new HashMap<>();
                 for (Document doc : results.getMappedResults()) {
-                        counts.put(doc.getString("_id"),
-                                        doc.getLong("count") != null ? doc.getLong("count")
-                                                        : doc.getInteger("count").longValue());
+                        Object countObj = doc.get("count");
+                        long countVal = 0;
+                        if (countObj instanceof Number) {
+                                countVal = ((Number) countObj).longValue();
+                        }
+                        counts.put(doc.getString("_id"), countVal);
                 }
 
                 while (current.isBefore(endTime)) {
