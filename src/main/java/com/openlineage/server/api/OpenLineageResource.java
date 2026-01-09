@@ -5,6 +5,7 @@ import com.openlineage.server.api.models.LineageResponse.Node;
 import com.openlineage.server.api.models.LineageResponse.Edge;
 import com.openlineage.server.api.models.LineageResponse.JobData;
 import com.openlineage.server.api.models.LineageResponse.DatasetData;
+import com.openlineage.server.domain.ColumnLineageDatasetFacet;
 import com.openlineage.server.storage.document.*;
 import com.openlineage.server.storage.repository.*;
 import org.springframework.http.HttpStatus;
@@ -219,8 +220,37 @@ public class OpenLineageResource {
         }
 
         // 3. Create Edges
-        // ... (Logic for column lineage edges can be added here once defined by
-        // requirements, currently placeholder as per previous impl)
+        for (Node node : datasetLineage.graph()) {
+            if ("DATASET".equals(node.type()) && node.data() instanceof DatasetData) {
+                DatasetData dsData = (DatasetData) node.data();
+                if (dsData.facets() != null && dsData.facets().containsKey("columnLineage")) {
+                    com.openlineage.server.domain.Facet facet = dsData.facets().get("columnLineage");
+                    if (facet instanceof ColumnLineageDatasetFacet) {
+                        ColumnLineageDatasetFacet colLineageFacet = (ColumnLineageDatasetFacet) facet;
+                        if (colLineageFacet.fields() != null) {
+                            for (Map.Entry<String, ColumnLineageDatasetFacet.Fields> entry : colLineageFacet.fields()
+                                    .entrySet()) {
+                                String outputCol = entry.getKey();
+                                ColumnLineageDatasetFacet.Fields fields = entry.getValue();
+                                String outputNodeId = "datasetField:" + dsData.namespace() + ":" + dsData.name() + ":"
+                                        + outputCol;
+
+                                for (ColumnLineageDatasetFacet.InputField inputField : fields.inputFields()) {
+                                    String inputNodeId = "datasetField:" + inputField.namespace() + ":"
+                                            + inputField.name() + ":" + inputField.field();
+
+                                    // Add Edge
+                                    Edge edge = new Edge(inputNodeId, outputNodeId);
+
+                                    outEdgesMap.computeIfAbsent(inputNodeId, k -> new HashSet<>()).add(edge);
+                                    inEdgesMap.computeIfAbsent(outputNodeId, k -> new HashSet<>()).add(edge);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         // 4. Assemble
         Set<Node> resultNodes = new HashSet<>();

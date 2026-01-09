@@ -42,7 +42,9 @@ public class JobMapper {
                 doc.getDescription(), // description
                 latestRun, // latestRun
                 recentRuns, // latestRuns
-                doc.getFacets());
+                doc.getFacets(),
+                latestRun != null ? latestRun.state() : null,
+                latestRun != null ? latestRun.durationMs() : null);
     }
 
     private Set<JobResponse.DatasetId> mapDatasetIds(Set<MarquezId> ids) {
