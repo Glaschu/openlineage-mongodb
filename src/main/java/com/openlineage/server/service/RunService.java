@@ -20,7 +20,7 @@ public class RunService {
                 .query(org.springframework.data.mongodb.core.query.Criteria.where("_id").is(runId));
 
         org.springframework.data.mongodb.core.query.Update update = new org.springframework.data.mongodb.core.query.Update()
-                .setOnInsert("jobId", new MarquezId(event.job().namespace(), event.job().name()))
+                .setOnInsert("job", new MarquezId(event.job().namespace(), event.job().name()))
                 .set("eventType", event.eventType())
                 .set("eventTime", event.eventTime())
                 .set("updatedAt", event.eventTime());
