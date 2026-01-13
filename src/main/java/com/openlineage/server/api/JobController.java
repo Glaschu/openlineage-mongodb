@@ -57,7 +57,8 @@ public class JobController {
         List<JobDocument> allJobs = repository.findByIdNamespace(namespace);
 
         List<com.openlineage.server.api.models.JobResponse> jobs = allJobs.stream()
-                .sorted(java.util.Comparator.comparing(JobDocument::getUpdatedAt).reversed())
+                .sorted(java.util.Comparator.comparing(JobDocument::getUpdatedAt,
+                        java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())).reversed())
                 .skip(offset)
                 .limit(limit)
                 .map(this::mapJob)

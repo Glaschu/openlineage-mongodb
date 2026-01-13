@@ -100,8 +100,9 @@ public class SearchController {
 
         // Sort and Limit in memory (simplified approach for joined search)
         Comparator<SearchResult> comparator = switch (sort) {
-            case UPDATE_AT -> Comparator.comparing(SearchResult::updatedAt).reversed();
-            case NAME -> Comparator.comparing(SearchResult::name);
+            case UPDATE_AT -> Comparator
+                    .comparing(SearchResult::updatedAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed();
+            case NAME -> Comparator.comparing(SearchResult::name, Comparator.nullsLast(Comparator.naturalOrder()));
         };
 
         List<SearchResult> finalResults = allResults.stream()

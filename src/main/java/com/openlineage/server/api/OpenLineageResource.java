@@ -129,7 +129,7 @@ public class OpenLineageResource {
             String jobNodeId = "job:" + job.getId().getNamespace() + ":" + job.getId().getName();
             outEdges.add(new Edge(dsNodeId, jobNodeId));
             if (visited.add(jobNodeId)) {
-                queue.add(new BfsNode("job", job.getId(), currentDepth + 1));
+                queue.add(new BfsNode("job", job.getId(), currentDepth)); // Dataset -> Job doesn't increment depth
             }
         }
 
@@ -139,7 +139,7 @@ public class OpenLineageResource {
             String jobNodeId = "job:" + job.getId().getNamespace() + ":" + job.getId().getName();
             inEdges.add(new Edge(jobNodeId, dsNodeId));
             if (visited.add(jobNodeId)) {
-                queue.add(new BfsNode("job", job.getId(), currentDepth + 1));
+                queue.add(new BfsNode("job", job.getId(), currentDepth)); // Dataset -> Job doesn't increment depth
             }
         }
 
