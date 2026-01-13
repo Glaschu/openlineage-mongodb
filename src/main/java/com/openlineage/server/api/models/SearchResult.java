@@ -9,12 +9,14 @@ public record SearchResult(
         String name,
         String namespace,
         ZonedDateTime updatedAt,
-        String description) {
+        String description,
+        String nodeId) {
     public static SearchResult job(String name, String namespace, ZonedDateTime updatedAt, String description) {
-        return new SearchResult("JOB", name, namespace, updatedAt, description);
+        return new SearchResult("JOB", name, namespace, updatedAt, description, "job:" + namespace + ":" + name);
     }
 
     public static SearchResult dataset(String name, String namespace, ZonedDateTime updatedAt, String description) {
-        return new SearchResult("DATASET", name, namespace, updatedAt, description);
+        return new SearchResult("DATASET", name, namespace, updatedAt, description,
+                "dataset:" + namespace + ":" + name);
     }
 }

@@ -19,6 +19,8 @@ public class DatasetDocument {
     private ZonedDateTime updatedAt;
     @Indexed
     private ZonedDateTime createdAt;
+    private java.util.UUID currentVersion;
+    private Boolean isDeleted = false;
 
     public DatasetDocument() {
     }
@@ -89,5 +91,21 @@ public class DatasetDocument {
 
     public void setCreatedAt(ZonedDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public java.util.UUID getCurrentVersion() {
+        return currentVersion;
+    }
+
+    public void setCurrentVersion(java.util.UUID currentVersion) {
+        this.currentVersion = currentVersion;
+    }
+
+    public Boolean getIsDeleted() {
+        return isDeleted;
+    }
+
+    public void setIsDeleted(Boolean isDeleted) {
+        this.isDeleted = isDeleted;
     }
 }

@@ -20,6 +20,9 @@ public class JobDocument {
     private String description;
     private String location;
     private ZonedDateTime updatedAt;
+    private java.util.UUID currentVersion;
+    private java.util.UUID parentJobUuid;
+    private String parentJobName;
 
     @Indexed
     private ZonedDateTime createdAt;
@@ -107,5 +110,29 @@ public class JobDocument {
 
     public void setCreatedAt(ZonedDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public java.util.UUID getCurrentVersion() {
+        return currentVersion;
+    }
+
+    public void setCurrentVersion(java.util.UUID currentVersion) {
+        this.currentVersion = currentVersion;
+    }
+
+    public java.util.UUID getParentJobUuid() {
+        return parentJobUuid;
+    }
+
+    public void setParentJobUuid(java.util.UUID parentJobUuid) {
+        this.parentJobUuid = parentJobUuid;
+    }
+
+    public String getParentJobName() {
+        return parentJobName;
+    }
+
+    public void setParentJobName(String parentJobName) {
+        this.parentJobName = parentJobName;
     }
 }

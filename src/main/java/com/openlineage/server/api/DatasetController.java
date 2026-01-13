@@ -94,6 +94,24 @@ public class DatasetController {
                 doc.getEvent().eventTime(),
                 doc.getEvent().eventTime(),
                 null,
+                doc.getEvent().inputs() != null ? doc.getEvent().inputs().stream()
+                        .map(d -> new com.openlineage.server.api.models.DatasetResponse(
+                                new com.openlineage.server.api.models.DatasetResponse.DatasetId(d.namespace(),
+                                        d.name()),
+                                "DB_TABLE", d.name(), d.name(), null, null, d.namespace(), d.namespace(),
+                                java.util.Collections.emptyList(), java.util.Collections.emptySet(), null, null,
+                                java.util.Collections.emptyList(), java.util.Collections.emptyMap(), "", null, null,
+                                false, null))
+                        .collect(java.util.stream.Collectors.toList()) : java.util.Collections.emptyList(),
+                doc.getEvent().outputs() != null ? doc.getEvent().outputs().stream()
+                        .map(d -> new com.openlineage.server.api.models.DatasetResponse(
+                                new com.openlineage.server.api.models.DatasetResponse.DatasetId(d.namespace(),
+                                        d.name()),
+                                "DB_TABLE", d.name(), d.name(), null, null, d.namespace(), d.namespace(),
+                                java.util.Collections.emptyList(), java.util.Collections.emptySet(), null, null,
+                                java.util.Collections.emptyList(), java.util.Collections.emptyMap(), "", null, null,
+                                false, null))
+                        .collect(java.util.stream.Collectors.toList()) : java.util.Collections.emptyList(),
                 java.util.Collections.emptyList(),
                 java.util.Collections.emptyList(),
                 java.util.Collections.emptyMap(),
@@ -119,7 +137,9 @@ public class DatasetController {
                 (java.util.Map<String, Facet>) ds.facets(),
                 doc.getEvent().run().runId(),
                 runResponse,
-                "active");
+                "active",
+                false,
+                null);
     }
 
     private java.util.List<Object> mapFields(com.openlineage.server.domain.Dataset ds) {

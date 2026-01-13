@@ -21,6 +21,7 @@ public class RunService {
 
         org.springframework.data.mongodb.core.query.Update update = new org.springframework.data.mongodb.core.query.Update()
                 .setOnInsert("job", new MarquezId(event.job().namespace(), event.job().name()))
+                .setOnInsert("createdAt", java.time.ZonedDateTime.now())
                 .set("eventType", event.eventType())
                 .set("eventTime", event.eventTime())
                 .set("updatedAt", event.eventTime());

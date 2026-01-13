@@ -12,9 +12,12 @@ import java.util.Set;
 public class JobService {
 
     private final org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+    private final VersionService versionService;
 
-    public JobService(org.springframework.data.mongodb.core.MongoTemplate mongoTemplate) {
+    public JobService(org.springframework.data.mongodb.core.MongoTemplate mongoTemplate,
+            VersionService versionService) {
         this.mongoTemplate = mongoTemplate;
+        this.versionService = versionService;
     }
 
     public void upsertJob(Job job, ZonedDateTime eventTime, Set<MarquezId> inputs, Set<MarquezId> outputs) {
@@ -24,7 +27,8 @@ public class JobService {
 
         org.springframework.data.mongodb.core.query.Update update = new org.springframework.data.mongodb.core.query.Update()
                 .setOnInsert("createdAt", eventTime)
-                .set("updatedAt", eventTime);
+                .set("updatedAt", eventTime)
+                .set("currentVersion", versionService.computeJobVersion(job, inputs, outputs));
 
         if (inputs != null && !inputs.isEmpty()) {
             update.addToSet("inputs").each(inputs.toArray());

@@ -10,6 +10,9 @@ import com.openlineage.server.domain.RunEvent;
 
 import com.openlineage.server.storage.repository.RunRepository;
 import com.openlineage.server.storage.document.RunDocument;
+import com.openlineage.server.storage.document.JobDocument;
+import com.openlineage.server.storage.repository.JobRepository;
+import com.openlineage.server.storage.document.MarquezId;
 import com.openlineage.server.service.LineageService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -24,12 +27,14 @@ import java.util.stream.Collectors;
 public class RunController {
 
     private final RunRepository repository;
+    private final JobRepository jobRepository;
     private final LineageService lineageService;
     private final com.openlineage.server.mapper.RunMapper runMapper;
 
-    public RunController(RunRepository repository, LineageService lineageService,
+    public RunController(RunRepository repository, JobRepository jobRepository, LineageService lineageService,
             com.openlineage.server.mapper.RunMapper runMapper) {
         this.repository = repository;
+        this.jobRepository = jobRepository;
         this.lineageService = lineageService;
         this.runMapper = runMapper;
     }
@@ -55,10 +60,22 @@ public class RunController {
     }
 
     @GetMapping("/jobs/runs/{runId}/facets")
-    public Map<String, Object> getRunFacets(@PathVariable String runId) {
-        return repository.findById(runId)
-                .map(doc -> (Map<String, Object>) (Map) doc.getRunFacets())
+    public Map<String, Object> getRunFacets(@PathVariable String runId,
+            @RequestParam(required = false) String type) {
+        RunDocument run = repository.findById(runId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Run not found"));
+
+        if ("job".equalsIgnoreCase(type)) {
+            JobDocument job = jobRepository.findById(run.getJob())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job not found"));
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("runId", runId);
+            response.put("facets", job.getFacets());
+            return response;
+        }
+
+        return (Map<String, Object>) (Map) run.getRunFacets();
     }
 
     // Lifecycle: Start

@@ -9,6 +9,9 @@ public class DataSourceDocument {
     @Id
     private String name; // e.g. "postgresql://host:port" or just name
     private String connectionUrl;
+    private String type;
+    private String description;
+    private ZonedDateTime updatedAt;
     private ZonedDateTime createdAt;
 
     public DataSourceDocument() {
@@ -42,5 +45,29 @@ public class DataSourceDocument {
 
     public void setCreatedAt(ZonedDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public ZonedDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(ZonedDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

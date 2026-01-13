@@ -40,7 +40,10 @@ public class SearchController {
             @RequestParam("q") String query,
             @RequestParam(value = "filter", required = false) SearchFilter filter,
             @RequestParam(value = "sort", defaultValue = "NAME") SearchSort sort,
-            @RequestParam(value = "limit", defaultValue = "10") int limit) {
+            @RequestParam(value = "limit", defaultValue = "10") int limit,
+            @RequestParam(value = "namespace", required = false) String namespace,
+            @RequestParam(value = "before", required = false) String before,
+            @RequestParam(value = "after", required = false) String after) {
 
         List<SearchResult> allResults = new ArrayList<>();
 
@@ -48,11 +51,22 @@ public class SearchController {
         String regex = "(?i).*" + query + ".*";
 
         if (filter == null || filter == SearchFilter.JOB) {
-            Query jobQuery = new Query(Criteria.where("_id.name").regex(regex));
-            // Apply similar limit logic at DB level if possible, but since we are combining
-            // two collections,
-            // we might over-fetch slightly then truncate. Ideally, we'd use a
-            // union/aggregate but simplified for now.
+            Criteria criteria = Criteria.where("_id.name").regex(regex);
+            // Namespace filter
+            if (namespace != null) {
+                criteria.and("_id.namespace").is(namespace);
+            }
+            // Date filters
+            if (before != null || after != null) {
+                Criteria dateCriteria = Criteria.where("updatedAt");
+                if (after != null)
+                    dateCriteria.gt(java.time.LocalDate.parse(after).atStartOfDay(java.time.ZoneId.of("UTC")));
+                if (before != null)
+                    dateCriteria.lt(java.time.LocalDate.parse(before).atStartOfDay(java.time.ZoneId.of("UTC")));
+                criteria.andOperator(dateCriteria);
+            }
+
+            Query jobQuery = new Query(criteria);
             jobQuery.limit(limit);
             List<JobDocument> jobs = mongoTemplate.find(jobQuery, JobDocument.class);
             allResults.addAll(jobs.stream()
@@ -61,7 +75,22 @@ public class SearchController {
         }
 
         if (filter == null || filter == SearchFilter.DATASET) {
-            Query datasetQuery = new Query(Criteria.where("_id.name").regex(regex));
+            Criteria criteria = Criteria.where("_id.name").regex(regex);
+            // Namespace filter
+            if (namespace != null) {
+                criteria.and("_id.namespace").is(namespace);
+            }
+            // Date filters (same logic)
+            if (before != null || after != null) {
+                Criteria dateCriteria = Criteria.where("updatedAt");
+                if (after != null)
+                    dateCriteria.gt(java.time.LocalDate.parse(after).atStartOfDay(java.time.ZoneId.of("UTC")));
+                if (before != null)
+                    dateCriteria.lt(java.time.LocalDate.parse(before).atStartOfDay(java.time.ZoneId.of("UTC")));
+                criteria.andOperator(dateCriteria);
+            }
+
+            Query datasetQuery = new Query(criteria);
             datasetQuery.limit(limit);
             List<DatasetDocument> datasets = mongoTemplate.find(datasetQuery, DatasetDocument.class);
             allResults.addAll(datasets.stream()

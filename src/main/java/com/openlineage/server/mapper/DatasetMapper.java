@@ -38,14 +38,16 @@ public class DatasetMapper {
                 doc.getId().getNamespace(),
                 doc.getSourceName(),
                 doc.getFields(),
-                doc.getTags(),
+                doc.getTags() != null ? doc.getTags() : Collections.emptySet(),
                 doc.getUpdatedAt(),
                 doc.getDescription(),
                 mapColumnLineage(facets),
                 facets,
                 "",
                 null,
-                null);
+                null,
+                doc.getIsDeleted() != null ? doc.getIsDeleted() : false,
+                doc.getCurrentVersion());
     }
 
     public DatasetResponse toResponse(com.openlineage.server.domain.Dataset ds,
@@ -75,7 +77,11 @@ public class DatasetMapper {
         com.openlineage.server.api.models.RunResponse createdBy = isOutput
                 ? new com.openlineage.server.api.models.RunResponse(run.getRunId(), run.getCreatedAt(),
                         run.getUpdatedAt(), null, null, null, null, null,
-                        null, Collections.emptyList(), Collections.emptyList(), Collections.emptyMap(),
+                        null,
+                        mapDatasets(run.getInputs()), // inputs
+                        mapDatasets(run.getOutputs()), // outputs
+                        Collections.emptyList(), Collections.emptyList(),
+                        Collections.emptyMap(),
                         Collections.emptyMap(), null)
                 : null;
 
@@ -90,6 +96,17 @@ public class DatasetMapper {
             // Ignore lookup failures
         }
 
+        String version = "";
+        if (ds.facets() != null && ds.facets().containsKey("version")) {
+            Facet facet = ds.facets().get("version");
+            if (facet instanceof GenericFacet) {
+                Object val = ((GenericFacet) facet).getAdditionalProperties().get("datasetVersion");
+                if (val != null) {
+                    version = val.toString();
+                }
+            }
+        }
+
         return new DatasetResponse(
                 new DatasetResponse.DatasetId(ds.namespace(), ds.name()),
                 "DB_TABLE",
@@ -100,14 +117,17 @@ public class DatasetMapper {
                 ds.namespace(),
                 ds.namespace(),
                 fields,
-                Collections.emptySet(),
+                Collections.emptySet(), // Tags currently not standard in OL events
                 null,
                 null,
                 mapColumnLineage(ds.facets()),
                 (Map<String, Facet>) ds.facets(),
-                "",
+                version,
                 createdBy,
-                lifecycleState);
+                lifecycleState,
+                false, // isDeleted
+                null // currentVersion
+        );
     }
 
     public List<DatasetResponse.ColumnLineage> mapColumnLineage(Map<String, Facet> facets) {
@@ -125,5 +145,31 @@ public class DatasetMapper {
                     .collect(Collectors.toList());
         }
         return Collections.emptyList();
+    }
+
+    private java.util.List<DatasetResponse> mapDatasetIds(
+            java.util.Set<com.openlineage.server.storage.document.MarquezId> ids) {
+        if (ids == null)
+            return Collections.emptyList();
+        return ids.stream()
+                .map(id -> new DatasetResponse(
+                        new DatasetResponse.DatasetId(id.getNamespace(), id.getName()),
+                        "DB_TABLE", id.getName(), id.getName(), null, null, id.getNamespace(), id.getNamespace(),
+                        Collections.emptyList(), Collections.emptySet(), null, null, Collections.emptyList(),
+                        Collections.emptyMap(), "", null, null, false, null))
+                .collect(Collectors.toList());
+    }
+
+    private java.util.List<DatasetResponse> mapDatasets(
+            java.util.List<com.openlineage.server.domain.Dataset> datasets) {
+        if (datasets == null)
+            return Collections.emptyList();
+        return datasets.stream()
+                .map(ds -> new DatasetResponse(
+                        new DatasetResponse.DatasetId(ds.namespace(), ds.name()),
+                        "DB_TABLE", ds.name(), ds.name(), null, null, ds.namespace(), ds.namespace(),
+                        Collections.emptyList(), Collections.emptySet(), null, null, Collections.emptyList(),
+                        Collections.emptyMap(), "", null, null, false, null))
+                .collect(Collectors.toList());
     }
 }

@@ -44,6 +44,10 @@ public class JobMapper {
                 recentRuns, // latestRuns
                 doc.getFacets(),
                 latestRun != null ? latestRun.state() : null,
+                doc.getParentJobName(),
+                doc.getParentJobUuid(),
+                doc.getCurrentVersion(),
+                Collections.emptyList(), // labels
                 latestRun != null ? latestRun.durationMs() : null);
     }
 

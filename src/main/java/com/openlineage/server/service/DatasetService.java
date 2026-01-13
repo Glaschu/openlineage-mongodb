@@ -15,11 +15,13 @@ public class DatasetService {
 
     private final org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
     private final FacetMergeService facetMergeService;
+    private final VersionService versionService;
 
     public DatasetService(org.springframework.data.mongodb.core.MongoTemplate mongoTemplate,
-            FacetMergeService facetMergeService) {
+            FacetMergeService facetMergeService, VersionService versionService) {
         this.mongoTemplate = mongoTemplate;
         this.facetMergeService = facetMergeService;
+        this.versionService = versionService;
     }
 
     public void upsertDataset(Dataset dataset, ZonedDateTime eventTime, boolean isInput) {
@@ -42,7 +44,9 @@ public class DatasetService {
         org.springframework.data.mongodb.core.query.Update update = new org.springframework.data.mongodb.core.query.Update()
                 .setOnInsert("createdAt", eventTime)
                 .set("updatedAt", eventTime)
-                .set("sourceName", sourceName);
+                .set("sourceName", sourceName)
+                .set("isDeleted", false)
+                .set("currentVersion", versionService.computeDatasetVersion(dataset));
 
         if (extractedFields != null) {
             update.set("fields", extractedFields);
@@ -65,7 +69,9 @@ public class DatasetService {
         org.springframework.data.mongodb.core.query.Update update = new org.springframework.data.mongodb.core.query.Update()
                 .setOnInsert("name", namespace)
                 .setOnInsert("createdAt", eventTime)
-                .set("updatedAt", eventTime); // Ensure we update the last seen time as well
+                .set("updatedAt", eventTime)
+                .set("type", "POSTGRESQL") // Placeholder/Default
+                .set("description", "");
 
         mongoTemplate.upsert(query, update, DataSourceDocument.class);
     }
