@@ -52,6 +52,37 @@ public class DatasetService {
             update.set("fields", extractedFields);
         }
 
+        if (dataset.facets() != null && !dataset.facets().isEmpty()) {
+            update.set("facets", dataset.facets());
+
+            // Extract Description
+            if (dataset.facets().containsKey("documentation")) {
+                com.openlineage.server.domain.Facet facet = dataset.facets().get("documentation");
+                if (facet instanceof com.openlineage.server.domain.GenericFacet) {
+                    Object desc = ((com.openlineage.server.domain.GenericFacet) facet).getAdditionalProperties()
+                            .get("description");
+                    if (desc != null) {
+                        update.set("description", desc.toString());
+                    }
+                }
+            }
+
+            // Extract Tags (experimental support for 'tags' facet)
+            if (dataset.facets().containsKey("tags")) {
+                com.openlineage.server.domain.Facet facet = dataset.facets().get("tags");
+                if (facet instanceof com.openlineage.server.domain.GenericFacet) {
+                    Object tagsObj = ((com.openlineage.server.domain.GenericFacet) facet).getAdditionalProperties()
+                            .get("tags");
+                    if (tagsObj instanceof List) {
+                        List<?> tagsList = (List<?>) tagsObj;
+                        if (!tagsList.isEmpty() && tagsList.get(0) instanceof String) {
+                            update.addToSet("tags").each(tagsList.toArray());
+                        }
+                    }
+                }
+            }
+        }
+
         mongoTemplate.upsert(query, update, DatasetDocument.class);
 
         // 2. Merge Facets into Split Collections

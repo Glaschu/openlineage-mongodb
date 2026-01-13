@@ -70,7 +70,8 @@ public class RunMapper {
                 includeDatasets ? mapDatasets(doc.getOutputs(), doc, true) : Collections.emptyList(),
                 includeDatasets ? mapDatasetVersions(doc.getInputs(), doc, false) : Collections.emptyList(),
                 includeDatasets ? mapDatasetVersionsOutput(doc.getOutputs(), doc) : Collections.emptyList(),
-                Collections.emptyMap(),
+
+                getRunArgs(doc.getRunFacets()),
                 (Map<String, Object>) (Map) doc.getRunFacets(),
                 new RunResponse.JobVersion(doc.getJob().getNamespace(),
                         doc.getJob().getName(), "latest"));
@@ -135,5 +136,19 @@ public class RunMapper {
         return datasets.stream()
                 .map(ds -> datasetMapper.toResponse(ds, run, isOutput))
                 .collect(Collectors.toList());
+    }
+
+    private Map<String, String> getRunArgs(Map<String, com.openlineage.server.domain.Facet> facets) {
+        if (facets == null || !facets.containsKey("runArgs")) {
+            return Collections.emptyMap();
+        }
+        com.openlineage.server.domain.Facet facet = facets.get("runArgs");
+        if (facet instanceof com.openlineage.server.domain.GenericFacet) {
+            Map<String, Object> props = ((com.openlineage.server.domain.GenericFacet) facet).getAdditionalProperties();
+            return props.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey,
+                            e -> e.getValue() == null ? "" : e.getValue().toString()));
+        }
+        return Collections.emptyMap();
     }
 }

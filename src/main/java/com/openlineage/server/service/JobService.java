@@ -39,6 +39,32 @@ public class JobService {
 
         if (job.facets() != null && !job.facets().isEmpty()) {
             update.set("facets", job.facets());
+
+            // Extract Description
+            if (job.facets().containsKey("documentation")) {
+                com.openlineage.server.domain.Facet facet = job.facets().get("documentation");
+                if (facet instanceof com.openlineage.server.domain.GenericFacet) {
+                    Object desc = ((com.openlineage.server.domain.GenericFacet) facet).getAdditionalProperties()
+                            .get("description");
+                    if (desc != null) {
+                        update.set("description", desc.toString());
+                    }
+                }
+            }
+
+            // Extract Location
+            if (job.facets().containsKey("sourceCodeLocation")) {
+                com.openlineage.server.domain.Facet facet = job.facets().get("sourceCodeLocation");
+                if (facet instanceof com.openlineage.server.domain.GenericFacet) {
+                    Object type = ((com.openlineage.server.domain.GenericFacet) facet).getAdditionalProperties()
+                            .get("type");
+                    Object url = ((com.openlineage.server.domain.GenericFacet) facet).getAdditionalProperties()
+                            .get("url");
+                    if (url != null) {
+                        update.set("location", url.toString());
+                    }
+                }
+            }
         }
 
         mongoTemplate.upsert(query, update, JobDocument.class);
