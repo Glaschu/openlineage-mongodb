@@ -44,22 +44,22 @@ public class LineageService {
         String producer = event.producer();
         Set<String> namespacesToCheck = new HashSet<>();
 
-        Set<MarquezId> jobInputs = new HashSet<>();
-        Set<MarquezId> jobOutputs = new HashSet<>();
+        java.util.Map<MarquezId, java.util.UUID> jobInputs = new java.util.HashMap<>();
+        java.util.Map<MarquezId, java.util.UUID> jobOutputs = new java.util.HashMap<>();
 
         if (event.inputs() != null) {
             event.inputs().forEach(d -> {
                 namespacesToCheck.add(d.namespace());
-                jobInputs.add(new MarquezId(d.namespace(), d.name()));
-                datasetService.upsertDataset(d, event.eventTime(), true);
+                java.util.UUID version = datasetService.upsertDataset(d, event.eventTime(), true);
+                jobInputs.put(new MarquezId(d.namespace(), d.name()), version);
                 datasetService.upsertDataSource(d.namespace(), event.eventTime());
             });
         }
         if (event.outputs() != null) {
             event.outputs().forEach(d -> {
                 namespacesToCheck.add(d.namespace());
-                jobOutputs.add(new MarquezId(d.namespace(), d.name()));
-                datasetService.upsertDataset(d, event.eventTime(), false);
+                java.util.UUID version = datasetService.upsertDataset(d, event.eventTime(), false);
+                jobOutputs.put(new MarquezId(d.namespace(), d.name()), version);
                 datasetService.upsertDataSource(d.namespace(), event.eventTime());
             });
         }

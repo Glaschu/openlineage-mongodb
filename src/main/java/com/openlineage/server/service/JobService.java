@@ -6,7 +6,6 @@ import com.openlineage.server.storage.document.MarquezId;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
-import java.util.Set;
 
 @Service
 public class JobService {
@@ -20,7 +19,8 @@ public class JobService {
         this.versionService = versionService;
     }
 
-    public void upsertJob(Job job, ZonedDateTime eventTime, Set<MarquezId> inputs, Set<MarquezId> outputs) {
+    public void upsertJob(Job job, ZonedDateTime eventTime, java.util.Map<MarquezId, java.util.UUID> inputs,
+            java.util.Map<MarquezId, java.util.UUID> outputs) {
         org.springframework.data.mongodb.core.query.Query query = org.springframework.data.mongodb.core.query.Query
                 .query(org.springframework.data.mongodb.core.query.Criteria.where("_id")
                         .is(new MarquezId(job.namespace(), job.name())));
@@ -31,10 +31,10 @@ public class JobService {
                 .set("currentVersion", versionService.computeJobVersion(job, inputs, outputs));
 
         if (inputs != null && !inputs.isEmpty()) {
-            update.addToSet("inputs").each(inputs.toArray());
+            update.addToSet("inputs").each(inputs.keySet().toArray());
         }
         if (outputs != null && !outputs.isEmpty()) {
-            update.addToSet("outputs").each(outputs.toArray());
+            update.addToSet("outputs").each(outputs.keySet().toArray());
         }
 
         if (job.facets() != null && !job.facets().isEmpty()) {
@@ -56,8 +56,7 @@ public class JobService {
             if (job.facets().containsKey("sourceCodeLocation")) {
                 com.openlineage.server.domain.Facet facet = job.facets().get("sourceCodeLocation");
                 if (facet instanceof com.openlineage.server.domain.GenericFacet) {
-                    Object type = ((com.openlineage.server.domain.GenericFacet) facet).getAdditionalProperties()
-                            .get("type");
+                    ((com.openlineage.server.domain.GenericFacet) facet).getAdditionalProperties();
                     Object url = ((com.openlineage.server.domain.GenericFacet) facet).getAdditionalProperties()
                             .get("url");
                     if (url != null) {

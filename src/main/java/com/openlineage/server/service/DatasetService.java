@@ -24,7 +24,7 @@ public class DatasetService {
         this.versionService = versionService;
     }
 
-    public void upsertDataset(Dataset dataset, ZonedDateTime eventTime, boolean isInput) {
+    public java.util.UUID upsertDataset(Dataset dataset, ZonedDateTime eventTime, boolean isInput) {
         // 1. Update Core Dataset Document
         List<Object> extractedFields = null;
         if (dataset.facets() != null && dataset.facets().containsKey("schema")) {
@@ -36,17 +36,29 @@ public class DatasetService {
             }
         }
         String sourceName = dataset.namespace();
+        MarquezId datasetId = new MarquezId(dataset.namespace(), dataset.name());
+
+        // Check for existing dataset to handle versioning logic
+        DatasetDocument existingDataset = mongoTemplate.findById(datasetId, DatasetDocument.class);
+        java.util.UUID contextVersion = versionService.computeDatasetVersion(dataset);
+
+        // If there is no schema change (or empty schema in new event) but we have an
+        // existing version, reuse it
+        boolean hasSchema = extractedFields != null && !extractedFields.isEmpty();
+        if (!hasSchema && existingDataset != null && existingDataset.getCurrentVersion() != null) {
+            contextVersion = existingDataset.getCurrentVersion();
+        }
 
         org.springframework.data.mongodb.core.query.Query query = org.springframework.data.mongodb.core.query.Query
                 .query(org.springframework.data.mongodb.core.query.Criteria.where("_id")
-                        .is(new MarquezId(dataset.namespace(), dataset.name())));
+                        .is(datasetId));
 
         org.springframework.data.mongodb.core.query.Update update = new org.springframework.data.mongodb.core.query.Update()
                 .setOnInsert("createdAt", eventTime)
                 .set("updatedAt", eventTime)
                 .set("sourceName", sourceName)
                 .set("isDeleted", false)
-                .set("currentVersion", versionService.computeDatasetVersion(dataset));
+                .set("currentVersion", contextVersion);
 
         if (extractedFields != null) {
             update.set("fields", extractedFields);
@@ -91,6 +103,8 @@ public class DatasetService {
         } else {
             facetMergeService.mergeOutputFacets(dataset.namespace(), dataset.name(), dataset.facets(), eventTime);
         }
+
+        return contextVersion;
     }
 
     public void upsertDataSource(String namespace, ZonedDateTime eventTime) {

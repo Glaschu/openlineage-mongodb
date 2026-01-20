@@ -7,23 +7,33 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class VersionService {
 
-    public UUID computeJobVersion(Job job, java.util.Set<MarquezId> inputs, java.util.Set<MarquezId> outputs) {
-        // Version = UUID(Namespace + Name + Inputs + Outputs + Location + Context)
-        // Simplified deterministic generation
+    public UUID computeJobVersion(Job job, java.util.Map<MarquezId, UUID> inputs,
+            java.util.Map<MarquezId, UUID> outputs) {
+        // Version = UUID(Namespace + Name + Inputs(with versions) + Outputs(with
+        // versions) + Location + Context)
         StringBuilder sb = new StringBuilder();
         sb.append(job.namespace());
         sb.append(job.name());
 
         if (inputs != null) {
-            inputs.stream().map(MarquezId::toString).sorted().forEach(sb::append);
+            inputs.entrySet().stream()
+                    .sorted((e1, e2) -> e1.getKey().toString().compareTo(e2.getKey().toString()))
+                    .forEach(e -> {
+                        sb.append(e.getKey().toString());
+                        sb.append(e.getValue().toString());
+                    });
         }
         if (outputs != null) {
-            outputs.stream().map(MarquezId::toString).sorted().forEach(sb::append);
+            outputs.entrySet().stream()
+                    .sorted((e1, e2) -> e1.getKey().toString().compareTo(e2.getKey().toString()))
+                    .forEach(e -> {
+                        sb.append(e.getKey().toString());
+                        sb.append(e.getValue().toString());
+                    });
         }
 
         // Location would be part of it if available in Job domain, currently not in
