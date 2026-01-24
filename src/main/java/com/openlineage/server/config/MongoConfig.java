@@ -19,7 +19,19 @@ public class MongoConfig {
         List<Converter<?, ?>> converters = new ArrayList<>();
         converters.add(new ZonedDateTimeToDateConverter());
         converters.add(new DateToZonedDateTimeConverter());
+        converters.add(new MarquezIdToStringConverter());
+        converters.add(new StringToMarquezIdConverter());
         return new MongoCustomConversions(converters);
+    }
+
+    @Bean
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnBean(org.springframework.data.mongodb.MongoDatabaseFactory.class)
+    public org.springframework.data.mongodb.core.convert.MappingMongoConverter mappingMongoConverter(org.springframework.data.mongodb.MongoDatabaseFactory factory, org.springframework.data.mongodb.core.convert.MongoCustomConversions conversions, org.springframework.data.mongodb.core.mapping.MongoMappingContext context) {
+        org.springframework.data.mongodb.core.convert.DbRefResolver dbRefResolver = new org.springframework.data.mongodb.core.convert.DefaultDbRefResolver(factory);
+        org.springframework.data.mongodb.core.convert.MappingMongoConverter mappingConverter = new org.springframework.data.mongodb.core.convert.MappingMongoConverter(dbRefResolver, context);
+        mappingConverter.setCustomConversions(conversions);
+        mappingConverter.setMapKeyDotReplacement("_dot_");
+        return mappingConverter;
     }
 
     static class ZonedDateTimeToDateConverter implements Converter<ZonedDateTime, Date> {
@@ -34,5 +46,31 @@ public class MongoConfig {
         public ZonedDateTime convert(Date source) {
             return ZonedDateTime.ofInstant(source.toInstant(), ZoneId.of("UTC")); // Default to UTC
         }
+    }
+
+    static class MarquezIdToStringConverter implements Converter<com.openlineage.server.storage.document.MarquezId, String> {
+        @Override
+        public String convert(com.openlineage.server.storage.document.MarquezId source) {
+            return source.getNamespace() + ":" + source.getName();
+        }
+    }
+
+    static class StringToMarquezIdConverter implements Converter<String, com.openlineage.server.storage.document.MarquezId> {
+        @Override
+        public com.openlineage.server.storage.document.MarquezId convert(String source) {
+            String[] parts = source.split(":", 2);
+            if (parts.length < 2) {
+                throw new IllegalArgumentException("Invalid MarquezId string format: " + source);
+            }
+            return new com.openlineage.server.storage.document.MarquezId(parts[0], parts[1]);
+        }
+    }
+
+    @Bean
+    public org.springframework.boot.autoconfigure.mongo.MongoClientSettingsBuilderCustomizer mongoClientSettingsBuilderCustomizer() {
+        return builder -> {
+            builder.uuidRepresentation(org.bson.UuidRepresentation.STANDARD);
+            builder.retryWrites(false);
+        };
     }
 }

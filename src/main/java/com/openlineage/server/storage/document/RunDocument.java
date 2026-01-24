@@ -13,7 +13,7 @@ import java.util.UUID;
 
 @Document(collection = "runs")
 @org.springframework.data.mongodb.core.index.CompoundIndexes({
-        @org.springframework.data.mongodb.core.index.CompoundIndex(name = "job_run_idx", def = "{'job.namespace': 1, 'job.name': 1, 'eventTime': -1}")
+        @org.springframework.data.mongodb.core.index.CompoundIndex(name = "job_run_idx", def = "{'jobNamespace': 1, 'jobName': 1, 'eventTime': -1}")
 })
 public class RunDocument {
 
@@ -21,7 +21,9 @@ public class RunDocument {
     private String runId;
 
     @Indexed
-    private MarquezId job; // Links to Job
+    private String jobNamespace;
+    @Indexed
+    private String jobName;
 
     private ZonedDateTime eventTime;
     private String eventType; // START, RUNNING, COMPLETE, FAIL, ABORT
@@ -42,7 +44,10 @@ public class RunDocument {
     public RunDocument(String runId, MarquezId job, ZonedDateTime eventTime, String eventType,
             List<Dataset> inputs, List<Dataset> outputs, Map<String, Facet> runFacets) {
         this.runId = runId;
-        this.job = job;
+        if (job != null) {
+            this.jobNamespace = job.getNamespace();
+            this.jobName = job.getName();
+        }
         this.eventTime = eventTime;
         this.eventType = eventType;
         this.inputs = inputs;
@@ -61,11 +66,14 @@ public class RunDocument {
     }
 
     public MarquezId getJob() {
-        return job;
+        return new MarquezId(jobNamespace, jobName);
     }
 
     public void setJob(MarquezId job) {
-        this.job = job;
+        if (job != null) {
+            this.jobNamespace = job.getNamespace();
+            this.jobName = job.getName();
+        }
     }
 
     public ZonedDateTime getEventTime() {
