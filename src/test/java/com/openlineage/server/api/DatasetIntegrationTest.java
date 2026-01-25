@@ -86,7 +86,7 @@ public class DatasetIntegrationTest {
 
                 when(datasetRepo.findById(any())).thenReturn(Optional.empty()); // simulate create
 
-                mockMvc.perform(put("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME)
+                mockMvc.perform(put("/api/v2/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{\"physicalName\": \"p\", \"sourceName\": \"s\", \"description\": \"Description\"}"))
                                 .andExpect(status().isOk())
@@ -102,7 +102,7 @@ public class DatasetIntegrationTest {
 
                 when(datasetRepo.findById(any())).thenReturn(Optional.of(doc));
 
-                mockMvc.perform(get("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME))
+                mockMvc.perform(get("/api/v2/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.name").value(DATASET_NAME))
                                 .andExpect(jsonPath("$.description").value("Existing Description"));
@@ -112,7 +112,7 @@ public class DatasetIntegrationTest {
         public void testDeleteDataset() throws Exception {
                 when(datasetRepo.existsById(any())).thenReturn(true);
 
-                mockMvc.perform(delete("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME))
+                mockMvc.perform(delete("/api/v2/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME))
                                 .andExpect(status().isNoContent());
 
                 verify(datasetRepo).deleteById(any());
@@ -125,7 +125,7 @@ public class DatasetIntegrationTest {
 
                 when(datasetRepo.findById(any())).thenReturn(Optional.of(doc));
 
-                mockMvc.perform(post("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME + "/tags/PII"))
+                mockMvc.perform(post("/api/v2/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME + "/tags/PII"))
                                 .andExpect(status().isCreated());
 
                 verify(datasetRepo).save(any());
@@ -141,7 +141,7 @@ public class DatasetIntegrationTest {
 
                 when(datasetRepo.findByIdNamespace(NAMESPACE)).thenReturn(java.util.List.of(doc1, doc2));
 
-                mockMvc.perform(get("/api/v1/namespaces/" + NAMESPACE + "/datasets"))
+                mockMvc.perform(get("/api/v2/namespaces/" + NAMESPACE + "/datasets"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.datasets[0].name").value("ds1"))
                                 .andExpect(jsonPath("$.datasets[1].name").value("ds2"))
@@ -172,7 +172,7 @@ public class DatasetIntegrationTest {
 
                 when(eventRepo.findByEventOutputsNamespaceAndEventOutputsName(any(), any(), any())).thenReturn(page);
 
-                mockMvc.perform(get("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME + "/versions"))
+                mockMvc.perform(get("/api/v2/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME + "/versions"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.versions[0].name").value(DATASET_NAME))
                                 .andExpect(jsonPath("$.totalCount").value(1));
@@ -186,7 +186,7 @@ public class DatasetIntegrationTest {
 
                 when(datasetRepo.findById(any())).thenReturn(Optional.of(doc));
 
-                mockMvc.perform(delete("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME + "/tags/tag1"))
+                mockMvc.perform(delete("/api/v2/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME + "/tags/tag1"))
                                 .andExpect(status().isNoContent());
 
                 verify(datasetRepo).save(any());
@@ -195,28 +195,28 @@ public class DatasetIntegrationTest {
         @Test
         public void testGetDatasetNotFound() throws Exception {
                 when(datasetRepo.findById(any())).thenReturn(Optional.empty());
-                mockMvc.perform(get("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME))
+                mockMvc.perform(get("/api/v2/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME))
                                 .andExpect(status().isNotFound());
         }
 
         @Test
         public void testDeleteDatasetNotFound() throws Exception {
                 when(datasetRepo.existsById(any())).thenReturn(false);
-                mockMvc.perform(delete("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME))
+                mockMvc.perform(delete("/api/v2/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME))
                                 .andExpect(status().isNotFound());
         }
 
         @Test
         public void testAddTagDatasetNotFound() throws Exception {
                 when(datasetRepo.findById(any())).thenReturn(Optional.empty());
-                mockMvc.perform(post("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME + "/tags/tag"))
+                mockMvc.perform(post("/api/v2/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME + "/tags/tag"))
                                 .andExpect(status().isNotFound());
         }
 
         @Test
         public void testDeleteTagDatasetNotFound() throws Exception {
                 when(datasetRepo.findById(any())).thenReturn(Optional.empty());
-                mockMvc.perform(delete("/api/v1/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME + "/tags/tag"))
+                mockMvc.perform(delete("/api/v2/namespaces/" + NAMESPACE + "/datasets/" + DATASET_NAME + "/tags/tag"))
                                 .andExpect(status().isNotFound());
         }
 }

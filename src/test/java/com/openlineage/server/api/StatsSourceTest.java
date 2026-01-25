@@ -63,7 +63,7 @@ public class StatsSourceTest {
                 when(mongoTemplate.aggregate(any(), eq(NamespaceRegistryDocument.class), eq(Document.class)))
                                 .thenReturn(results);
 
-                mockMvc.perform(get("/api/v1/stats/sources")
+                mockMvc.perform(get("/api/v2/stats/sources")
                                 .param("period", "DAY")
                                 .param("timezoon", "Europe/london")) // Typo in param name
                                 .andExpect(status().isOk());
@@ -84,7 +84,7 @@ public class StatsSourceTest {
                 when(mongoTemplate.aggregate(any(), eq(NamespaceRegistryDocument.class), eq(Document.class)))
                                 .thenReturn(results);
 
-                mockMvc.perform(get("/api/v1/stats/sources")
+                mockMvc.perform(get("/api/v2/stats/sources")
                                 .param("period", "DAY")
                                 .param("timezone", "Europe/London")) // Explicit valid timezone
                                 .andExpect(status().isOk());

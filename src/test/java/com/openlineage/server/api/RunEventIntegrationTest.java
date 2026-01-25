@@ -88,7 +88,7 @@ public class RunEventIntegrationTest {
                                 "producer",
                                 "http://schema.url");
 
-                mockMvc.perform(post("/api/v1/lineage")
+                mockMvc.perform(post("/api/v2/lineage")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(mapper.writeValueAsString(event)))
                                 .andExpect(status().isCreated());

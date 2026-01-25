@@ -77,7 +77,7 @@ public class NamespaceIntegrationTest {
         when(nsRepo.save(any())).thenReturn(doc);
         when(nsRepo.findById(nsName)).thenReturn(Optional.of(doc));
 
-        mockMvc.perform(put("/api/v1/namespaces/" + nsName)
+        mockMvc.perform(put("/api/v2/namespaces/" + nsName)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(doc)))
                 .andExpect(status().isOk())
@@ -99,7 +99,7 @@ public class NamespaceIntegrationTest {
         // Update Owner
         NamespaceRegistryDocument updateDoc = new NamespaceRegistryDocument(nsName, "willy", null, false, "desc");
 
-        mockMvc.perform(put("/api/v1/namespaces/" + nsName)
+        mockMvc.perform(put("/api/v2/namespaces/" + nsName)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(updateDoc)))
                 .andExpect(status().isOk())
@@ -117,7 +117,7 @@ public class NamespaceIntegrationTest {
 
         when(nsRepo.findById(nsName)).thenReturn(Optional.of(doc));
 
-        mockMvc.perform(get("/api/v1/namespaces/" + nsName))
+        mockMvc.perform(get("/api/v2/namespaces/" + nsName))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value(nsName))
                 .andExpect(jsonPath("$.ownerName").value("owner"))
@@ -132,7 +132,7 @@ public class NamespaceIntegrationTest {
         when(nsRepo.existsById(nsName)).thenReturn(true);
         doNothing().when(nsRepo).deleteById(nsName);
 
-        mockMvc.perform(delete("/api/v1/namespaces/" + nsName))
+        mockMvc.perform(delete("/api/v2/namespaces/" + nsName))
                 .andExpect(status().isNoContent());
 
         verify(nsRepo, times(1)).deleteById(nsName);

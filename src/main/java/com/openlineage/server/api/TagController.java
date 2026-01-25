@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/v1/tags")
+@RequestMapping("/api/v2/tags")
 public class TagController {
 
     private final TagRepository tagRepository;

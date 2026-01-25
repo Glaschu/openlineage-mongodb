@@ -81,7 +81,7 @@ public class RunIntegrationTest {
 
                 when(runRepository.findById(runId)).thenReturn(Optional.of(doc));
 
-                mockMvc.perform(get("/api/v1/runs/" + runId))
+                mockMvc.perform(get("/api/v2/runs/" + runId))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.id").value(runId))
                                 .andExpect(jsonPath("$.state").value("RUNNING"))
@@ -105,7 +105,7 @@ public class RunIntegrationTest {
                 when(runRepository.findByJobNamespaceAndJobNameOrderByEventTimeDesc("ns", "job"))
                                 .thenReturn(List.of(doc));
 
-                mockMvc.perform(get("/api/v1/namespaces/ns/jobs/job/runs"))
+                mockMvc.perform(get("/api/v2/namespaces/ns/jobs/job/runs"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.runs[0].id").value(runId))
                                 .andExpect(jsonPath("$.runs[0].state").value("COMPLETED"));

@@ -114,7 +114,7 @@ public class LineageExportIntegrationTest {
         when(outputFacetRepository.findById(outputId)).thenReturn(java.util.Optional.of(facetDoc));
 
         // Trigger API
-        mockMvc.perform(get("/api/v1/lineage-export/recent/30")
+        mockMvc.perform(get("/api/v2/lineage-export/recent/30")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.namespaceData[0].namespaceName").value(namespace))

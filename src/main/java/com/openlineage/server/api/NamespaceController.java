@@ -9,7 +9,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/namespaces")
+@RequestMapping("/api/v2/namespaces")
 public class NamespaceController {
 
     private final NamespaceRepository repository;

@@ -116,13 +116,13 @@ public class MarquezCompatibilityTest {
                                 Collections.emptyList(), Collections.emptyList(),
                                 "producer-1", null);
 
-                mockMvc.perform(post("/api/v1/lineage")
+                mockMvc.perform(post("/api/v2/lineage")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(mapper.writeValueAsString(event)))
                                 .andExpect(status().isCreated());
 
                 // 2. Verify Job Endpoint (Read) - Check for latestRun
-                mockMvc.perform(get("/api/v1/namespaces/ns-1/jobs/job-1"))
+                mockMvc.perform(get("/api/v2/namespaces/ns-1/jobs/job-1"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.id.name").value("job-1"));
                 // .andExpect(jsonPath("$.latestRun").exists()); // Requires JobController to
@@ -145,20 +145,20 @@ public class MarquezCompatibilityTest {
                                                 Collections.emptyMap())));
 
                 // 3. Verify Run Lifecycle (Complete)
-                mockMvc.perform(post("/api/v1/jobs/runs/run-123/complete"))
+                mockMvc.perform(post("/api/v2/jobs/runs/run-123/complete"))
                                 .andExpect(status().isOk());
 
                 // 4. Verify Facets exist on run (using getRunFacets) and support type=job
-                mockMvc.perform(get("/api/v1/jobs/runs/run-123/facets"))
+                mockMvc.perform(get("/api/v2/jobs/runs/run-123/facets"))
                                 .andExpect(status().isOk());
 
-                mockMvc.perform(get("/api/v1/jobs/runs/run-123/facets?type=job"))
+                mockMvc.perform(get("/api/v2/jobs/runs/run-123/facets?type=job"))
                                 .andExpect(status().isOk());
 
                 // 5. Test Namespace Update (Marquez API)
                 when(nsRepo.save(any())).thenReturn(new com.openlineage.server.storage.document.NamespaceRegistryDocument("ns-1",
                                 "data-eng", null, false, "desc"));
-                mockMvc.perform(put("/api/v1/namespaces/ns-1")
+                mockMvc.perform(put("/api/v2/namespaces/ns-1")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{\"ownerTeam\": \"data-eng\"}"))
                                 .andExpect(status().isOk());

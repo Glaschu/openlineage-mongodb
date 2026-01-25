@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/v1/namespaces/{namespace}/datasets")
+@RequestMapping("/api/v2/namespaces/{namespace}/datasets")
 public class DatasetController {
 
     private final DatasetRepository repository;

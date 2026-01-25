@@ -72,7 +72,7 @@ public class GovernanceIntegrationTest {
 
         RunEvent event = createEvent(ns);
 
-        mockMvc.perform(post("/api/v1/lineage")
+        mockMvc.perform(post("/api/v2/lineage")
                 .header("x-user", owner)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(event)))
@@ -92,7 +92,7 @@ public class GovernanceIntegrationTest {
 
         RunEvent event = createEvent(ns);
 
-        mockMvc.perform(post("/api/v1/lineage")
+        mockMvc.perform(post("/api/v2/lineage")
                 .header("x-user", owner)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(event)))
@@ -110,7 +110,7 @@ public class GovernanceIntegrationTest {
 
         RunEvent event = createEvent(ns);
 
-        mockMvc.perform(post("/api/v1/lineage")
+        mockMvc.perform(post("/api/v2/lineage")
                 .header("x-user", intruder)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(event)))
@@ -127,7 +127,7 @@ public class GovernanceIntegrationTest {
 
         RunEvent event = createEvent(ns);
 
-        mockMvc.perform(post("/api/v1/lineage")
+        mockMvc.perform(post("/api/v2/lineage")
                 .header("x-user", newOwner)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(event)))

@@ -29,7 +29,7 @@ import java.util.HashMap;
 import java.util.Collections;
 
 @RestController
-@RequestMapping("/api/v1/stats")
+@RequestMapping("/api/v2/stats")
 public class StatsController {
 
         private final MongoTemplate mongoTemplate;

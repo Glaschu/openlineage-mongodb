@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @RestController
-@RequestMapping("/api/v1/search")
+@RequestMapping("/api/v2/search")
 public class SearchController {
 
     private final MongoTemplate mongoTemplate;

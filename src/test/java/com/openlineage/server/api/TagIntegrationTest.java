@@ -72,7 +72,7 @@ public class TagIntegrationTest {
         when(tagRepo.save(any())).thenReturn(doc);
 
         // Use PUT to create/update
-        mockMvc.perform(put("/api/v1/tags/" + tagName)
+        mockMvc.perform(put("/api/v2/tags/" + tagName)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(doc)))
                 .andExpect(status().isOk())
@@ -87,7 +87,7 @@ public class TagIntegrationTest {
 
         when(tagRepo.save(any())).thenReturn(doc);
 
-        mockMvc.perform(put("/api/v1/tags/" + tagName)
+        mockMvc.perform(put("/api/v2/tags/" + tagName)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(doc)))
                 .andExpect(status().isOk())
@@ -104,14 +104,14 @@ public class TagIntegrationTest {
         when(tagRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
         // Create
-        mockMvc.perform(put("/api/v1/tags/" + tagName)
+        mockMvc.perform(put("/api/v2/tags/" + tagName)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(initial)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.description").value("Description"));
 
         // Update
-        mockMvc.perform(put("/api/v1/tags/" + tagName)
+        mockMvc.perform(put("/api/v2/tags/" + tagName)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(updated)))
                 .andExpect(status().isOk())

@@ -76,7 +76,7 @@ public class SearchIntegrationTest {
         when(mongoTemplate.find(any(Query.class), eq(JobDocument.class))).thenReturn(List.of(job));
         when(mongoTemplate.find(any(Query.class), eq(DatasetDocument.class))).thenReturn(List.of(dataset));
 
-        mockMvc.perform(get("/api/v1/search?q=my"))
+        mockMvc.perform(get("/api/v2/search?q=my"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalCount").value(2))
                 .andExpect(jsonPath("$.results[0].name").value("my-dataset")) // Sorted by NAME by default
@@ -90,7 +90,7 @@ public class SearchIntegrationTest {
 
         when(mongoTemplate.find(any(Query.class), eq(JobDocument.class))).thenReturn(List.of(job));
 
-        mockMvc.perform(get("/api/v1/search?q=my&filter=JOB"))
+        mockMvc.perform(get("/api/v2/search?q=my&filter=JOB"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalCount").value(1))
                 .andExpect(jsonPath("$.results[0].type").value("JOB"))

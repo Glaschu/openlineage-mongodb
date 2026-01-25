@@ -138,7 +138,7 @@ public class ColumnLineageGraphTest {
                 // Request lineage for the output dataset
                 String nodeId = "dataset:" + outNs + ":" + outName;
 
-                String response = mockMvc.perform(get("/api/v1/column-lineage")
+                String response = mockMvc.perform(get("/api/v2/column-lineage")
                                 .param("nodeId", nodeId)
                                 .param("depth", "5"))
                                 .andExpect(status().isOk())

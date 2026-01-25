@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/lineage")
+@RequestMapping("/api/v2/lineage")
 public class RunEventController {
 
     private final LineageService lineageService;

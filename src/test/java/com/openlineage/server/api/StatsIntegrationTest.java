@@ -71,7 +71,7 @@ public class StatsIntegrationTest {
                                 eq(Document.class)))
                                 .thenReturn(results);
 
-                mockMvc.perform(get("/api/v1/stats/lineage-events"))
+                mockMvc.perform(get("/api/v2/stats/lineage-events"))
                                 .andExpect(status().isOk());
                 // Verification of fields requires mocking the date range precise match or
                 // logic,
@@ -90,7 +90,7 @@ public class StatsIntegrationTest {
                                 eq(Document.class)))
                                 .thenReturn(results);
 
-                mockMvc.perform(get("/api/v1/stats/jobs"))
+                mockMvc.perform(get("/api/v2/stats/jobs"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$").isArray());
         }

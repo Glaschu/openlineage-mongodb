@@ -81,7 +81,7 @@ public class JobIntegrationTest {
     public void testCreateJob() throws Exception {
         when(jobRepo.findById(any())).thenReturn(Optional.empty()); // simulate create
 
-        mockMvc.perform(put("/api/v1/namespaces/" + NAMESPACE + "/jobs/" + JOB_NAME)
+        mockMvc.perform(put("/api/v2/namespaces/" + NAMESPACE + "/jobs/" + JOB_NAME)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"description\": \"Job Description\", \"location\": \"https://github.com/repo\"}"))
                 .andExpect(status().isOk())
@@ -99,7 +99,7 @@ public class JobIntegrationTest {
 
         when(jobRepo.findById(any())).thenReturn(Optional.of(doc));
 
-        mockMvc.perform(get("/api/v1/namespaces/" + NAMESPACE + "/jobs/" + JOB_NAME))
+        mockMvc.perform(get("/api/v2/namespaces/" + NAMESPACE + "/jobs/" + JOB_NAME))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value(JOB_NAME))
                 .andExpect(jsonPath("$.description").value("Existing Description"))
@@ -110,7 +110,7 @@ public class JobIntegrationTest {
     public void testDeleteJob() throws Exception {
         when(jobRepo.existsById(any())).thenReturn(true);
 
-        mockMvc.perform(delete("/api/v1/namespaces/" + NAMESPACE + "/jobs/" + JOB_NAME))
+        mockMvc.perform(delete("/api/v2/namespaces/" + NAMESPACE + "/jobs/" + JOB_NAME))
                 .andExpect(status().isNoContent());
 
         verify(jobRepo).deleteById(any());

@@ -90,7 +90,7 @@ public class JobRunsGraphTest {
                 when(runRepo.findByJobNamespaceAndJobNameOrderByEventTimeDesc(namespace, jobName))
                                 .thenReturn(runs);
 
-                mockMvc.perform(get("/api/v1/namespaces/" + namespace + "/jobs/" + jobName))
+                mockMvc.perform(get("/api/v2/namespaces/" + namespace + "/jobs/" + jobName))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.latestRun").exists())
                                 .andExpect(jsonPath("$.latestRuns").isArray())
@@ -114,7 +114,7 @@ public class JobRunsGraphTest {
                 when(runRepo.findByJobNamespaceAndJobNameOrderByEventTimeDesc(namespace, jobName))
                                 .thenReturn(Collections.emptyList());
 
-                mockMvc.perform(get("/api/v1/namespaces/" + namespace + "/jobs/" + jobName))
+                mockMvc.perform(get("/api/v2/namespaces/" + namespace + "/jobs/" + jobName))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.latestRun").doesNotExist()) // Or null?
                                 .andExpect(jsonPath("$.latestRuns").isArray())
