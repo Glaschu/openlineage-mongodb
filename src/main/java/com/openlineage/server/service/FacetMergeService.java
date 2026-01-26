@@ -43,7 +43,7 @@ public class FacetMergeService {
                 .set("updatedAt", eventTime);
 
         for (Map.Entry<String, Facet> entry : newFacets.entrySet()) {
-            update.set("facets." + entry.getKey(), entry.getValue());
+            update.set("facets." + entry.getKey().replace(".", "_dot_"), entry.getValue());
         }
 
         mongoTemplate.upsert(query, update, entityClass);

@@ -38,7 +38,9 @@ public class JobService {
         }
 
         if (job.facets() != null && !job.facets().isEmpty()) {
-            update.set("facets", job.facets());
+            for (java.util.Map.Entry<String, com.openlineage.server.domain.Facet> entry : job.facets().entrySet()) {
+                update.set("facets." + entry.getKey().replace(".", "_dot_"), entry.getValue());
+            }
 
             // Extract Description
             if (job.facets().containsKey("documentation")) {

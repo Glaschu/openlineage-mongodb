@@ -65,7 +65,9 @@ public class DatasetService {
         }
 
         if (dataset.facets() != null && !dataset.facets().isEmpty()) {
-            update.set("facets", dataset.facets());
+            for (java.util.Map.Entry<String, com.openlineage.server.domain.Facet> entry : dataset.facets().entrySet()) {
+                update.set("facets." + entry.getKey().replace(".", "_dot_"), entry.getValue());
+            }
 
             // Extract Description
             if (dataset.facets().containsKey("documentation")) {

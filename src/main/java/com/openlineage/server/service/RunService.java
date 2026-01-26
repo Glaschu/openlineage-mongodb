@@ -20,7 +20,8 @@ public class RunService {
                 .query(org.springframework.data.mongodb.core.query.Criteria.where("_id").is(runId));
 
         org.springframework.data.mongodb.core.query.Update update = new org.springframework.data.mongodb.core.query.Update()
-                .setOnInsert("job", new MarquezId(event.job().namespace(), event.job().name()))
+                .setOnInsert("jobNamespace", event.job().namespace())
+                .setOnInsert("jobName", event.job().name())
                 .setOnInsert("createdAt", java.time.ZonedDateTime.now())
                 .set("eventType", event.eventType())
                 .set("eventTime", event.eventTime())
@@ -36,7 +37,9 @@ public class RunService {
         if (event.run().facets() != null && !event.run().facets().isEmpty()) {
             // Facets logic: replace atomic or merge? For Run, replacing run facets map is
             // standard as they naturally specific to the run state.
-            update.set("facets", event.run().facets());
+            for (java.util.Map.Entry<String, Object> entry : event.run().facets().entrySet()) {
+                update.set("facets." + entry.getKey().replace(".", "_dot_"), entry.getValue());
+            }
         }
 
         String type = event.eventType().toUpperCase();
