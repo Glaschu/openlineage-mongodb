@@ -16,5 +16,5 @@ public interface LineageEventRepository extends MongoRepository<LineageEventDocu
 
     org.springframework.data.domain.Page<LineageEventDocument> findByEventOutputsNamespaceAndEventOutputsName(String namespace, String name, org.springframework.data.domain.Pageable pageable);
     
-    org.springframework.data.domain.Page<LineageEventDocument> findByEventEventTimeBetween(java.time.ZonedDateTime start, java.time.ZonedDateTime end, org.springframework.data.domain.Pageable pageable);
+    org.springframework.data.domain.Page<LineageEventDocument> findByEventTimeBetween(java.time.ZonedDateTime start, java.time.ZonedDateTime end, org.springframework.data.domain.Pageable pageable);
 }

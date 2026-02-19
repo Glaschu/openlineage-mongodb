@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface RunRepository extends MongoRepository<RunDocument, String> {
-    java.util.List<RunDocument> findByJobNamespaceAndJobNameOrderByEventTimeDesc(String namespace, String name);
+    org.springframework.data.domain.Page<RunDocument> findByJobNamespaceAndJobName(String namespace, String name, org.springframework.data.domain.Pageable pageable);
 }

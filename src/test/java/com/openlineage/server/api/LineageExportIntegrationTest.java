@@ -33,7 +33,8 @@ import com.openlineage.server.domain.ColumnLineageDatasetFacet;
 @AutoConfigureMockMvc
 @org.springframework.boot.autoconfigure.EnableAutoConfiguration(exclude = {
         org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration.class
+        org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class
 })
 public class LineageExportIntegrationTest {
 
@@ -65,6 +66,8 @@ public class LineageExportIntegrationTest {
     private com.openlineage.server.storage.repository.InputDatasetFacetRepository inputDatasetFacetRepository;
     @MockBean
     private com.openlineage.server.storage.repository.LineageEventRepository lineageEventRepository;
+    @MockBean
+    private com.openlineage.server.storage.repository.LineageEdgeRepository lineageEdgeRepository;
 
     @Test
     public void testRecentLineageExport() throws Exception {
@@ -100,18 +103,19 @@ public class LineageExportIntegrationTest {
         RunDocument run = new RunDocument();
         run.setEventTime(ZonedDateTime.now());
         run.setEventType("COMPLETE");
-        when(runRepository.findByJobNamespaceAndJobNameOrderByEventTimeDesc(any(), any()))
-                .thenReturn(Collections.singletonList(run));
+        when(runRepository.findByJobNamespaceAndJobName(any(), any(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(Collections.singletonList(run)));
 
         // Update: We need to mock OutputDatasetFacetRepository for column lineage
         // But for this simple test, we can skip or add it. Let's add simple one.
         OutputDatasetFacetDocument facetDoc = new OutputDatasetFacetDocument();
+        facetDoc.setDatasetId(outputId);
         facetDoc.setFacets(Collections.singletonMap("columnLineage",
                 new ColumnLineageDatasetFacet(
                         Map.of("outCol", new ColumnLineageDatasetFacet.Fields(
                                 List.of(new ColumnLineageDatasetFacet.InputField(namespace, "input-ds", "inCol")),
                                 "IDENTITY", "desc")))));
-        when(outputFacetRepository.findById(outputId)).thenReturn(java.util.Optional.of(facetDoc));
+        when(outputFacetRepository.findAllById(any())).thenReturn(Collections.singletonList(facetDoc));
 
         // Trigger API
         mockMvc.perform(get("/api/v2/lineage-export/recent/30")

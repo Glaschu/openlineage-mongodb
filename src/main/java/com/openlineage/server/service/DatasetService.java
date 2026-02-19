@@ -55,6 +55,7 @@ public class DatasetService {
 
         org.springframework.data.mongodb.core.query.Update update = new org.springframework.data.mongodb.core.query.Update()
                 .setOnInsert("createdAt", eventTime)
+                .setOnInsert("searchName", dataset.name())
                 .set("updatedAt", eventTime)
                 .set("sourceName", sourceName)
                 .set("isDeleted", false)
@@ -66,13 +67,17 @@ public class DatasetService {
 
         if (dataset.facets() != null && !dataset.facets().isEmpty()) {
             for (java.util.Map.Entry<String, com.openlineage.server.domain.Facet> entry : dataset.facets().entrySet()) {
-                update.set("facets." + entry.getKey().replace(".", "_dot_"), entry.getValue());
+                update.set("facets." + com.openlineage.server.storage.document.DocumentDbSanitizer.sanitizeKey(entry.getKey()), com.openlineage.server.storage.document.DocumentDbSanitizer.sanitize(entry.getValue()));
             }
 
             // Extract Description
             if (dataset.facets().containsKey("documentation")) {
                 com.openlineage.server.domain.Facet facet = dataset.facets().get("documentation");
-                if (facet instanceof com.openlineage.server.domain.GenericFacet) {
+                if (facet instanceof com.openlineage.server.domain.DocumentationFacet docFacet) {
+                    if (docFacet.description() != null) {
+                        update.set("description", docFacet.description());
+                    }
+                } else if (facet instanceof com.openlineage.server.domain.GenericFacet) {
                     Object desc = ((com.openlineage.server.domain.GenericFacet) facet).getAdditionalProperties()
                             .get("description");
                     if (desc != null) {

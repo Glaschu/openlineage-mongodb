@@ -41,14 +41,22 @@ public class RunController {
 
     // List runs for a job
     @GetMapping("/namespaces/{namespace}/jobs/{jobName}/runs")
-    public RunsResponse listRunsForJob(@PathVariable String namespace, @PathVariable String jobName) {
-        List<RunDocument> runDocs = repository.findByJobNamespaceAndJobNameOrderByEventTimeDesc(namespace, jobName);
+    public RunsResponse listRunsForJob(@PathVariable String namespace, @PathVariable String jobName,
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
 
-        List<RunResponse> runs = runDocs.stream()
+        if (limit <= 0) limit = 20;
+        if (limit > 200) limit = 200;
+
+        org.springframework.data.domain.Pageable pageRequest = org.springframework.data.domain.PageRequest
+                .of(offset / limit, limit, org.springframework.data.domain.Sort.by("eventTime").descending());
+        org.springframework.data.domain.Page<RunDocument> page = repository.findByJobNamespaceAndJobName(namespace, jobName, pageRequest);
+
+        List<RunResponse> runs = page.getContent().stream()
                 .map(doc -> runMapper.toRunResponse(doc, true))
                 .collect(Collectors.toList());
 
-        return new RunsResponse(runs, runs.size());
+        return new RunsResponse(runs, (int) page.getTotalElements());
     }
 
     // Get run by ID

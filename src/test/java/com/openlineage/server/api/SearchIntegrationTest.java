@@ -60,6 +60,9 @@ public class SearchIntegrationTest {
     private com.openlineage.server.storage.repository.InputDatasetFacetRepository inputRepo;
     @MockBean
     private com.openlineage.server.storage.repository.OutputDatasetFacetRepository outputRepo;
+
+    @MockBean
+    private com.openlineage.server.storage.repository.LineageEdgeRepository lineageEdgeRepo;
     @MockBean
     private com.openlineage.server.service.LineageService lineageService;
 

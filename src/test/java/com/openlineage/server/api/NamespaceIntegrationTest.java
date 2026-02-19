@@ -62,6 +62,9 @@ public class NamespaceIntegrationTest {
     @MockBean
     private com.openlineage.server.storage.repository.OutputDatasetFacetRepository outputRepo;
 
+    @MockBean
+    private com.openlineage.server.storage.repository.LineageEdgeRepository lineageEdgeRepo;
+
     @BeforeEach
     public void setup() {
         // Default mocks

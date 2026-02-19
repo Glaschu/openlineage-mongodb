@@ -17,6 +17,7 @@ public class NamespaceRegistryDocument {
     private String description;
     @Indexed
     private java.time.ZonedDateTime createdAt;
+    @Indexed
     private java.time.ZonedDateTime updatedAt;
 
     public NamespaceRegistryDocument() {

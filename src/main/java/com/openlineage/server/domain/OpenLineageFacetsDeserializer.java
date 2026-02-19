@@ -12,7 +12,33 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * Custom Jackson deserializer for OpenLineage facet maps.
+ * 
+ * Maps well-known facet keys to strongly-typed POJOs for structured access,
+ * while preserving all unknown/custom facets via GenericFacet (no data loss).
+ * 
+ * Supported typed facets:
+ * - Dataset: schema, ownership, columnLineage, documentation, dataSource, storage, lifecycleStateChange
+ * - Job: documentation, sql, sourceCodeLocation
+ * - Run: (all handled as GenericFacet — run facets are highly variable)
+ */
 public class OpenLineageFacetsDeserializer extends JsonDeserializer<Map<String, Facet>> {
+
+    // Mapping of facet key → typed class for known facets
+    private static final Map<String, Class<? extends Facet>> TYPED_FACETS = Map.ofEntries(
+            // Dataset facets
+            Map.entry("schema", SchemaDatasetFacet.class),
+            Map.entry("ownership", OwnershipDatasetFacet.class),
+            Map.entry("columnLineage", ColumnLineageDatasetFacet.class),
+            Map.entry("documentation", DocumentationFacet.class),
+            Map.entry("dataSource", DataSourceDatasetFacet.class),
+            Map.entry("storage", StorageDatasetFacet.class),
+            Map.entry("lifecycleStateChange", LifecycleStateChangeDatasetFacet.class),
+            // Job facets
+            Map.entry("sql", SqlJobFacet.class),
+            Map.entry("sourceCodeLocation", SourceCodeLocationJobFacet.class)
+    );
 
     @Override
     public Map<String, Facet> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
@@ -27,23 +53,19 @@ public class OpenLineageFacetsDeserializer extends JsonDeserializer<Map<String, 
             JsonNode value = entry.getValue();
 
             Facet facet;
+            Class<? extends Facet> typedClass = TYPED_FACETS.get(key);
+
             try {
-                if ("schema".equals(key)) {
-                    facet = mapper.treeToValue(value, SchemaDatasetFacet.class);
-                } else if ("ownership".equals(key)) {
-                    facet = mapper.treeToValue(value, OwnershipDatasetFacet.class);
-                } else if ("columnLineage".equals(key)) {
-                    facet = mapper.treeToValue(value, ColumnLineageDatasetFacet.class);
+                if (typedClass != null) {
+                    facet = mapper.treeToValue(value, typedClass);
                 } else {
                     facet = mapper.treeToValue(value, GenericFacet.class);
                 }
             } catch (JsonProcessingException | IllegalArgumentException e) {
-                // If typed deserialization fails, fallback to generic
+                // If typed deserialization fails, fallback to generic — never lose data
                 try {
                     facet = mapper.treeToValue(value, GenericFacet.class);
                 } catch (JsonProcessingException ex) {
-                    // If even generic fails, skip or throw. Throwing is safer than silent data loss? 
-                    // But GenericFacet is just a map, unlikely to fail unless JSON is invalid.
                     throw ex;
                 }
             }

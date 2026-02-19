@@ -38,7 +38,7 @@ public class RunService {
             // Facets logic: replace atomic or merge? For Run, replacing run facets map is
             // standard as they naturally specific to the run state.
             for (java.util.Map.Entry<String, Object> entry : event.run().facets().entrySet()) {
-                update.set("facets." + entry.getKey().replace(".", "_dot_"), entry.getValue());
+                update.set("runFacets." + com.openlineage.server.storage.document.DocumentDbSanitizer.sanitizeKey(entry.getKey()), com.openlineage.server.storage.document.DocumentDbSanitizer.sanitize(entry.getValue()));
             }
         }
 

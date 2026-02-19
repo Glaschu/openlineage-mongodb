@@ -2,12 +2,16 @@ package com.openlineage.server.storage.document;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.TextIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.ZonedDateTime;
 import java.util.Map;
 
 @Document(collection = "datasets")
+@org.springframework.data.mongodb.core.index.CompoundIndexes({
+        @org.springframework.data.mongodb.core.index.CompoundIndex(name = "dataset_namespace_updated_idx", def = "{'id.namespace': 1, 'updatedAt': -1}")
+})
 public class DatasetDocument {
 
     @Id
@@ -16,11 +20,16 @@ public class DatasetDocument {
     private java.util.List<Object> fields;
     private java.util.Set<String> tags = new java.util.HashSet<>();
     private String description;
+    @Indexed
     private ZonedDateTime updatedAt;
     @Indexed
     private ZonedDateTime createdAt;
     private java.util.UUID currentVersion;
     private Boolean isDeleted = false;
+
+    /** Denormalized name field for DocumentDB text search (mirrors _id.name). */
+    @TextIndexed
+    private String searchName;
 
     public DatasetDocument() {
     }
@@ -28,6 +37,7 @@ public class DatasetDocument {
     public DatasetDocument(String namespace, String name, String sourceName, java.util.List<Object> fields,
             ZonedDateTime updatedAt) {
         this.id = new MarquezId(namespace, name);
+        this.searchName = name;
         this.sourceName = sourceName;
         this.fields = fields;
         this.updatedAt = updatedAt;
@@ -107,5 +117,13 @@ public class DatasetDocument {
 
     public void setIsDeleted(Boolean isDeleted) {
         this.isDeleted = isDeleted;
+    }
+
+    public String getSearchName() {
+        return searchName;
+    }
+
+    public void setSearchName(String searchName) {
+        this.searchName = searchName;
     }
 }

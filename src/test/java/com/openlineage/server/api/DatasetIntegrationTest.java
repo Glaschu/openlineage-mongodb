@@ -70,6 +70,9 @@ public class DatasetIntegrationTest {
         @MockBean
         private com.openlineage.server.storage.repository.OutputDatasetFacetRepository outputRepo;
 
+    @MockBean
+    private com.openlineage.server.storage.repository.LineageEdgeRepository lineageEdgeRepo;
+
         private final String NAMESPACE = "default";
         private final String DATASET_NAME = "my-dataset";
 
@@ -139,7 +142,8 @@ public class DatasetIntegrationTest {
                 DatasetDocument doc2 = new DatasetDocument(NAMESPACE, "ds2", "src2", Collections.emptyList(),
                                 ZonedDateTime.now());
 
-                when(datasetRepo.findByIdNamespace(NAMESPACE)).thenReturn(java.util.List.of(doc1, doc2));
+                org.springframework.data.domain.Page<DatasetDocument> page = new org.springframework.data.domain.PageImpl<>(java.util.List.of(doc1, doc2));
+                when(datasetRepo.findByIdNamespace(org.mockito.ArgumentMatchers.eq(NAMESPACE), org.mockito.ArgumentMatchers.any())).thenReturn(page);
 
                 mockMvc.perform(get("/api/v2/namespaces/" + NAMESPACE + "/datasets"))
                                 .andExpect(status().isOk())

@@ -76,6 +76,9 @@ public class RunEventIntegrationTest {
         @MockBean
         private OutputDatasetFacetRepository outputRepo;
 
+    @MockBean
+    private com.openlineage.server.storage.repository.LineageEdgeRepository lineageEdgeRepo;
+
         @Test
         public void testPostEvent() throws Exception {
                 RunEvent event = new RunEvent(

@@ -64,6 +64,9 @@ public class JobRunsGraphTest {
         @MockBean
         private com.openlineage.server.storage.repository.OutputDatasetFacetRepository outputRepo;
 
+    @MockBean
+    private com.openlineage.server.storage.repository.LineageEdgeRepository lineageEdgeRepo;
+
         @Test
         public void testGetJobReturnsLatestRuns() throws Exception {
                 String namespace = "ns";
@@ -86,9 +89,9 @@ public class JobRunsGraphTest {
                                 })
                                 .collect(Collectors.toList());
 
-                // Mock repo returning all ordered by time
-                when(runRepo.findByJobNamespaceAndJobNameOrderByEventTimeDesc(namespace, jobName))
-                                .thenReturn(runs);
+                // Mock paginated repo returning first 10 runs
+                when(runRepo.findByJobNamespaceAndJobName(any(), any(), any()))
+                                .thenReturn(new org.springframework.data.domain.PageImpl<>(runs.subList(0, 10)));
 
                 mockMvc.perform(get("/api/v2/namespaces/" + namespace + "/jobs/" + jobName))
                                 .andExpect(status().isOk())
@@ -111,8 +114,8 @@ public class JobRunsGraphTest {
                                 Collections.emptySet(), ZonedDateTime.now());
 
                 when(jobRepo.findById(jobId)).thenReturn(Optional.of(job));
-                when(runRepo.findByJobNamespaceAndJobNameOrderByEventTimeDesc(namespace, jobName))
-                                .thenReturn(Collections.emptyList());
+                when(runRepo.findByJobNamespaceAndJobName(any(), any(), any()))
+                                .thenReturn(new org.springframework.data.domain.PageImpl<>(Collections.emptyList()));
 
                 mockMvc.perform(get("/api/v2/namespaces/" + namespace + "/jobs/" + jobName))
                                 .andExpect(status().isOk())

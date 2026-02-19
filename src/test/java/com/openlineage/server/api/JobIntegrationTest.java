@@ -69,12 +69,18 @@ public class JobIntegrationTest {
     @MockBean
     private com.openlineage.server.storage.repository.OutputDatasetFacetRepository outputRepo;
 
+    @MockBean
+    private com.openlineage.server.storage.repository.LineageEdgeRepository lineageEdgeRepo;
+
     private final String NAMESPACE = "default";
     private final String JOB_NAME = "my-job";
 
     @BeforeEach
     public void setup() {
         when(jobRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+        // Default: return empty page for paginated run lookups (used by mapJob)
+        when(runRepo.findByJobNamespaceAndJobName(any(), any(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(Collections.emptyList()));
     }
 
     @Test

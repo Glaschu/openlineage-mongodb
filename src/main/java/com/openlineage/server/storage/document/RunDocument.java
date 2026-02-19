@@ -35,6 +35,7 @@ public class RunDocument {
 
     private Map<String, Facet> runFacets;
 
+    @Indexed(expireAfter = "180d")
     private ZonedDateTime createdAt;
     private ZonedDateTime updatedAt;
 

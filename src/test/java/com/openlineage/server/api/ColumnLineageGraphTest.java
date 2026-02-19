@@ -51,6 +51,9 @@ public class ColumnLineageGraphTest {
         @MockBean
         private OutputDatasetFacetRepository outputRepo;
 
+    @MockBean
+    private com.openlineage.server.storage.repository.LineageEdgeRepository lineageEdgeRepo;
+
         @MockBean
         private com.openlineage.server.storage.repository.LineageEventRepository eventRepo;
 
@@ -83,16 +86,29 @@ public class ColumnLineageGraphTest {
                 JobDocument jobDoc = new JobDocument(jobNs, jobName, Collections.emptyMap(),
                                 Set.of(inputId), Set.of(outputId), ZonedDateTime.now());
 
-                // Mock Job Fetch
+                // Mock Job Fetch (used by processJob during BFS)
                 when(jobRepo.findById(jobId)).thenReturn(Optional.of(jobDoc));
-                // Job produces outputId
-                when(jobRepo.findByOutputsContaining(outputId)).thenReturn(List.of(jobDoc));
-                // Job consumes inputId
-                when(jobRepo.findByInputsContaining(inputId)).thenReturn(List.of(jobDoc));
 
-                // Default empty for others
-                when(jobRepo.findByInputsContaining(outputId)).thenReturn(Collections.emptyList());
-                when(jobRepo.findByOutputsContaining(inputId)).thenReturn(Collections.emptyList());
+                // Mock lineage edges for BFS traversal
+                // Job produces outputId: edge from job → output dataset (target = output)
+                LineageEdgeDocument jobToOutput = new LineageEdgeDocument(
+                                "job", jobNs, jobName, "dataset", outNs, outName, "output", ZonedDateTime.now());
+                // Job consumes inputId: edge from input dataset → job (source = input, target = job)
+                LineageEdgeDocument inputToJob = new LineageEdgeDocument(
+                                "dataset", inNs, inName, "job", jobNs, jobName, "input", ZonedDateTime.now());
+
+                // When looking up edges where output dataset is the target → find the job that produces it
+                when(lineageEdgeRepo.findByTargetNamespaceAndTargetName(outNs, outName))
+                                .thenReturn(List.of(jobToOutput));
+                // When looking up edges where output dataset is the source → nothing consumes it
+                when(lineageEdgeRepo.findBySourceNamespaceAndSourceName(outNs, outName))
+                                .thenReturn(Collections.emptyList());
+                // When looking up edges where input dataset is the target → nothing
+                when(lineageEdgeRepo.findByTargetNamespaceAndTargetName(inNs, inName))
+                                .thenReturn(Collections.emptyList());
+                // When looking up edges where input dataset is the source → the job consumes it
+                when(lineageEdgeRepo.findBySourceNamespaceAndSourceName(inNs, inName))
+                                .thenReturn(List.of(inputToJob));
 
                 // 2. Setup Datasets
                 DatasetDocument inDs = new DatasetDocument();

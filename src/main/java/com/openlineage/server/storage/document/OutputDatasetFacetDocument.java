@@ -2,6 +2,7 @@ package com.openlineage.server.storage.document;
 
 import com.openlineage.server.domain.Facet;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.ZonedDateTime;
@@ -15,6 +16,8 @@ public class OutputDatasetFacetDocument implements DatasetFacet {
 
     private Map<String, Facet> facets;
     private ZonedDateTime updatedAt;
+    @Indexed(expireAfter = "90d")
+    private ZonedDateTime createdAt;
 
     public OutputDatasetFacetDocument() {
     }
@@ -23,6 +26,7 @@ public class OutputDatasetFacetDocument implements DatasetFacet {
         this.datasetId = datasetId;
         this.facets = facets;
         this.updatedAt = updatedAt;
+        this.createdAt = ZonedDateTime.now();
     }
 
     public MarquezId getDatasetId() {

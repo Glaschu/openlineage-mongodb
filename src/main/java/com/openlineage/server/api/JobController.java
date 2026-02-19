@@ -54,17 +54,16 @@ public class JobController {
         if (limit <= 0)
             limit = 10;
 
-        List<JobDocument> allJobs = repository.findByIdNamespace(namespace);
+        org.springframework.data.domain.Pageable pageRequest = org.springframework.data.domain.PageRequest
+                .of(offset / limit, limit, org.springframework.data.domain.Sort.by("updatedAt").descending());
 
-        List<com.openlineage.server.api.models.JobResponse> jobs = allJobs.stream()
-                .sorted(java.util.Comparator.comparing(JobDocument::getUpdatedAt,
-                        java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())).reversed())
-                .skip(offset)
-                .limit(limit)
+        org.springframework.data.domain.Page<JobDocument> page = repository.findByIdNamespace(namespace, pageRequest);
+
+        List<com.openlineage.server.api.models.JobResponse> jobs = page.getContent().stream()
                 .map(this::mapJob)
                 .collect(java.util.stream.Collectors.toList());
 
-        return new com.openlineage.server.api.models.JobResponse.JobsResponse(jobs, allJobs.size());
+        return new com.openlineage.server.api.models.JobResponse.JobsResponse(jobs, (int) page.getTotalElements());
     }
 
     @GetMapping("/namespaces/{namespace}/jobs/{jobName}")
@@ -99,11 +98,12 @@ public class JobController {
     }
 
     private com.openlineage.server.api.models.JobResponse mapJob(JobDocument doc) {
-        List<com.openlineage.server.storage.document.RunDocument> runs = runRepository
-                .findByJobNamespaceAndJobNameOrderByEventTimeDesc(doc.getId().getNamespace(), doc.getId().getName())
-                .stream()
-                .limit(10)
-                .collect(java.util.stream.Collectors.toList());
-        return jobMapper.toResponse(doc, runs);
+        // Use paginated query — only fetch the 10 most recent runs from MongoDB, not the entire collection
+        org.springframework.data.domain.Page<com.openlineage.server.storage.document.RunDocument> runsPage =
+                runRepository.findByJobNamespaceAndJobName(
+                        doc.getId().getNamespace(), doc.getId().getName(),
+                        org.springframework.data.domain.PageRequest.of(0, 10,
+                                org.springframework.data.domain.Sort.by("eventTime").descending()));
+        return jobMapper.toResponse(doc, runsPage.getContent());
     }
 }

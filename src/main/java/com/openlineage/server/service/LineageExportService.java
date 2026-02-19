@@ -86,11 +86,37 @@ public class LineageExportService {
             datasetRepository.findAllById(datasetIdsToFetch).forEach(d -> datasetMap.put(d.getId(), d));
         }
 
+        // --- Prefetch Output Facets ---
+        Set<MarquezId> outputIdsToFetch = new HashSet<>();
         for (JobDocument job : jobs) {
-            // Get latest run for status
-            RunDocument lastRun = runRepository.findByJobNamespaceAndJobNameOrderByEventTimeDesc(
-                    job.getId().getNamespace(), job.getId().getName())
-                    .stream().findFirst().orElse(null);
+            if (job.getOutputs() != null) {
+                outputIdsToFetch.addAll(job.getOutputs());
+            }
+        }
+        Map<MarquezId, OutputDatasetFacetDocument> outputFacetMap = new HashMap<>();
+        if (!outputIdsToFetch.isEmpty()) {
+            outputFacetRepository.findAllById(outputIdsToFetch).forEach(f -> outputFacetMap.put(f.getDatasetId(), f));
+        }
+
+        // --- Prefetch Latest Runs for Statuses ---
+        // (For a massive number of jobs, we could use an aggregation query here, 
+        // but fetching exactly the latest run per job cleanly is complex in Spring Data without custom Aggregations.
+        // We will execute a single query fetching latest runs for these jobs if possible, 
+        // or a bounded iterator minimizing network roundtrips).
+        Map<MarquezId, RunDocument> latestRunsMap = new HashMap<>();
+        for (JobDocument job : jobs) {
+            // Bounded query: fetch only the single latest run per job instead of ALL runs
+            org.springframework.data.domain.Page<RunDocument> page = runRepository.findByJobNamespaceAndJobName(
+                    job.getId().getNamespace(), job.getId().getName(),
+                    org.springframework.data.domain.PageRequest.of(0, 1,
+                            org.springframework.data.domain.Sort.by("eventTime").descending()));
+            if (!page.isEmpty()) {
+                latestRunsMap.put(job.getId(), page.getContent().get(0));
+            }
+        }
+
+        for (JobDocument job : jobs) {
+            RunDocument lastRun = latestRunsMap.get(job.getId());
 
             String lastRunState = (lastRun != null) ? lastRun.getEventType() : null;
             Instant lastRunTime = (lastRun != null) ? lastRun.getEventTime().toInstant() : null;
@@ -113,7 +139,8 @@ public class LineageExportService {
 
                     // Column Lineage logic
                     if (outputDs != null) {
-                        processColumnLineage(outputDs, inputId, colRows);
+                        OutputDatasetFacetDocument facetDoc = outputFacetMap.get(outputDs.getId());
+                        processColumnLineage(outputDs, inputId, facetDoc, colRows);
                     }
                 }
             }
@@ -128,13 +155,12 @@ public class LineageExportService {
                 colRows.size());
     }
 
-    private void processColumnLineage(DatasetDocument outputDs, MarquezId inputId, List<ColumnLineageRow> rows) {
+    private void processColumnLineage(DatasetDocument outputDs, MarquezId inputId, OutputDatasetFacetDocument facetDoc, List<ColumnLineageRow> rows) {
         // Facets are stored separately
-        Optional<OutputDatasetFacetDocument> facetDoc = outputFacetRepository.findById(outputDs.getId());
-        if (facetDoc.isEmpty() || facetDoc.get().getFacets() == null)
+        if (facetDoc == null || facetDoc.getFacets() == null)
             return;
 
-        Facet facet = facetDoc.get().getFacets().get("columnLineage");
+        Facet facet = facetDoc.getFacets().get("columnLineage");
         if (!(facet instanceof ColumnLineageDatasetFacet))
             return;
 

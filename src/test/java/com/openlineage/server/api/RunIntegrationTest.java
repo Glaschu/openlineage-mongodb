@@ -56,6 +56,9 @@ public class RunIntegrationTest {
         private com.openlineage.server.storage.repository.InputDatasetFacetRepository inputRepo;
         @MockBean
         private com.openlineage.server.storage.repository.OutputDatasetFacetRepository outputRepo;
+
+    @MockBean
+    private com.openlineage.server.storage.repository.LineageEdgeRepository lineageEdgeRepo;
         @MockBean
         private com.openlineage.server.storage.repository.TagRepository tagRepo;
 
@@ -102,8 +105,11 @@ public class RunIntegrationTest {
                                 Collections.emptyList(),
                                 Collections.emptyMap());
 
-                when(runRepository.findByJobNamespaceAndJobNameOrderByEventTimeDesc("ns", "job"))
-                                .thenReturn(List.of(doc));
+                when(runRepository.findByJobNamespaceAndJobName(
+                                org.mockito.ArgumentMatchers.eq("ns"),
+                                org.mockito.ArgumentMatchers.eq("job"),
+                                org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
+                                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(doc)));
 
                 mockMvc.perform(get("/api/v2/namespaces/ns/jobs/job/runs"))
                                 .andExpect(status().isOk())

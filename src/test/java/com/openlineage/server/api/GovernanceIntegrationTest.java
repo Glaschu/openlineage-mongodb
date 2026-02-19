@@ -63,6 +63,9 @@ public class GovernanceIntegrationTest {
     @MockBean
     private com.openlineage.server.storage.repository.OutputDatasetFacetRepository outputRepo;
 
+    @MockBean
+    private com.openlineage.server.storage.repository.LineageEdgeRepository lineageEdgeRepo;
+
     @Test
     public void testClaimNewNamespace() throws Exception {
         String ns = "new-ns";

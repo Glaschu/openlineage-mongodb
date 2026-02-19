@@ -73,6 +73,9 @@ public class MarquezCompatibilityTest {
         @MockBean
         private com.openlineage.server.storage.repository.OutputDatasetFacetRepository outputRepo;
 
+    @MockBean
+    private com.openlineage.server.storage.repository.LineageEdgeRepository lineageEdgeRepo;
+
         @MockBean
         private com.openlineage.server.service.FacetMergeService facetMergeService;
 
@@ -105,6 +108,10 @@ public class MarquezCompatibilityTest {
                 mockRun.setEvent(mockEvent);
 
                 when(eventRepo.findByRunId("run-123")).thenReturn(java.util.Collections.singletonList(mockRun));
+
+                // Default: return empty page for paginated run lookups (used by mapJob)
+                when(runRepo.findByJobNamespaceAndJobName(any(), any(), any()))
+                                .thenReturn(new org.springframework.data.domain.PageImpl<>(Collections.emptyList()));
         }
 
         @Test

@@ -25,8 +25,19 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
 
 openlineage:
   governance:
     cache-ttl-ms: 60000
+  retention:
+    # TTL durations for automatic data expiration (applied via TTL indexes)
+    events-ttl: 90d    # Raw lineage events
+    runs-ttl: 180d     # Run state documents
+    facets-ttl: 90d    # Input/output dataset facet documents
+    # Jobs and datasets have no TTL — they are reference data
+  bulk:
+    max-size: 500      # Maximum events per bulk ingestion request

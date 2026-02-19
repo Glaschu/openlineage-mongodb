@@ -63,6 +63,8 @@ public class VersioningIntegrationTest {
     private com.openlineage.server.storage.repository.InputDatasetFacetRepository inputFacetRepository;
     @MockBean
     private com.openlineage.server.storage.repository.OutputDatasetFacetRepository outputFacetRepository;
+    @MockBean
+    private com.openlineage.server.storage.repository.LineageEdgeRepository lineageEdgeRepository;
 
     private Map<Object, Object> store = new HashMap<>();
 

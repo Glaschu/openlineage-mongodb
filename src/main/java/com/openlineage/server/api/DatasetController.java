@@ -39,12 +39,22 @@ public class DatasetController {
 
     @GetMapping
     public com.openlineage.server.api.models.DatasetResponse.DatasetsResponse listDatasets(
-            @PathVariable String namespace) {
-        List<com.openlineage.server.api.models.DatasetResponse> datasets = repository.findByIdNamespace(namespace)
+            @PathVariable String namespace,
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
+
+        if (limit <= 0) limit = 10;
+
+        org.springframework.data.domain.Pageable pageRequest = org.springframework.data.domain.PageRequest
+                .of(offset / limit, limit, org.springframework.data.domain.Sort.by("updatedAt").descending());
+
+        org.springframework.data.domain.Page<DatasetDocument> page = repository.findByIdNamespace(namespace, pageRequest);
+
+        List<com.openlineage.server.api.models.DatasetResponse> datasets = page.getContent()
                 .stream()
                 .map(this::mapDatasetSimple)
                 .collect(java.util.stream.Collectors.toList());
-        return new com.openlineage.server.api.models.DatasetResponse.DatasetsResponse(datasets, datasets.size());
+        return new com.openlineage.server.api.models.DatasetResponse.DatasetsResponse(datasets, (int) page.getTotalElements());
     }
 
     @GetMapping("/{datasetName}")

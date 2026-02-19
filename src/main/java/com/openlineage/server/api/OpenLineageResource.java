@@ -12,6 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.openlineage.server.domain.BfsNode;
+import com.openlineage.server.util.LineageNodeParser;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -24,6 +27,7 @@ public class OpenLineageResource {
     private final LineageEventRepository eventRepository;
     private final InputDatasetFacetRepository inputFacetRepository;
     private final OutputDatasetFacetRepository outputFacetRepository;
+    private final LineageEdgeRepository lineageEdgeRepository;
     private final com.openlineage.server.mapper.LineageNodeMapper lineageNodeMapper;
 
     public OpenLineageResource(JobRepository jobRepository,
@@ -31,12 +35,14 @@ public class OpenLineageResource {
             LineageEventRepository eventRepository,
             InputDatasetFacetRepository inputFacetRepository,
             OutputDatasetFacetRepository outputFacetRepository,
+            LineageEdgeRepository lineageEdgeRepository,
             com.openlineage.server.mapper.LineageNodeMapper lineageNodeMapper) {
         this.jobRepository = jobRepository;
         this.datasetRepository = datasetRepository;
         this.eventRepository = eventRepository;
         this.inputFacetRepository = inputFacetRepository;
         this.outputFacetRepository = outputFacetRepository;
+        this.lineageEdgeRepository = lineageEdgeRepository;
         this.lineageNodeMapper = lineageNodeMapper;
     }
 
@@ -45,10 +51,10 @@ public class OpenLineageResource {
             @RequestParam("nodeId") String nodeId,
             @RequestParam(value = "depth", defaultValue = "20") int depth) {
 
-        Set<Node> nodes = new HashSet<>();
+        Set<Node> nodes = new LinkedHashSet<>();
         // format: type:namespace:name
-        MarquezId centerId = parseNodeId(nodeId);
-        String type = parseType(nodeId);
+        MarquezId centerId = LineageNodeParser.parseNodeId(nodeId);
+        String type = LineageNodeParser.parseType(nodeId);
 
         Queue<BfsNode> queue = new LinkedList<>();
         Set<String> visited = new HashSet<>();
@@ -123,23 +129,32 @@ public class OpenLineageResource {
         Set<Edge> inEdges = new HashSet<>();
         Set<Edge> outEdges = new HashSet<>();
 
-        // Find Jobs consuming this dataset (Dataset -> Job)
-        List<JobDocument> consumers = jobRepository.findByInputsContaining(datasetId);
-        for (JobDocument job : consumers) {
-            String jobNodeId = "job:" + job.getId().getNamespace() + ":" + job.getId().getName();
-            outEdges.add(new Edge(dsNodeId, jobNodeId));
-            if (visited.add(jobNodeId)) {
-                queue.add(new BfsNode("job", job.getId(), currentDepth)); // Dataset -> Job doesn't increment depth
+        // Use lineage_edges collection — indexed lookups instead of scanning all jobs
+        // Find jobs that produce this dataset (Job → Dataset edges where this dataset is target)
+        List<LineageEdgeDocument> producerEdges = lineageEdgeRepository
+                .findByTargetNamespaceAndTargetName(datasetId.getNamespace(), datasetId.getName());
+        for (LineageEdgeDocument edge : producerEdges) {
+            if ("job".equals(edge.getSourceType())) {
+                String jobNodeId = "job:" + edge.getSourceNamespace() + ":" + edge.getSourceName();
+                inEdges.add(new Edge(jobNodeId, dsNodeId));
+                MarquezId jobId = new MarquezId(edge.getSourceNamespace(), edge.getSourceName());
+                if (visited.add(jobNodeId)) {
+                    queue.add(new BfsNode("job", jobId, currentDepth));
+                }
             }
         }
 
-        // Find Jobs producing this dataset (Job -> Dataset)
-        List<JobDocument> producers = jobRepository.findByOutputsContaining(datasetId);
-        for (JobDocument job : producers) {
-            String jobNodeId = "job:" + job.getId().getNamespace() + ":" + job.getId().getName();
-            inEdges.add(new Edge(jobNodeId, dsNodeId));
-            if (visited.add(jobNodeId)) {
-                queue.add(new BfsNode("job", job.getId(), currentDepth)); // Dataset -> Job doesn't increment depth
+        // Find jobs that consume this dataset (Dataset → Job edges where this dataset is source)
+        List<LineageEdgeDocument> consumerEdges = lineageEdgeRepository
+                .findBySourceNamespaceAndSourceName(datasetId.getNamespace(), datasetId.getName());
+        for (LineageEdgeDocument edge : consumerEdges) {
+            if ("job".equals(edge.getTargetType())) {
+                String jobNodeId = "job:" + edge.getTargetNamespace() + ":" + edge.getTargetName();
+                outEdges.add(new Edge(dsNodeId, jobNodeId));
+                MarquezId jobId = new MarquezId(edge.getTargetNamespace(), edge.getTargetName());
+                if (visited.add(jobNodeId)) {
+                    queue.add(new BfsNode("job", jobId, currentDepth));
+                }
             }
         }
 
@@ -158,33 +173,6 @@ public class OpenLineageResource {
         DatasetData data = lineageNodeMapper.mapDataset(ds, mergedFacets);
 
         nodes.add(new Node(dsNodeId, "DATASET", data, inEdges, outEdges));
-    }
-
-    private MarquezId parseNodeId(String nodeId) {
-        // format: type:namespace:name
-        String[] parts = nodeId.split(":");
-        if (parts.length < 3)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid nodeId");
-        return new MarquezId(parts[1], parts[2]);
-    }
-
-    private String parseType(String nodeId) {
-        String[] parts = nodeId.split(":");
-        if (parts.length < 3)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid nodeId");
-        return parts[0];
-    }
-
-    private static class BfsNode {
-        String type;
-        MarquezId id;
-        int depth;
-
-        public BfsNode(String type, MarquezId id, int depth) {
-            this.type = type;
-            this.id = id;
-            this.depth = depth;
-        }
     }
 
     @GetMapping("/column-lineage")
@@ -253,7 +241,7 @@ public class OpenLineageResource {
         }
 
         // 4. Assemble
-        Set<Node> resultNodes = new HashSet<>();
+        Set<Node> resultNodes = new LinkedHashSet<>();
         for (String id : fieldNodeIds) {
             resultNodes.add(new Node(
                     id,
@@ -278,15 +266,17 @@ public class OpenLineageResource {
 
         if (limit <= 0)
             limit = 10;
+        if (limit > 200)
+            limit = 200;
 
         java.time.ZonedDateTime end = before != null ? before : java.time.ZonedDateTime.now().plusYears(100);
         java.time.ZonedDateTime start = after != null ? after : java.time.ZonedDateTime.now().minusYears(100);
 
         org.springframework.data.domain.Pageable pageRequest = org.springframework.data.domain.PageRequest
-                .of(offset / limit, limit, org.springframework.data.domain.Sort.by("event.eventTime").descending());
+                .of(offset / limit, limit, org.springframework.data.domain.Sort.by("eventTime").descending());
 
         org.springframework.data.domain.Page<LineageEventDocument> page = eventRepository
-                .findByEventEventTimeBetween(start, end, pageRequest);
+                .findByEventTimeBetween(start, end, pageRequest);
 
         List<com.openlineage.server.domain.RunEvent> events = page.getContent().stream()
                 .map(LineageEventDocument::getEvent)

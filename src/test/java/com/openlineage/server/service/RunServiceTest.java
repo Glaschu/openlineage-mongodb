@@ -71,8 +71,8 @@ class RunServiceTest {
         org.bson.Document updateDoc = update.getUpdateObject();
         org.bson.Document setClause = (org.bson.Document) updateDoc.get("$set");
 
-        assertThat(setClause).containsKey("facets.io_dot_openlineage_dot_test_dot_facet");
-        assertThat(setClause).doesNotContainKey("facets.io.openlineage.test.facet");
+        assertThat(setClause).containsKey("runFacets.io_dot_openlineage_dot_test_dot_facet");
+        assertThat(setClause).doesNotContainKey("runFacets.io.openlineage.test.facet");
         
         org.bson.Document setOnInsertClause = (org.bson.Document) updateDoc.get("$setOnInsert");
         assertThat(setOnInsertClause).containsKey("jobNamespace");

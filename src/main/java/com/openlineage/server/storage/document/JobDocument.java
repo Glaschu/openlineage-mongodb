@@ -3,22 +3,29 @@ package com.openlineage.server.storage.document;
 import com.openlineage.server.domain.Facet;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.TextIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.ZonedDateTime;
 import java.util.Map;
 
 @Document(collection = "jobs")
+@org.springframework.data.mongodb.core.index.CompoundIndexes({
+        @org.springframework.data.mongodb.core.index.CompoundIndex(name = "job_namespace_updated_idx", def = "{'id.namespace': 1, 'updatedAt': -1}")
+})
 public class JobDocument {
 
     @Id
     private MarquezId id;
     private Map<String, Facet> facets;
+    @Indexed
     private java.util.Set<MarquezId> inputs;
+    @Indexed
     private java.util.Set<MarquezId> outputs;
     private java.util.Set<String> tags = new java.util.HashSet<>();
     private String description;
     private String location;
+    @Indexed
     private ZonedDateTime updatedAt;
     private java.util.UUID currentVersion;
     private java.util.UUID parentJobUuid;
@@ -27,12 +34,17 @@ public class JobDocument {
     @Indexed
     private ZonedDateTime createdAt;
 
+    /** Denormalized name field for DocumentDB text search (mirrors _id.name). */
+    @TextIndexed
+    private String searchName;
+
     public JobDocument() {
     }
 
     public JobDocument(String namespace, String name, Map<String, Facet> facets, java.util.Set<MarquezId> inputs,
             java.util.Set<MarquezId> outputs, ZonedDateTime updatedAt) {
         this.id = new MarquezId(namespace, name);
+        this.searchName = name;
         this.facets = facets;
         this.inputs = inputs;
         this.outputs = outputs;
@@ -134,5 +146,13 @@ public class JobDocument {
 
     public void setParentJobName(String parentJobName) {
         this.parentJobName = parentJobName;
+    }
+
+    public String getSearchName() {
+        return searchName;
+    }
+
+    public void setSearchName(String searchName) {
+        this.searchName = searchName;
     }
 }

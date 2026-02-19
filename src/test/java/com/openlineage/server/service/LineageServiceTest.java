@@ -22,6 +22,7 @@ public class LineageServiceTest {
     private JobService jobService;
     private RunService runService;
     private DatasetService datasetService;
+    private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
 
     @BeforeEach
     public void setup() {
@@ -30,8 +31,9 @@ public class LineageServiceTest {
         jobService = mock(JobService.class);
         runService = mock(RunService.class);
         datasetService = mock(DatasetService.class);
+        mongoTemplate = mock(org.springframework.data.mongodb.core.MongoTemplate.class);
 
-        service = new LineageService(eventRepo, governanceService, jobService, runService, datasetService);
+        service = new LineageService(eventRepo, governanceService, jobService, runService, datasetService, mongoTemplate);
     }
 
     @Test
