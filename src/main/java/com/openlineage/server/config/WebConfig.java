@@ -28,7 +28,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void configurePathMatch(PathMatchConfigurer configurer) {
         UrlPathHelper urlPathHelper = new UrlPathHelper();
         // Decode URL so @PathVariable gets the original string
-        urlPathHelper.setUrlDecode(true);
+        urlPathHelper.setUrlDecode(false);
         // Do NOT deduplicate slashes — namespaces can legitimately contain //
         urlPathHelper.setRemoveSemicolonContent(false);
         configurer.setUrlPathHelper(urlPathHelper);

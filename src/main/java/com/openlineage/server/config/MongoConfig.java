@@ -19,8 +19,8 @@ public class MongoConfig {
         List<Converter<?, ?>> converters = new ArrayList<>();
         converters.add(new ZonedDateTimeToDateConverter());
         converters.add(new DateToZonedDateTimeConverter());
-        converters.add(new MarquezIdToStringConverter());
-        converters.add(new StringToMarquezIdConverter());
+        // MarquezId is stored natively as a nested document {namespace, name}
+        // — no string converters needed (the old ":" delimiter broke S3/JDBC URIs).
         converters.add(new DocumentToFacetMapConverter());
         return new MongoCustomConversions(converters);
     }
@@ -51,26 +51,6 @@ public class MongoConfig {
         @Override
         public ZonedDateTime convert(Date source) {
             return ZonedDateTime.ofInstant(source.toInstant(), ZoneId.of("UTC")); // Default to UTC
-        }
-    }
-
-    static class MarquezIdToStringConverter
-            implements Converter<com.openlineage.server.storage.document.MarquezId, String> {
-        @Override
-        public String convert(com.openlineage.server.storage.document.MarquezId source) {
-            return source.getNamespace() + ":" + source.getName();
-        }
-    }
-
-    static class StringToMarquezIdConverter
-            implements Converter<String, com.openlineage.server.storage.document.MarquezId> {
-        @Override
-        public com.openlineage.server.storage.document.MarquezId convert(String source) {
-            String[] parts = source.split(":", 2);
-            if (parts.length < 2) {
-                throw new IllegalArgumentException("Invalid MarquezId string format: " + source);
-            }
-            return new com.openlineage.server.storage.document.MarquezId(parts[0], parts[1]);
         }
     }
 
