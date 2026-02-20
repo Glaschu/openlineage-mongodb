@@ -21,14 +21,20 @@ public class MongoConfig {
         converters.add(new DateToZonedDateTimeConverter());
         converters.add(new MarquezIdToStringConverter());
         converters.add(new StringToMarquezIdConverter());
+        converters.add(new DocumentToFacetMapConverter());
         return new MongoCustomConversions(converters);
     }
 
     @Bean
     @org.springframework.boot.autoconfigure.condition.ConditionalOnBean(org.springframework.data.mongodb.MongoDatabaseFactory.class)
-    public org.springframework.data.mongodb.core.convert.MappingMongoConverter mappingMongoConverter(org.springframework.data.mongodb.MongoDatabaseFactory factory, org.springframework.data.mongodb.core.convert.MongoCustomConversions conversions, org.springframework.data.mongodb.core.mapping.MongoMappingContext context) {
-        org.springframework.data.mongodb.core.convert.DbRefResolver dbRefResolver = new org.springframework.data.mongodb.core.convert.DefaultDbRefResolver(factory);
-        org.springframework.data.mongodb.core.convert.MappingMongoConverter mappingConverter = new org.springframework.data.mongodb.core.convert.MappingMongoConverter(dbRefResolver, context);
+    public org.springframework.data.mongodb.core.convert.MappingMongoConverter mappingMongoConverter(
+            org.springframework.data.mongodb.MongoDatabaseFactory factory,
+            org.springframework.data.mongodb.core.convert.MongoCustomConversions conversions,
+            org.springframework.data.mongodb.core.mapping.MongoMappingContext context) {
+        org.springframework.data.mongodb.core.convert.DbRefResolver dbRefResolver = new org.springframework.data.mongodb.core.convert.DefaultDbRefResolver(
+                factory);
+        org.springframework.data.mongodb.core.convert.MappingMongoConverter mappingConverter = new org.springframework.data.mongodb.core.convert.MappingMongoConverter(
+                dbRefResolver, context);
         mappingConverter.setCustomConversions(conversions);
         mappingConverter.setMapKeyDotReplacement("_dot_");
         return mappingConverter;
@@ -48,14 +54,16 @@ public class MongoConfig {
         }
     }
 
-    static class MarquezIdToStringConverter implements Converter<com.openlineage.server.storage.document.MarquezId, String> {
+    static class MarquezIdToStringConverter
+            implements Converter<com.openlineage.server.storage.document.MarquezId, String> {
         @Override
         public String convert(com.openlineage.server.storage.document.MarquezId source) {
             return source.getNamespace() + ":" + source.getName();
         }
     }
 
-    static class StringToMarquezIdConverter implements Converter<String, com.openlineage.server.storage.document.MarquezId> {
+    static class StringToMarquezIdConverter
+            implements Converter<String, com.openlineage.server.storage.document.MarquezId> {
         @Override
         public com.openlineage.server.storage.document.MarquezId convert(String source) {
             String[] parts = source.split(":", 2);
