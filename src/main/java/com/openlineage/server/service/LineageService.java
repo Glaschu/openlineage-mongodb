@@ -1,7 +1,11 @@
 package com.openlineage.server.service;
 
 import com.openlineage.server.domain.RunEvent;
+import com.openlineage.server.storage.document.DocumentDbSanitizer;
 import com.openlineage.server.storage.document.LineageEdgeDocument;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.openlineage.server.storage.document.LineageEventDocument;
 import com.openlineage.server.storage.repository.LineageEventRepository;
 import com.openlineage.server.storage.document.MarquezId;
@@ -94,8 +98,10 @@ public class LineageService {
             governanceService.validateOrRegisterNamespace(ns, producer);
         }
 
-        // Save Event
-        LineageEventDocument doc = new LineageEventDocument(event);
+        // Save Event — sanitize the raw event to replace dotted map keys
+        // (e.g. "spark.master") that DocumentDB/MongoDB forbid in field names.
+        RunEvent sanitizedEvent = sanitizeEventForStorage(event);
+        LineageEventDocument doc = new LineageEventDocument(sanitizedEvent);
         eventRepository.save(doc);
         log.info("Ingested event for run: {}", event.run().runId());
     }
@@ -142,5 +148,19 @@ public class LineageService {
                 .set("updatedAt", eventTime);
 
         mongoTemplate.upsert(query, update, LineageEdgeDocument.class);
+    }
+
+    /**
+     * Creates a sanitized copy of a RunEvent where all map keys containing dots
+     * or dollars are replaced, making it safe for DocumentDB/MongoDB storage.
+     * Re-uses DocumentDbSanitizer.sanitize() which already handles recursive
+     * key sanitization across the entire object graph.
+     */
+    private RunEvent sanitizeEventForStorage(RunEvent event) {
+        Object sanitized = DocumentDbSanitizer.sanitize(event);
+        ObjectMapper mapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return mapper.convertValue(sanitized, RunEvent.class);
     }
 }
