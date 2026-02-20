@@ -98,20 +98,20 @@ public class LineageExportService {
             outputFacetRepository.findAllById(outputIdsToFetch).forEach(f -> outputFacetMap.put(f.getDatasetId(), f));
         }
 
-        // --- Prefetch Latest Runs for Statuses ---
-        // (For a massive number of jobs, we could use an aggregation query here, 
-        // but fetching exactly the latest run per job cleanly is complex in Spring Data without custom Aggregations.
-        // We will execute a single query fetching latest runs for these jobs if possible, 
-        // or a bounded iterator minimizing network roundtrips).
+        // --- Prefetch Latest Runs for Statuses (single batch query) ---
         Map<MarquezId, RunDocument> latestRunsMap = new HashMap<>();
-        for (JobDocument job : jobs) {
-            // Bounded query: fetch only the single latest run per job instead of ALL runs
-            org.springframework.data.domain.Page<RunDocument> page = runRepository.findByJobNamespaceAndJobName(
-                    job.getId().getNamespace(), job.getId().getName(),
-                    org.springframework.data.domain.PageRequest.of(0, 1,
-                            org.springframework.data.domain.Sort.by("eventTime").descending()));
-            if (!page.isEmpty()) {
-                latestRunsMap.put(job.getId(), page.getContent().get(0));
+        if (!jobs.isEmpty()) {
+            List<Criteria> runConditions = new ArrayList<>();
+            for (JobDocument job : jobs) {
+                runConditions.add(Criteria.where("jobNamespace").is(job.getId().getNamespace())
+                        .and("jobName").is(job.getId().getName()));
+            }
+            Query runQuery = Query.query(new Criteria().orOperator(runConditions))
+                    .with(org.springframework.data.domain.Sort.by("eventTime").descending());
+            List<RunDocument> allRuns = mongoTemplate.find(runQuery, RunDocument.class);
+            for (RunDocument run : allRuns) {
+                MarquezId key = run.getJob();
+                latestRunsMap.putIfAbsent(key, run);
             }
         }
 
@@ -155,7 +155,8 @@ public class LineageExportService {
                 colRows.size());
     }
 
-    private void processColumnLineage(DatasetDocument outputDs, MarquezId inputId, OutputDatasetFacetDocument facetDoc, List<ColumnLineageRow> rows) {
+    private void processColumnLineage(DatasetDocument outputDs, MarquezId inputId, OutputDatasetFacetDocument facetDoc,
+            List<ColumnLineageRow> rows) {
         // Facets are stored separately
         if (facetDoc == null || facetDoc.getFacets() == null)
             return;

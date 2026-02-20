@@ -45,18 +45,23 @@ public class RunController {
             @RequestParam(defaultValue = "20") int limit,
             @RequestParam(defaultValue = "0") int offset) {
 
-        if (limit <= 0) limit = 20;
-        if (limit > 200) limit = 200;
+        if (limit <= 0)
+            limit = 20;
+        if (limit > 200)
+            limit = 200;
 
         org.springframework.data.domain.Pageable pageRequest = org.springframework.data.domain.PageRequest
                 .of(offset / limit, limit, org.springframework.data.domain.Sort.by("eventTime").descending());
-        org.springframework.data.domain.Page<RunDocument> page = repository.findByJobNamespaceAndJobName(namespace, jobName, pageRequest);
+        org.springframework.data.domain.Slice<RunDocument> slice = repository.findByJobNamespaceAndJobName(namespace,
+                jobName, pageRequest);
 
-        List<RunResponse> runs = page.getContent().stream()
+        List<RunResponse> runs = slice.getContent().stream()
                 .map(doc -> runMapper.toRunResponse(doc, true))
                 .collect(Collectors.toList());
 
-        return new RunsResponse(runs, (int) page.getTotalElements());
+        // Slice avoids costly count query; estimate total for pagination
+        int totalEstimate = slice.hasNext() ? offset + limit + 1 : offset + runs.size();
+        return new RunsResponse(runs, totalEstimate);
     }
 
     // Get run by ID

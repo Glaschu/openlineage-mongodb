@@ -98,12 +98,13 @@ public class JobController {
     }
 
     private com.openlineage.server.api.models.JobResponse mapJob(JobDocument doc) {
-        // Use paginated query — only fetch the 10 most recent runs from MongoDB, not the entire collection
-        org.springframework.data.domain.Page<com.openlineage.server.storage.document.RunDocument> runsPage =
-                runRepository.findByJobNamespaceAndJobName(
+        // Use paginated query — only fetch the 10 most recent runs from MongoDB, not
+        // the entire collection
+        org.springframework.data.domain.Slice<com.openlineage.server.storage.document.RunDocument> runsSlice = runRepository
+                .findByJobNamespaceAndJobName(
                         doc.getId().getNamespace(), doc.getId().getName(),
                         org.springframework.data.domain.PageRequest.of(0, 10,
                                 org.springframework.data.domain.Sort.by("eventTime").descending()));
-        return jobMapper.toResponse(doc, runsPage.getContent());
+        return jobMapper.toResponse(doc, runsSlice.getContent());
     }
 }

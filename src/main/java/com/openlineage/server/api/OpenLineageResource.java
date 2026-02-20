@@ -28,6 +28,7 @@ public class OpenLineageResource {
     private final InputDatasetFacetRepository inputFacetRepository;
     private final OutputDatasetFacetRepository outputFacetRepository;
     private final LineageEdgeRepository lineageEdgeRepository;
+    private final org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
     private final com.openlineage.server.mapper.LineageNodeMapper lineageNodeMapper;
 
     public OpenLineageResource(JobRepository jobRepository,
@@ -36,6 +37,7 @@ public class OpenLineageResource {
             InputDatasetFacetRepository inputFacetRepository,
             OutputDatasetFacetRepository outputFacetRepository,
             LineageEdgeRepository lineageEdgeRepository,
+            org.springframework.data.mongodb.core.MongoTemplate mongoTemplate,
             com.openlineage.server.mapper.LineageNodeMapper lineageNodeMapper) {
         this.jobRepository = jobRepository;
         this.datasetRepository = datasetRepository;
@@ -43,6 +45,7 @@ public class OpenLineageResource {
         this.inputFacetRepository = inputFacetRepository;
         this.outputFacetRepository = outputFacetRepository;
         this.lineageEdgeRepository = lineageEdgeRepository;
+        this.mongoTemplate = mongoTemplate;
         this.lineageNodeMapper = lineageNodeMapper;
     }
 
@@ -51,15 +54,16 @@ public class OpenLineageResource {
             @RequestParam("nodeId") String nodeId,
             @RequestParam(value = "depth", defaultValue = "20") int depth) {
 
-        Set<Node> nodes = new LinkedHashSet<>();
         // format: type:namespace:name
         MarquezId centerId = LineageNodeParser.parseNodeId(nodeId);
         String type = LineageNodeParser.parseType(nodeId);
 
+        // Phase 1: BFS to discover all nodes and collect job documents
+        Set<Node> nodes = new LinkedHashSet<>();
         Queue<BfsNode> queue = new LinkedList<>();
         Set<String> visited = new HashSet<>();
+        Map<String, JobDocument> discoveredJobs = new HashMap<>(); // nodeId -> JobDocument
 
-        // Add center node
         queue.add(new BfsNode(type, centerId, 0));
         visited.add(nodeId);
 
@@ -69,17 +73,71 @@ public class OpenLineageResource {
                 continue;
 
             if ("job".equals(current.type)) {
-                processJob(current.id, nodes, queue, visited, current.depth);
+                processJob(current.id, nodes, queue, visited, current.depth, discoveredJobs);
             } else if ("dataset".equals(current.type)) {
                 processDataset(current.id, nodes, queue, visited, current.depth);
             }
         }
 
+        // Phase 2: Batch-load latest runs for all discovered jobs (single query)
+        if (!discoveredJobs.isEmpty()) {
+            Map<String, RunDocument> latestRuns = batchLoadLatestRuns(discoveredJobs.values());
+
+            // Rebuild job nodes with run data
+            Set<Node> finalNodes = new LinkedHashSet<>();
+            for (Node node : nodes) {
+                if ("JOB".equals(node.type()) && discoveredJobs.containsKey(node.id())) {
+                    JobDocument job = discoveredJobs.get(node.id());
+                    String runKey = job.getId().getNamespace() + ":" + job.getId().getName();
+                    RunDocument latestRun = latestRuns.get(runKey);
+                    JobData data = lineageNodeMapper.mapJob(job, latestRun);
+                    finalNodes.add(new Node(node.id(), "JOB", data, node.inEdges(), node.outEdges()));
+                } else {
+                    finalNodes.add(node);
+                }
+            }
+            return new LineageResponse(finalNodes);
+        }
+
         return new LineageResponse(nodes);
     }
 
+    /**
+     * Batch-load the latest run for each job in a single MongoDB query.
+     * Returns a map of "namespace:name" -> RunDocument.
+     */
+    private Map<String, RunDocument> batchLoadLatestRuns(java.util.Collection<JobDocument> jobs) {
+        Map<String, RunDocument> result = new HashMap<>();
+
+        // Build $or conditions for all jobs
+        List<org.springframework.data.mongodb.core.query.Criteria> conditions = new java.util.ArrayList<>();
+        for (JobDocument job : jobs) {
+            conditions.add(org.springframework.data.mongodb.core.query.Criteria
+                    .where("jobNamespace").is(job.getId().getNamespace())
+                    .and("jobName").is(job.getId().getName()));
+        }
+        if (conditions.isEmpty())
+            return result;
+
+        // Single query: fetch all runs for all discovered jobs, sorted by eventTime
+        // desc
+        org.springframework.data.mongodb.core.query.Query query = new org.springframework.data.mongodb.core.query.Query(
+                new org.springframework.data.mongodb.core.query.Criteria().orOperator(conditions))
+                .with(org.springframework.data.domain.Sort.by("eventTime").descending());
+
+        List<RunDocument> allRuns = mongoTemplate.find(query, RunDocument.class);
+
+        // Pick the first (latest) run per job — results are sorted desc
+        for (RunDocument run : allRuns) {
+            String key = run.getJob().getNamespace() + ":" + run.getJob().getName();
+            result.putIfAbsent(key, run); // first = latest due to desc sort
+        }
+
+        return result;
+    }
+
     private void processJob(MarquezId jobId, Set<Node> nodes, Queue<BfsNode> queue, Set<String> visited,
-            int currentDepth) {
+            int currentDepth, Map<String, JobDocument> discoveredJobs) {
         Optional<JobDocument> jobOpt = jobRepository.findById(jobId);
         if (jobOpt.isEmpty())
             return;
@@ -112,10 +170,10 @@ public class OpenLineageResource {
             }
         }
 
-        // Map to JobData
-        JobData data = lineageNodeMapper.mapJob(job);
-
-        nodes.add(new Node(jobNodeId, "JOB", data, inEdges, outEdges));
+        // Store job for batch run loading; use placeholder data for now
+        discoveredJobs.put(jobNodeId, job);
+        JobData placeholderData = lineageNodeMapper.mapJob(job); // No run data yet
+        nodes.add(new Node(jobNodeId, "JOB", placeholderData, inEdges, outEdges));
     }
 
     private void processDataset(MarquezId datasetId, Set<Node> nodes, Queue<BfsNode> queue, Set<String> visited,

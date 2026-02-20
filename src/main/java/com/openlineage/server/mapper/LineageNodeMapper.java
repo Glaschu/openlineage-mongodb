@@ -10,12 +10,8 @@ import com.openlineage.server.storage.document.DatasetDocument;
 import com.openlineage.server.storage.document.JobDocument;
 import com.openlineage.server.storage.document.MarquezId;
 import com.openlineage.server.storage.document.RunDocument;
-import com.openlineage.server.storage.repository.RunRepository;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -25,31 +21,30 @@ import java.util.stream.Collectors;
 @Component
 public class LineageNodeMapper {
 
-    private final RunRepository runRepository;
     private final RunMapper runMapper;
 
-    public LineageNodeMapper(RunRepository runRepository, RunMapper runMapper) {
-        this.runRepository = runRepository;
+    public LineageNodeMapper(RunMapper runMapper) {
         this.runMapper = runMapper;
     }
 
     public JobData mapJob(JobDocument job) {
-        // Look up the latest run for this job
+        return mapJob(job, null);
+    }
+
+    /**
+     * Map a job document to lineage JobData, optionally including latestRun info.
+     * Accepts a pre-loaded RunDocument to avoid N+1 queries in the BFS.
+     */
+    public JobData mapJob(JobDocument job, RunDocument latestRunDoc) {
         RunResponse latestRun = null;
         String state = null;
         String currentRunId = null;
         Long durationMs = null;
 
-        List<RunDocument> latestRuns = runRepository.findByJobNamespaceAndJobName(
-                job.getId().getNamespace(), job.getId().getName(),
-                PageRequest.of(0, 1, Sort.by("eventTime").descending()))
-                .getContent();
-
-        if (!latestRuns.isEmpty()) {
-            RunDocument latest = latestRuns.get(0);
-            latestRun = runMapper.toRunResponse(latest);
+        if (latestRunDoc != null) {
+            latestRun = runMapper.toRunResponse(latestRunDoc);
             state = latestRun.state();
-            currentRunId = latest.getRunId();
+            currentRunId = latestRunDoc.getRunId();
             durationMs = latestRun.durationMs();
         }
 
