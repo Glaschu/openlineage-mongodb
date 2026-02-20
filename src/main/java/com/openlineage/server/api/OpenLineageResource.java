@@ -130,7 +130,8 @@ public class OpenLineageResource {
         Set<Edge> outEdges = new HashSet<>();
 
         // Use lineage_edges collection — indexed lookups instead of scanning all jobs
-        // Find jobs that produce this dataset (Job → Dataset edges where this dataset is target)
+        // Find jobs that produce this dataset (Job → Dataset edges where this dataset
+        // is target)
         List<LineageEdgeDocument> producerEdges = lineageEdgeRepository
                 .findByTargetNamespaceAndTargetName(datasetId.getNamespace(), datasetId.getName());
         for (LineageEdgeDocument edge : producerEdges) {
@@ -139,12 +140,13 @@ public class OpenLineageResource {
                 inEdges.add(new Edge(jobNodeId, dsNodeId));
                 MarquezId jobId = new MarquezId(edge.getSourceNamespace(), edge.getSourceName());
                 if (visited.add(jobNodeId)) {
-                    queue.add(new BfsNode("job", jobId, currentDepth));
+                    queue.add(new BfsNode("job", jobId, currentDepth + 1));
                 }
             }
         }
 
-        // Find jobs that consume this dataset (Dataset → Job edges where this dataset is source)
+        // Find jobs that consume this dataset (Dataset → Job edges where this dataset
+        // is source)
         List<LineageEdgeDocument> consumerEdges = lineageEdgeRepository
                 .findBySourceNamespaceAndSourceName(datasetId.getNamespace(), datasetId.getName());
         for (LineageEdgeDocument edge : consumerEdges) {
@@ -153,7 +155,7 @@ public class OpenLineageResource {
                 outEdges.add(new Edge(dsNodeId, jobNodeId));
                 MarquezId jobId = new MarquezId(edge.getTargetNamespace(), edge.getTargetName());
                 if (visited.add(jobNodeId)) {
-                    queue.add(new BfsNode("job", jobId, currentDepth));
+                    queue.add(new BfsNode("job", jobId, currentDepth + 1));
                 }
             }
         }
