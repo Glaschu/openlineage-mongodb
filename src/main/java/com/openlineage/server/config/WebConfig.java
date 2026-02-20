@@ -15,11 +15,11 @@ import org.springframework.web.util.UrlPathHelper;
  *
  * Key behaviours:
  * 1. Tomcat is configured to allow encoded slashes (%2F) and other special
- *    characters through to Spring — without this, Tomcat rejects them with a 400.
+ * characters through to Spring — without this, Tomcat rejects them with a 400.
  * 2. UrlPathHelper is configured to decode URLs so that @PathVariable values
- *    arrive as the decoded original string (e.g. "postgres://users-db").
+ * arrive as the decoded original string (e.g. "postgres://users-db").
  * 3. Slash-deduplication is disabled so paths like /namespaces/a//b are not
- *    silently collapsed.
+ * silently collapsed.
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -41,15 +41,19 @@ public class WebConfig implements WebMvcConfigurer {
             public void customize(Connector connector) {
                 // Allow special characters in query parameters
                 connector.setProperty("relaxedQueryChars", "[]|{}^\\`\"<>");
-                // Allow special characters in path segments (needed for encoded namespace values)
+                // Allow special characters in path segments (needed for encoded namespace
+                // values)
                 connector.setProperty("relaxedPathChars", "[]|{}^\\`\"<>");
                 connector.setURIEncoding("UTF-8");
                 // Critical: Allow %2F (encoded slashes) to pass through without
                 // Tomcat rejecting them. Without this, requests like
-                // /api/v2/namespaces/postgres%3A%2F%2Fusers-db/jobs return 400.
-                connector.setProperty("org.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH", "true");
-                // Do not reject encoded backslash either
-                connector.setProperty("org.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_BACKSLASH", "true");
+                // /api/v2/namespaces/s3%3A%2F%2Fbucket-name/jobs return 400.
+                //
+                // Tomcat 10.1+ (Spring Boot 3.x) replaced the old
+                // ALLOW_ENCODED_SLASH system property with encodedSolidusHandling.
+                // DECODE = accept %2F and decode it to / before passing to Spring.
+                connector.setEncodedSolidusHandling(
+                        org.apache.tomcat.util.buf.EncodedSolidusHandling.DECODE.getValue());
             }
         });
     }
