@@ -20,7 +20,7 @@ public class JobService {
     }
 
     public void upsertJob(Job job, ZonedDateTime eventTime, java.util.Map<MarquezId, java.util.UUID> inputs,
-            java.util.Map<MarquezId, java.util.UUID> outputs) {
+            java.util.Map<MarquezId, java.util.UUID> outputs, String parentJobName, java.util.UUID parentJobUuid) {
         org.springframework.data.mongodb.core.query.Query query = org.springframework.data.mongodb.core.query.Query
                 .query(org.springframework.data.mongodb.core.query.Criteria.where("_id")
                         .is(new MarquezId(job.namespace(), job.name())));
@@ -30,6 +30,13 @@ public class JobService {
                 .setOnInsert("searchName", job.name())
                 .set("updatedAt", eventTime)
                 .set("currentVersion", versionService.computeJobVersion(job, inputs, outputs));
+
+        if (parentJobName != null) {
+            update.set("parentJobName", parentJobName);
+            if (parentJobUuid != null) {
+                update.set("parentJobUuid", parentJobUuid);
+            }
+        }
 
         if (inputs != null && !inputs.isEmpty()) {
             update.addToSet("inputs").each(inputs.keySet().toArray());

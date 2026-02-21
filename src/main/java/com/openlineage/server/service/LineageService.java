@@ -81,7 +81,28 @@ public class LineageService {
         if (event.job() != null && event.job().namespace() != null) {
             jobNamespace = event.job().namespace();
             namespacesToCheck.add(jobNamespace);
-            jobService.upsertJob(event.job(), event.eventTime(), jobInputs, jobOutputs);
+
+            String parentJobName = null;
+            java.util.UUID parentJobUuid = null;
+
+            if (event.run() != null && event.run().facets() != null && event.run().facets().containsKey("parent")) {
+                Object parentObj = event.run().facets().get("parent");
+                if (parentObj instanceof java.util.Map map) {
+                    Object jobObj = map.get("job");
+                    if (jobObj instanceof java.util.Map jobMap) {
+                        String pNamespace = (String) jobMap.get("namespace");
+                        String pName = (String) jobMap.get("name");
+                        if (pName != null && pNamespace != null) {
+                            parentJobName = pName;
+                            // Deterministic UUID for parent job matching VersionService logic
+                            String pIdString = pNamespace + pName;
+                            parentJobUuid = java.util.UUID.nameUUIDFromBytes(pIdString.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                        }
+                    }
+                }
+            }
+
+            jobService.upsertJob(event.job(), event.eventTime(), jobInputs, jobOutputs, parentJobName, parentJobUuid);
             runService.upsertRun(event);
 
             // Upsert materialized lineage edges for fast graph queries

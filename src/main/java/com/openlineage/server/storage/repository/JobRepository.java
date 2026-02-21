@@ -13,4 +13,12 @@ public interface JobRepository extends MongoRepository<JobDocument, MarquezId> {
     List<JobDocument> findByInputsContaining(MarquezId id);
 
     List<JobDocument> findByOutputsContaining(MarquezId id);
+
+    Page<JobDocument> findByParentJobNameIsNull(Pageable pageable);
+
+    Page<JobDocument> findByParentJobName(String parentJobName, Pageable pageable);
+
+    Page<JobDocument> findByIdNamespaceAndParentJobNameIsNull(String namespace, Pageable pageable);
+
+    Page<JobDocument> findByIdNamespaceAndParentJobName(String namespace, String parentJobName, Pageable pageable);
 }

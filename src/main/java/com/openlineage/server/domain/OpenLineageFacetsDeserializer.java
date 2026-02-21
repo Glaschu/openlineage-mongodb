@@ -19,7 +19,7 @@ import java.util.Map;
  * while preserving all unknown/custom facets via GenericFacet (no data loss).
  * 
  * Supported typed facets:
- * - Dataset: schema, ownership, columnLineage, documentation, dataSource, storage, lifecycleStateChange
+ * - Dataset: schema, ownership, columnLineage, documentation, dataSource, storage, lifecycleStateChange, symlinks
  * - Job: documentation, sql, sourceCodeLocation
  * - Run: (all handled as GenericFacet — run facets are highly variable)
  */
@@ -35,6 +35,7 @@ public class OpenLineageFacetsDeserializer extends JsonDeserializer<Map<String, 
             Map.entry("dataSource", DataSourceDatasetFacet.class),
             Map.entry("storage", StorageDatasetFacet.class),
             Map.entry("lifecycleStateChange", LifecycleStateChangeDatasetFacet.class),
+            Map.entry("symlinks", SymlinksDatasetFacet.class),
             // Job facets
             Map.entry("sql", SqlJobFacet.class),
             Map.entry("sourceCodeLocation", SourceCodeLocationJobFacet.class)

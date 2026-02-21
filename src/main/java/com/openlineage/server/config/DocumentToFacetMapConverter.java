@@ -34,6 +34,7 @@ public class DocumentToFacetMapConverter implements Converter<Document, Map<Stri
             Map.entry("dataSource", DataSourceDatasetFacet.class),
             Map.entry("storage", StorageDatasetFacet.class),
             Map.entry("lifecycleStateChange", LifecycleStateChangeDatasetFacet.class),
+            Map.entry("symlinks", SymlinksDatasetFacet.class),
             Map.entry("sql", SqlJobFacet.class),
             Map.entry("sourceCodeLocation", SourceCodeLocationJobFacet.class));
 

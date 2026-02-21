@@ -52,38 +52,196 @@ public class OpenLineageResource {
     @GetMapping("/lineage")
     public LineageResponse getLineage(
             @RequestParam("nodeId") String nodeId,
-            @RequestParam(value = "depth", defaultValue = "20") int depth) {
+            @RequestParam(value = "depth", defaultValue = "20") int depth,
+            @RequestParam(value = "aggregateByParent", defaultValue = "false") boolean aggregateByParent) {
 
         // format: type:namespace:name
         MarquezId centerId = LineageNodeParser.parseNodeId(nodeId);
         String type = LineageNodeParser.parseType(nodeId);
 
-        // Phase 1: BFS to discover all nodes and collect job documents
-        Set<Node> nodes = new LinkedHashSet<>();
-        Queue<BfsNode> queue = new LinkedList<>();
-        Set<String> visited = new HashSet<>();
-        Map<String, JobDocument> discoveredJobs = new HashMap<>(); // nodeId -> JobDocument
+        if ("symlink".equals(type)) {
+            org.springframework.data.mongodb.core.query.Query symlinkQuery = new org.springframework.data.mongodb.core.query.Query(
+                    org.springframework.data.mongodb.core.query.Criteria.where("facets.symlinks.identifiers").elemMatch(
+                            org.springframework.data.mongodb.core.query.Criteria.where("namespace").is(centerId.getNamespace())
+                                    .and("name").is(centerId.getName())
+                    )
+            );
 
-        queue.add(new BfsNode(type, centerId, 0));
-        visited.add(nodeId);
-
-        while (!queue.isEmpty()) {
-            BfsNode current = queue.poll();
-            if (current.depth >= depth)
-                continue;
-
-            if ("job".equals(current.type)) {
-                processJob(current.id, nodes, queue, visited, current.depth, discoveredJobs);
-            } else if ("dataset".equals(current.type)) {
-                processDataset(current.id, nodes, queue, visited, current.depth);
+            InputDatasetFacetDocument inputFacet = mongoTemplate.findOne(symlinkQuery, InputDatasetFacetDocument.class);
+            if (inputFacet != null) {
+                centerId = inputFacet.getDatasetId();
+                type = "dataset";
+                nodeId = "dataset:" + centerId.getNamespace() + ":" + centerId.getName();
+            } else {
+                OutputDatasetFacetDocument outputFacet = mongoTemplate.findOne(symlinkQuery, OutputDatasetFacetDocument.class);
+                if (outputFacet != null) {
+                    centerId = outputFacet.getDatasetId();
+                    type = "dataset";
+                    nodeId = "dataset:" + centerId.getNamespace() + ":" + centerId.getName();
+                } else {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Symlink not found: " + centerId.getNamespace() + ":" + centerId.getName());
+                }
             }
         }
 
-        // Phase 2: Batch-load latest runs for all discovered jobs (single query)
+        Set<Node> nodes = new LinkedHashSet<>();
+        Set<String> visited = new HashSet<>();
+        Map<String, JobDocument> discoveredJobs = new HashMap<>(); // nodeId -> JobDocument
+
+        List<BfsNode> currentLayer = new ArrayList<>();
+        currentLayer.add(new BfsNode(type, centerId, 0));
+        visited.add(nodeId);
+
+        for (int currentDepth = 0; currentDepth < depth; currentDepth++) {
+            if (currentLayer.isEmpty()) break;
+
+            List<MarquezId> jobIdsToFetch = new ArrayList<>();
+            List<MarquezId> datasetIdsToFetch = new ArrayList<>();
+
+            for (BfsNode node : currentLayer) {
+                if ("job".equals(node.type)) jobIdsToFetch.add(node.id);
+                else if ("dataset".equals(node.type)) datasetIdsToFetch.add(node.id);
+            }
+
+            List<BfsNode> nextLayer = new ArrayList<>();
+
+            // 1. Process Jobs
+            if (!jobIdsToFetch.isEmpty()) {
+                Iterable<JobDocument> jobs = jobRepository.findAllById(jobIdsToFetch);
+                for (JobDocument job : jobs) {
+                    processJobBatch(job, nodes, nextLayer, visited, currentDepth, discoveredJobs);
+                }
+            }
+
+            // 2. Process Datasets
+            if (!datasetIdsToFetch.isEmpty()) {
+                Iterable<DatasetDocument> datasets = datasetRepository.findAllById(datasetIdsToFetch);
+
+                // Batch-fetch all edges
+                List<LineageEdgeDocument> allEdges = new ArrayList<>();
+                for (List<MarquezId> batch : partition(datasetIdsToFetch, 100)) {
+                    List<org.springframework.data.mongodb.core.query.Criteria> edgeConditions = new ArrayList<>();
+                    for (MarquezId dsId : batch) {
+                        edgeConditions.add(
+                                org.springframework.data.mongodb.core.query.Criteria.where("sourceNamespace").is(dsId.getNamespace()).and("sourceName").is(dsId.getName())
+                        );
+                        edgeConditions.add(
+                                org.springframework.data.mongodb.core.query.Criteria.where("targetNamespace").is(dsId.getNamespace()).and("targetName").is(dsId.getName())
+                        );
+                    }
+                    if (!edgeConditions.isEmpty()) {
+                        allEdges.addAll(mongoTemplate.find(
+                                new org.springframework.data.mongodb.core.query.Query(
+                                        new org.springframework.data.mongodb.core.query.Criteria().orOperator(edgeConditions)
+                                ), LineageEdgeDocument.class
+                        ));
+                    }
+                }
+
+                Map<MarquezId, List<LineageEdgeDocument>> datasetToEdges = new HashMap<>();
+                for (LineageEdgeDocument edge : allEdges) {
+                    MarquezId sourceId = new MarquezId(edge.getSourceNamespace(), edge.getSourceName());
+                    MarquezId targetId = new MarquezId(edge.getTargetNamespace(), edge.getTargetName());
+                    datasetToEdges.computeIfAbsent(sourceId, k -> new ArrayList<>()).add(edge);
+                    datasetToEdges.computeIfAbsent(targetId, k -> new ArrayList<>()).add(edge);
+                }
+
+                Iterable<InputDatasetFacetDocument> inputFacets = inputFacetRepository.findAllById(datasetIdsToFetch);
+                Map<MarquezId, InputDatasetFacetDocument> inputFacetMap = new HashMap<>();
+                inputFacets.forEach(f -> inputFacetMap.put(f.getDatasetId(), f));
+
+                Iterable<OutputDatasetFacetDocument> outputFacets = outputFacetRepository.findAllById(datasetIdsToFetch);
+                Map<MarquezId, OutputDatasetFacetDocument> outputFacetMap = new HashMap<>();
+                outputFacets.forEach(f -> outputFacetMap.put(f.getDatasetId(), f));
+
+                for (DatasetDocument ds : datasets) {
+                    processDatasetBatch(ds, nodes, nextLayer, visited, currentDepth,
+                            datasetToEdges.getOrDefault(ds.getId(), Collections.emptyList()),
+                            inputFacetMap.get(ds.getId()),
+                            outputFacetMap.get(ds.getId()));
+                }
+            }
+
+            currentLayer = nextLayer;
+        }
+
+        // Phase 1.5: Aggregate by Parent Job if requested
+        if (aggregateByParent) { // We declared it in the method signature
+            Set<MarquezId> parentIdsToFetch = new HashSet<>();
+            Map<String, String> childToParentNodeId = new HashMap<>();
+
+            for (JobDocument job : discoveredJobs.values()) {
+                if (job.getParentJobName() != null) {
+                    String childNodeId = "job:" + job.getId().getNamespace() + ":" + job.getId().getName();
+                    String parentNodeId = "job:" + job.getId().getNamespace() + ":" + job.getParentJobName();
+                    childToParentNodeId.put(childNodeId, parentNodeId);
+                    
+                    if (!discoveredJobs.containsKey(parentNodeId)) {
+                        parentIdsToFetch.add(new MarquezId(job.getId().getNamespace(), job.getParentJobName()));
+                    }
+                }
+            }
+
+            if (!parentIdsToFetch.isEmpty()) {
+                Iterable<JobDocument> parentJobs = jobRepository.findAllById(parentIdsToFetch);
+                for (JobDocument pJob : parentJobs) {
+                    String pNodeId = "job:" + pJob.getId().getNamespace() + ":" + pJob.getId().getName();
+                    discoveredJobs.put(pNodeId, pJob);
+                    nodes.add(new Node(pNodeId, "JOB", lineageNodeMapper.mapJob(pJob), new HashSet<>(), new HashSet<>()));
+                }
+            }
+
+            if (!childToParentNodeId.isEmpty()) {
+                Map<String, Node> nodeMap = new HashMap<>();
+                for (Node n : nodes) nodeMap.put(n.id(), n);
+
+                for (Map.Entry<String, String> entry : childToParentNodeId.entrySet()) {
+                    String childId = entry.getKey();
+                    String parentId = entry.getValue();
+
+                    Node childNode = nodeMap.get(childId);
+                    Node parentNode = nodeMap.get(parentId);
+
+                    if (childNode != null && parentNode != null) {
+                        // Inherit edges
+                        for (Edge inEdge : childNode.inEdges()) {
+                            parentNode.inEdges().add(new Edge(inEdge.origin(), parentId));
+                        }
+                        for (Edge outEdge : childNode.outEdges()) {
+                            parentNode.outEdges().add(new Edge(parentId, outEdge.destination()));
+                        }
+                        
+                        nodeMap.remove(childId);
+                    }
+                }
+
+                // Update edges in all remaining nodes to point to parent instead of child
+                for (Node n : nodeMap.values()) {
+                    Set<Edge> updatedInEdges = new HashSet<>();
+                    for (Edge inEdge : n.inEdges()) {
+                        String newOrigin = childToParentNodeId.getOrDefault(inEdge.origin(), inEdge.origin());
+                        updatedInEdges.add(new Edge(newOrigin, n.id()));
+                    }
+                    n.inEdges().clear();
+                    n.inEdges().addAll(updatedInEdges);
+
+                    Set<Edge> updatedOutEdges = new HashSet<>();
+                    for (Edge outEdge : n.outEdges()) {
+                        String newDest = childToParentNodeId.getOrDefault(outEdge.destination(), outEdge.destination());
+                        updatedOutEdges.add(new Edge(n.id(), newDest));
+                    }
+                    n.outEdges().clear();
+                    n.outEdges().addAll(updatedOutEdges);
+                }
+
+                nodes = new LinkedHashSet<>(nodeMap.values());
+            }
+        }
+
+        // Phase 2: Batch-load latest runs for all discovered jobs
         if (!discoveredJobs.isEmpty()) {
             Map<String, RunDocument> latestRuns = batchLoadLatestRuns(discoveredJobs.values());
 
-            // Rebuild job nodes with run data
             Set<Node> finalNodes = new LinkedHashSet<>();
             for (Node node : nodes) {
                 if ("JOB".equals(node.type()) && discoveredJobs.containsKey(node.id())) {
@@ -102,139 +260,108 @@ public class OpenLineageResource {
         return new LineageResponse(nodes);
     }
 
-    /**
-     * Batch-load the latest run for each job in a single MongoDB query.
-     * Returns a map of "namespace:name" -> RunDocument.
-     */
+    private <T> List<List<T>> partition(List<T> list, int size) {
+        List<List<T>> result = new ArrayList<>();
+        for (int i = 0; i < list.size(); i += size) {
+            result.add(list.subList(i, Math.min(list.size(), i + size)));
+        }
+        return result;
+    }
+
     private Map<String, RunDocument> batchLoadLatestRuns(java.util.Collection<JobDocument> jobs) {
-        Map<String, RunDocument> result = new HashMap<>();
+        Map<String, RunDocument> result = new java.util.concurrent.ConcurrentHashMap<>();
 
-        // Build $or conditions for all jobs
-        List<org.springframework.data.mongodb.core.query.Criteria> conditions = new java.util.ArrayList<>();
-        for (JobDocument job : jobs) {
-            conditions.add(org.springframework.data.mongodb.core.query.Criteria
-                    .where("jobNamespace").is(job.getId().getNamespace())
-                    .and("jobName").is(job.getId().getName()));
-        }
-        if (conditions.isEmpty())
-            return result;
+        // DocumentDB/MongoDB handles parallel independent `.limit(1)` queries extremely fast,
+        // avoiding millions of historical run documents being shipped over the wire.
+        jobs.parallelStream().forEach(job -> {
+            org.springframework.data.mongodb.core.query.Query query = new org.springframework.data.mongodb.core.query.Query(
+                    org.springframework.data.mongodb.core.query.Criteria
+                            .where("jobNamespace").is(job.getId().getNamespace())
+                            .and("jobName").is(job.getId().getName()))
+                    .with(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "eventTime"))
+                    .limit(1);
 
-        // Single query: fetch all runs for all discovered jobs, sorted by eventTime
-        // desc
-        org.springframework.data.mongodb.core.query.Query query = new org.springframework.data.mongodb.core.query.Query(
-                new org.springframework.data.mongodb.core.query.Criteria().orOperator(conditions))
-                .with(org.springframework.data.domain.Sort.by("eventTime").descending());
-
-        List<RunDocument> allRuns = mongoTemplate.find(query, RunDocument.class);
-
-        // Pick the first (latest) run per job — results are sorted desc
-        for (RunDocument run : allRuns) {
-            String key = run.getJob().getNamespace() + ":" + run.getJob().getName();
-            result.putIfAbsent(key, run); // first = latest due to desc sort
-        }
+            RunDocument latestRun = mongoTemplate.findOne(query, RunDocument.class);
+            if (latestRun != null) {
+                String key = job.getId().getNamespace() + ":" + job.getId().getName();
+                result.put(key, latestRun);
+            }
+        });
 
         return result;
     }
 
-    private void processJob(MarquezId jobId, Set<Node> nodes, Queue<BfsNode> queue, Set<String> visited,
+    private void processJobBatch(JobDocument job, Set<Node> nodes, List<BfsNode> nextLayer, Set<String> visited,
             int currentDepth, Map<String, JobDocument> discoveredJobs) {
-        Optional<JobDocument> jobOpt = jobRepository.findById(jobId);
-        if (jobOpt.isEmpty())
-            return;
-        JobDocument job = jobOpt.get();
-
-        // Add Job Node
+        
         String jobNodeId = "job:" + job.getId().getNamespace() + ":" + job.getId().getName();
         Set<Edge> inEdges = new HashSet<>();
         Set<Edge> outEdges = new HashSet<>();
 
-        // Inputs (Dataset -> Job)
         if (job.getInputs() != null) {
             for (MarquezId inputId : job.getInputs()) {
                 String inputNodeId = "dataset:" + inputId.getNamespace() + ":" + inputId.getName();
                 inEdges.add(new Edge(inputNodeId, jobNodeId));
                 if (visited.add(inputNodeId)) {
-                    queue.add(new BfsNode("dataset", inputId, currentDepth + 1));
+                    nextLayer.add(new BfsNode("dataset", inputId, currentDepth + 1));
                 }
             }
         }
 
-        // Outputs (Job -> Dataset)
         if (job.getOutputs() != null) {
             for (MarquezId outputId : job.getOutputs()) {
                 String outputNodeId = "dataset:" + outputId.getNamespace() + ":" + outputId.getName();
                 outEdges.add(new Edge(jobNodeId, outputNodeId));
                 if (visited.add(outputNodeId)) {
-                    queue.add(new BfsNode("dataset", outputId, currentDepth + 1));
+                    nextLayer.add(new BfsNode("dataset", outputId, currentDepth + 1));
                 }
             }
         }
 
-        // Store job for batch run loading; use placeholder data for now
         discoveredJobs.put(jobNodeId, job);
-        JobData placeholderData = lineageNodeMapper.mapJob(job); // No run data yet
+        JobData placeholderData = lineageNodeMapper.mapJob(job); 
         nodes.add(new Node(jobNodeId, "JOB", placeholderData, inEdges, outEdges));
     }
 
-    private void processDataset(MarquezId datasetId, Set<Node> nodes, Queue<BfsNode> queue, Set<String> visited,
-            int currentDepth) {
-        Optional<DatasetDocument> dsOpt = datasetRepository.findById(datasetId);
-        if (dsOpt.isEmpty())
-            return;
-        DatasetDocument ds = dsOpt.get();
-
-        String dsNodeId = "dataset:" + ds.getId().getNamespace() + ":" + ds.getId().getName();
+    private void processDatasetBatch(DatasetDocument ds, Set<Node> nodes, List<BfsNode> nextLayer, Set<String> visited,
+            int currentDepth, List<LineageEdgeDocument> dsEdges, 
+            InputDatasetFacetDocument inputFacet, OutputDatasetFacetDocument outputFacet) {
+            
+        MarquezId datasetId = ds.getId();
+        String dsNodeId = "dataset:" + datasetId.getNamespace() + ":" + datasetId.getName();
         Set<Edge> inEdges = new HashSet<>();
         Set<Edge> outEdges = new HashSet<>();
 
-        // Use lineage_edges collection — indexed lookups instead of scanning all jobs
-        // Find jobs that produce this dataset (Job → Dataset edges where this dataset
-        // is target)
-        List<LineageEdgeDocument> producerEdges = lineageEdgeRepository
-                .findByTargetNamespaceAndTargetName(datasetId.getNamespace(), datasetId.getName());
-        for (LineageEdgeDocument edge : producerEdges) {
-            if ("job".equals(edge.getSourceType())) {
+        for (LineageEdgeDocument edge : dsEdges) {
+            if ("job".equals(edge.getSourceType()) && edge.getTargetNamespace().equals(datasetId.getNamespace()) && edge.getTargetName().equals(datasetId.getName())) {
                 String jobNodeId = "job:" + edge.getSourceNamespace() + ":" + edge.getSourceName();
                 inEdges.add(new Edge(jobNodeId, dsNodeId));
                 MarquezId jobId = new MarquezId(edge.getSourceNamespace(), edge.getSourceName());
                 if (visited.add(jobNodeId)) {
-                    queue.add(new BfsNode("job", jobId, currentDepth + 1));
+                    nextLayer.add(new BfsNode("job", jobId, currentDepth + 1));
                 }
             }
-        }
-
-        // Find jobs that consume this dataset (Dataset → Job edges where this dataset
-        // is source)
-        List<LineageEdgeDocument> consumerEdges = lineageEdgeRepository
-                .findBySourceNamespaceAndSourceName(datasetId.getNamespace(), datasetId.getName());
-        for (LineageEdgeDocument edge : consumerEdges) {
-            if ("job".equals(edge.getTargetType())) {
+            if ("job".equals(edge.getTargetType()) && edge.getSourceNamespace().equals(datasetId.getNamespace()) && edge.getSourceName().equals(datasetId.getName())) {
                 String jobNodeId = "job:" + edge.getTargetNamespace() + ":" + edge.getTargetName();
                 outEdges.add(new Edge(dsNodeId, jobNodeId));
                 MarquezId jobId = new MarquezId(edge.getTargetNamespace(), edge.getTargetName());
                 if (visited.add(jobNodeId)) {
-                    queue.add(new BfsNode("job", jobId, currentDepth + 1));
+                    nextLayer.add(new BfsNode("job", jobId, currentDepth + 1));
                 }
             }
         }
 
-        // Fetch merged facets
         Map<String, com.openlineage.server.domain.Facet> mergedFacets = new HashMap<>();
-        inputFacetRepository.findById(ds.getId()).ifPresent(d -> {
-            if (d.getFacets() != null)
-                mergedFacets.putAll(d.getFacets());
-        });
-        outputFacetRepository.findById(ds.getId()).ifPresent(d -> {
-            if (d.getFacets() != null)
-                mergedFacets.putAll(d.getFacets());
-        });
+        if (inputFacet != null && inputFacet.getFacets() != null) {
+            mergedFacets.putAll(inputFacet.getFacets());
+        }
+        if (outputFacet != null && outputFacet.getFacets() != null) {
+            mergedFacets.putAll(outputFacet.getFacets());
+        }
 
-        // Map to DatasetData
         DatasetData data = lineageNodeMapper.mapDataset(ds, mergedFacets);
-
         nodes.add(new Node(dsNodeId, "DATASET", data, inEdges, outEdges));
     }
-
     @GetMapping("/column-lineage")
     public LineageResponse getColumnLineage(
             @RequestParam("nodeId") String nodeId,
@@ -242,7 +369,9 @@ public class OpenLineageResource {
             @RequestParam(value = "withDownstream", defaultValue = "false") boolean withDownstream) {
 
         // 1. Fetch Dataset/Job Graph
-        LineageResponse datasetLineage = getLineage(nodeId, depth);
+        // A column lineage dataset hop is 2 graph edges. We add 1 to ensure the target dataset nodes are fetched.
+        int graphDepth = (depth * 2) + 1;
+        LineageResponse datasetLineage = getLineage(nodeId, graphDepth, false);
 
         Map<String, Set<Edge>> inEdgesMap = new HashMap<>();
         Map<String, Set<Edge>> outEdgesMap = new HashMap<>();
