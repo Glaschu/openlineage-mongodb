@@ -92,6 +92,51 @@ public class OpenLineageResource {
         currentLayer.add(new BfsNode(type, centerId, 0));
         visited.add(nodeId);
 
+        if ("job".equals(type)) {
+            if (aggregateByParent) {
+                JobDocument centerJob = jobRepository.findById(centerId).orElse(null);
+                if (centerJob != null) {
+                    String parentName = centerJob.getParentJobName() != null ? centerJob.getParentJobName() : centerId.getName();
+                    
+                    org.springframework.data.mongodb.core.query.Query relatedQuery = new org.springframework.data.mongodb.core.query.Query(
+                            org.springframework.data.mongodb.core.query.Criteria.where("parentJobName").is(parentName)
+                    );
+                    List<JobDocument> relatedJobs = mongoTemplate.find(relatedQuery, JobDocument.class);
+                    for (JobDocument related : relatedJobs) {
+                        String relatedNodeId = "job:" + related.getId().getNamespace() + ":" + related.getId().getName();
+                        if (visited.add(relatedNodeId)) {
+                            currentLayer.add(new BfsNode("job", related.getId(), 0));
+                        }
+                    }
+                    
+                    if (centerJob.getParentJobName() != null) {
+                        org.springframework.data.mongodb.core.query.Query parentQuery = new org.springframework.data.mongodb.core.query.Query(
+                                org.springframework.data.mongodb.core.query.Criteria.where("_id.name").is(parentName)
+                        );
+                        List<JobDocument> parents = mongoTemplate.find(parentQuery, JobDocument.class);
+                        for (JobDocument p : parents) {
+                            String pNodeId = "job:" + p.getId().getNamespace() + ":" + p.getId().getName();
+                            if (visited.add(pNodeId)) {
+                                currentLayer.add(new BfsNode("job", p.getId(), 0));
+                            }
+                        }
+                    }
+                }
+            } else {
+                org.springframework.data.mongodb.core.query.Query childQuery = new org.springframework.data.mongodb.core.query.Query(
+                        org.springframework.data.mongodb.core.query.Criteria.where("parentJobName").is(centerId.getName())
+                                .and("_id.namespace").is(centerId.getNamespace())
+                );
+                List<JobDocument> childJobs = mongoTemplate.find(childQuery, JobDocument.class);
+                for (JobDocument child : childJobs) {
+                    String childNodeId = "job:" + child.getId().getNamespace() + ":" + child.getId().getName();
+                    if (visited.add(childNodeId)) {
+                        currentLayer.add(new BfsNode("job", child.getId(), 0));
+                    }
+                }
+            }
+        }
+
         for (int currentDepth = 0; currentDepth < depth; currentDepth++) {
             if (currentLayer.isEmpty()) break;
 
@@ -165,78 +210,7 @@ public class OpenLineageResource {
             currentLayer = nextLayer;
         }
 
-        // Phase 1.5: Aggregate by Parent Job if requested
-        if (aggregateByParent) { // We declared it in the method signature
-            Set<MarquezId> parentIdsToFetch = new HashSet<>();
-            Map<String, String> childToParentNodeId = new HashMap<>();
 
-            for (JobDocument job : discoveredJobs.values()) {
-                if (job.getParentJobName() != null) {
-                    String childNodeId = "job:" + job.getId().getNamespace() + ":" + job.getId().getName();
-                    String parentNodeId = "job:" + job.getId().getNamespace() + ":" + job.getParentJobName();
-                    childToParentNodeId.put(childNodeId, parentNodeId);
-                    
-                    if (!discoveredJobs.containsKey(parentNodeId)) {
-                        parentIdsToFetch.add(new MarquezId(job.getId().getNamespace(), job.getParentJobName()));
-                    }
-                }
-            }
-
-            if (!parentIdsToFetch.isEmpty()) {
-                Iterable<JobDocument> parentJobs = jobRepository.findAllById(parentIdsToFetch);
-                for (JobDocument pJob : parentJobs) {
-                    String pNodeId = "job:" + pJob.getId().getNamespace() + ":" + pJob.getId().getName();
-                    discoveredJobs.put(pNodeId, pJob);
-                    nodes.add(new Node(pNodeId, "JOB", lineageNodeMapper.mapJob(pJob), new HashSet<>(), new HashSet<>()));
-                }
-            }
-
-            if (!childToParentNodeId.isEmpty()) {
-                Map<String, Node> nodeMap = new HashMap<>();
-                for (Node n : nodes) nodeMap.put(n.id(), n);
-
-                for (Map.Entry<String, String> entry : childToParentNodeId.entrySet()) {
-                    String childId = entry.getKey();
-                    String parentId = entry.getValue();
-
-                    Node childNode = nodeMap.get(childId);
-                    Node parentNode = nodeMap.get(parentId);
-
-                    if (childNode != null && parentNode != null) {
-                        // Inherit edges
-                        for (Edge inEdge : childNode.inEdges()) {
-                            parentNode.inEdges().add(new Edge(inEdge.origin(), parentId));
-                        }
-                        for (Edge outEdge : childNode.outEdges()) {
-                            parentNode.outEdges().add(new Edge(parentId, outEdge.destination()));
-                        }
-                        
-                        nodeMap.remove(childId);
-                    }
-                }
-
-                // Update edges in all remaining nodes to point to parent instead of child
-                for (Node n : nodeMap.values()) {
-                    Set<Edge> updatedInEdges = new HashSet<>();
-                    for (Edge inEdge : n.inEdges()) {
-                        String newOrigin = childToParentNodeId.getOrDefault(inEdge.origin(), inEdge.origin());
-                        updatedInEdges.add(new Edge(newOrigin, n.id()));
-                    }
-                    n.inEdges().clear();
-                    n.inEdges().addAll(updatedInEdges);
-
-                    Set<Edge> updatedOutEdges = new HashSet<>();
-                    for (Edge outEdge : n.outEdges()) {
-                        String newDest = childToParentNodeId.getOrDefault(outEdge.destination(), outEdge.destination());
-                        updatedOutEdges.add(new Edge(n.id(), newDest));
-                    }
-                    n.outEdges().clear();
-                    n.outEdges().addAll(updatedOutEdges);
-                }
-
-                nodes = new LinkedHashSet<>(nodeMap.values());
-            }
-        }
 
         // Phase 2: Batch-load latest runs for all discovered jobs
         if (!discoveredJobs.isEmpty()) {

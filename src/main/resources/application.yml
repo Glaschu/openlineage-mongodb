@@ -10,10 +10,10 @@ spring:
       host: ${MONGODB_HOST:localhost}
       port: ${MONGODB_PORT:27017}
       database: openlineage
-      username: ${MONGODB_USER:}
-      password: ${MONGODB_PASSWORD:}
-      authentication-database: admin
-      replica-set-name: ${MONGODB_REPLICA_SET:rs0}
+      # username: ${MONGODB_USER:}
+      # password: ${MONGODB_PASSWORD:}
+      # authentication-database: admin
+      # replica-set-name: ${MONGODB_REPLICA_SET:rs0}
       # Auto-index creation should be disabled in production for DocumentDB 4.0 to avoid timeouts
       auto-index-creation: true
       connection-pool:

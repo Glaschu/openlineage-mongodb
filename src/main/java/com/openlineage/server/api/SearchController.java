@@ -9,8 +9,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.TextCriteria;
-import org.springframework.data.mongodb.core.query.TextQuery;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -76,43 +74,9 @@ public class SearchController {
     }
 
     /**
-     * Search jobs using DocumentDB text index on searchName field.
-     * Falls back to regex if text search fails (e.g., no text index yet).
+     * Search jobs using regex on _id.name (since DocumentDB does not support $text index natively)
      */
     private List<SearchResult> searchJobs(String query, String namespace, String before, String after, int limit) {
-        try {
-            // Use $text query — backed by DocumentDB text index on searchName
-            TextCriteria textCriteria = TextCriteria.forDefaultLanguage().matchingPhrase(query);
-            Query jobQuery = TextQuery.queryText(textCriteria).sortByScore();
-            addFilters(jobQuery, namespace, before, after);
-            jobQuery.limit(limit);
-            List<JobDocument> jobs = mongoTemplate.find(jobQuery, JobDocument.class);
-            return jobs.stream().map(searchMapper::toSearchResult).toList();
-        } catch (Exception e) {
-            // Fallback: regex on _id.name (works without text index but slower)
-            return searchJobsFallback(query, namespace, before, after, limit);
-        }
-    }
-
-    /**
-     * Search datasets using DocumentDB text index on searchName field.
-     * Falls back to regex if text search fails.
-     */
-    private List<SearchResult> searchDatasets(String query, String namespace, String before, String after, int limit) {
-        try {
-            TextCriteria textCriteria = TextCriteria.forDefaultLanguage().matchingPhrase(query);
-            Query dsQuery = TextQuery.queryText(textCriteria).sortByScore();
-            addFilters(dsQuery, namespace, before, after);
-            dsQuery.limit(limit);
-            List<DatasetDocument> datasets = mongoTemplate.find(dsQuery, DatasetDocument.class);
-            return datasets.stream().map(searchMapper::toSearchResult).toList();
-        } catch (Exception e) {
-            return searchDatasetsFallback(query, namespace, before, after, limit);
-        }
-    }
-
-    /** Regex fallback for environments without text index */
-    private List<SearchResult> searchJobsFallback(String query, String namespace, String before, String after, int limit) {
         String regex = "(?i).*" + query + ".*";
         Criteria criteria = Criteria.where("_id.name").regex(regex);
         Query jobQuery = new Query(criteria);
@@ -122,7 +86,10 @@ public class SearchController {
         return jobs.stream().map(searchMapper::toSearchResult).toList();
     }
 
-    private List<SearchResult> searchDatasetsFallback(String query, String namespace, String before, String after, int limit) {
+    /**
+     * Search datasets using regex on _id.name (since DocumentDB does not support $text index natively)
+     */
+    private List<SearchResult> searchDatasets(String query, String namespace, String before, String after, int limit) {
         String regex = "(?i).*" + query + ".*";
         Criteria criteria = Criteria.where("_id.name").regex(regex);
         Query dsQuery = new Query(criteria);

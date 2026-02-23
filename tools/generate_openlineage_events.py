@@ -90,7 +90,7 @@ def generate_run_event(event_type, time, run_id, job, inputs, outputs, parent_ru
         
     return {
         "eventType": event_type,
-        "eventTime": time.isoformat() + "Z",
+        "eventTime": time.isoformat().replace("+00:00", "Z"),
         "run": {
             "runId": run_id,
             "facets": run_facets
@@ -159,25 +159,22 @@ def post_events(events, target_url):
     print(f"Posting {len(events)} events to {target_url}...")
     headers = {'Content-Type': 'application/json'}
     
-    req = urllib.request.Request(target_url, data=json.dumps(events).encode('utf-8'), headers=headers, method='POST')
-    try:
-        urllib.request.urlopen(req)
-        print("Successfully posted bulk events.")
-    except Exception as e:
-        print(f"Error posting events: {e}")
-        # Try falling back to individual POSTs if bulk isn't supported
-        print("Trying individual event posts to /api/v1/lineage ...")
-        fallback_url = target_url.replace('/events', '')
-        success_count = 0
-        for ev in events:
-            ev_req = urllib.request.Request(fallback_url, data=json.dumps(ev).encode('utf-8'), headers=headers, method='POST')
-            try:
-                urllib.request.urlopen(ev_req)
-                success_count += 1
-            except Exception as ev_e:
-                print(f"Error posting individual event: {ev_e}")
-                break
-        print(f"Successfully posted {success_count}/{len(events)} events.")
+    # Chunk into groups of 50 to avoid Tomcat default maxPostSize (2MB)
+    chunk_size = 50
+    chunks = [events[i:i + chunk_size] for i in range(0, len(events), chunk_size)]
+    
+    success_count = 0
+    for chunk in chunks:
+        req = urllib.request.Request(target_url, data=json.dumps(chunk).encode('utf-8'), headers=headers, method='POST')
+        try:
+            urllib.request.urlopen(req)
+            success_count += len(chunk)
+            print(f"Successfully posted chunk of {len(chunk)} events. Total: {success_count}/{len(events)}")
+        except Exception as e:
+            print(f"Error posting chunk: {e}")
+            break
+            
+    print(f"Finished. Successfully posted {success_count}/{len(events)} events.")
 
 
 if __name__ == "__main__":

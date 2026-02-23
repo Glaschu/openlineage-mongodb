@@ -3,6 +3,9 @@ package com.openlineage.server.api;
 import com.openlineage.server.storage.document.JobDocument;
 import com.openlineage.server.storage.repository.JobRepository;
 import com.openlineage.server.storage.document.MarquezId;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,15 +20,18 @@ public class JobController {
     private final com.openlineage.server.storage.repository.RunRepository runRepository;
     private final com.openlineage.server.storage.repository.TagRepository tagRepository;
     private final com.openlineage.server.mapper.JobMapper jobMapper;
+    private final MongoTemplate mongoTemplate;
 
     public JobController(JobRepository repository,
             com.openlineage.server.storage.repository.RunRepository runRepository,
             com.openlineage.server.storage.repository.TagRepository tagRepository,
-            com.openlineage.server.mapper.JobMapper jobMapper) {
+            com.openlineage.server.mapper.JobMapper jobMapper,
+            MongoTemplate mongoTemplate) {
         this.repository = repository;
         this.runRepository = runRepository;
         this.tagRepository = tagRepository;
         this.jobMapper = jobMapper;
+        this.mongoTemplate = mongoTemplate;
     }
 
     @GetMapping("/jobs")
@@ -33,29 +39,37 @@ public class JobController {
             @RequestParam(defaultValue = "10") int limit,
             @RequestParam(defaultValue = "0") int offset,
             @RequestParam(required = false, defaultValue = "false") boolean rootOnly,
-            @RequestParam(required = false) String parentJobName) {
+            @RequestParam(required = false) String parentJobName,
+            @RequestParam(required = false, defaultValue = "false") boolean hasLineage) {
 
-        // Ensure limit is positive to avoid division by zero
-        if (limit <= 0)
-            limit = 10;
-
-        org.springframework.data.domain.Pageable pageRequest = org.springframework.data.domain.PageRequest
-                .of(offset / limit, limit, org.springframework.data.domain.Sort.by("updatedAt").descending());
+        if (limit <= 0) limit = 10;
         
-        org.springframework.data.domain.Page<JobDocument> page;
+        Query query = new Query();
         if (parentJobName != null) {
-            page = repository.findByParentJobName(parentJobName, pageRequest);
+            query.addCriteria(Criteria.where("parentJobName").is(parentJobName));
         } else if (rootOnly) {
-            page = repository.findByParentJobNameIsNull(pageRequest);
-        } else {
-            page = repository.findAll(pageRequest);
+            query.addCriteria(Criteria.where("parentJobName").isNull());
+        }
+        
+        if (hasLineage) {
+            query.addCriteria(new Criteria().orOperator(
+                Criteria.where("inputs.0").exists(true),
+                Criteria.where("outputs.0").exists(true)
+            ));
         }
 
-        List<com.openlineage.server.api.models.JobResponse> jobs = page.getContent().stream()
+        long totalCount = mongoTemplate.count(query, JobDocument.class);
+        
+        query.with(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "updatedAt"));
+        query.skip(offset).limit(limit);
+
+        List<JobDocument> page = mongoTemplate.find(query, JobDocument.class);
+
+        List<com.openlineage.server.api.models.JobResponse> jobs = page.stream()
                 .map(this::mapJob)
                 .collect(java.util.stream.Collectors.toList());
 
-        return new com.openlineage.server.api.models.JobResponse.JobsResponse(jobs, (int) page.getTotalElements());
+        return new com.openlineage.server.api.models.JobResponse.JobsResponse(jobs, (int) totalCount);
     }
 
     @GetMapping("/namespaces/{namespace}/jobs")
@@ -64,28 +78,39 @@ public class JobController {
             @RequestParam(defaultValue = "10") int limit,
             @RequestParam(defaultValue = "0") int offset,
             @RequestParam(required = false, defaultValue = "false") boolean rootOnly,
-            @RequestParam(required = false) String parentJobName) {
+            @RequestParam(required = false) String parentJobName,
+            @RequestParam(required = false, defaultValue = "false") boolean hasLineage) {
 
-        if (limit <= 0)
-            limit = 10;
+        if (limit <= 0) limit = 10;
 
-        org.springframework.data.domain.Pageable pageRequest = org.springframework.data.domain.PageRequest
-                .of(offset / limit, limit, org.springframework.data.domain.Sort.by("updatedAt").descending());
-
-        org.springframework.data.domain.Page<JobDocument> page;
+        Query query = new Query();
+        query.addCriteria(Criteria.where("_id.namespace").is(namespace));
+        
         if (parentJobName != null) {
-            page = repository.findByIdNamespaceAndParentJobName(namespace, parentJobName, pageRequest);
+            query.addCriteria(Criteria.where("parentJobName").is(parentJobName));
         } else if (rootOnly) {
-            page = repository.findByIdNamespaceAndParentJobNameIsNull(namespace, pageRequest);
-        } else {
-            page = repository.findByIdNamespace(namespace, pageRequest);
+            query.addCriteria(Criteria.where("parentJobName").isNull());
         }
 
-        List<com.openlineage.server.api.models.JobResponse> jobs = page.getContent().stream()
+        if (hasLineage) {
+            query.addCriteria(new Criteria().orOperator(
+                Criteria.where("inputs.0").exists(true),
+                Criteria.where("outputs.0").exists(true)
+            ));
+        }
+
+        long totalCount = mongoTemplate.count(query, JobDocument.class);
+
+        query.with(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "updatedAt"));
+        query.skip(offset).limit(limit);
+
+        List<JobDocument> page = mongoTemplate.find(query, JobDocument.class);
+
+        List<com.openlineage.server.api.models.JobResponse> jobs = page.stream()
                 .map(this::mapJob)
                 .collect(java.util.stream.Collectors.toList());
 
-        return new com.openlineage.server.api.models.JobResponse.JobsResponse(jobs, (int) page.getTotalElements());
+        return new com.openlineage.server.api.models.JobResponse.JobsResponse(jobs, (int) totalCount);
     }
 
     @GetMapping("/namespaces/{namespace}/jobs/{jobName}")
