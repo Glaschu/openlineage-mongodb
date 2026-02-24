@@ -121,18 +121,18 @@ describe('table-level layout helpers', () => {
   it('findDownstreamNodes and findUpstreamNodes traverse connected components', () => {
     const { graph, datasetCurrent, jobUpstream, jobDownstream, datasetChild } = buildGraph()
 
-    expect(findDownstreamNodes(graph, null)).toEqual([])
-    expect(findDownstreamNodes(graph, 'missing-node')).toEqual([])
+    expect(findDownstreamNodes(graph, null, false)).toEqual({ nodes: [], edges: [] })
+    expect(findDownstreamNodes(graph, 'missing-node', false)).toEqual({ nodes: [], edges: [] })
 
-    const downstream = findDownstreamNodes(graph, datasetCurrent.id)
-    expect(downstream.map((node) => node.id)).toEqual([
+    const downstream = findDownstreamNodes(graph, datasetCurrent.id, false)
+    expect(downstream.nodes.map((node) => node.id)).toEqual([
       datasetCurrent.id,
       jobDownstream.id,
       datasetChild.id,
     ])
 
-    const upstream = findUpstreamNodes(graph, datasetCurrent.id)
-    expect(upstream.map((node) => node.id)).toEqual([
+    const upstream = findUpstreamNodes(graph, datasetCurrent.id, false)
+    expect(upstream.nodes.map((node) => node.id)).toEqual([
       datasetCurrent.id,
       jobUpstream.id,
     ])
@@ -141,7 +141,7 @@ describe('table-level layout helpers', () => {
   it('createElkNodes filters nodes, highlights context, and sizes datasets', () => {
     const { graph, datasetCurrent, jobDownstream, jobUpstream, datasetChild } = buildGraph()
 
-    const { nodes, edges } = createElkNodes(graph, datasetCurrent.id, false, false, null)
+    const { nodes, edges } = createElkNodes(graph, datasetCurrent.id, false, false, null, false)
 
     const nodeIds = nodes.map((node) => node.id)
     expect(nodeIds).toEqual([
@@ -157,9 +157,15 @@ describe('table-level layout helpers', () => {
     const childDatasetNode = nodes.find((node) => node.id === datasetChild.id)
     expect(childDatasetNode?.height).toBe(34 + 1 * 10)
 
-    edges.forEach((edge) => {
-      expect(edge.color).toBe(theme.palette.primary.main)
-    })
+    const edgeColors = edges.reduce((acc, edge) => {
+      acc[edge.id] = edge.color
+      return acc
+    }, {} as Record<string, string | undefined>)
+
+    expect(edgeColors[`${jobUpstream.id}:${datasetCurrent.id}`]).toBe(theme.palette.primary.main)
+    expect(edgeColors[`${datasetCurrent.id}:${jobDownstream.id}`]).toBe(theme.palette.info.main)
+    expect(edgeColors[`${jobDownstream.id}:${datasetChild.id}`]).toBe(theme.palette.info.main)
+
     expect(edges).toHaveLength(3)
     expect(edges.map((edge) => edge.id)).toEqual(
       expect.arrayContaining([
@@ -178,7 +184,8 @@ describe('table-level layout helpers', () => {
       datasetUnrelated.id,
       false,
       true,
-      `${datasetIsolated.id}`
+      `${datasetIsolated.id}`,
+      false
     )
 
     const isolatedDataset = nodes.find((node) => node.id === datasetIsolated.id)
@@ -190,6 +197,6 @@ describe('table-level layout helpers', () => {
     const outboundEdge = edges.find(
       (edge) => edge.id === `${jobIsolated.id}:${datasetIsolated.id}`
     )
-    expect(outboundEdge?.color).toBe(theme.palette.primary.main)
+    expect(outboundEdge?.color).toBe(theme.palette.info.main)
   })
 })

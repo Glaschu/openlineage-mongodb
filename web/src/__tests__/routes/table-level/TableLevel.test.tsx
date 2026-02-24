@@ -140,7 +140,8 @@ describe('TableLevel', () => {
         'DATASET:analytics:daily-table',
         true,
         false,
-        null
+        null,
+        false
       )
 
       expect(graphRenderMock).toHaveBeenCalledWith(

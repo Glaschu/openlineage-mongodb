@@ -72,14 +72,14 @@ describe('NamespaceSelect', () => {
   it('renders the prompt and selected namespace', () => {
     renderComponent('default', ['default'])
 
-    expect(screen.getByText('Namespace')).toBeTruthy()
+    expect(screen.getByPlaceholderText('Namespace')).toBeTruthy()
     // Select component structure is complex; check for value presence
     // Material UI select puts val in hidden input or displayed div.
     // 'default' should be visible.
-    expect(screen.getByText('default')).toBeTruthy()
+    expect(screen.getByDisplayValue('default')).toBeTruthy()
   })
 
-  it('dispatches selectNamespace when a different namespace is chosen', () => {
+  it('dispatches selectNamespace when a different namespace is chosen', async () => {
     const store = createMockStore('default')
     const theme = createTheme()
 
@@ -100,10 +100,10 @@ describe('NamespaceSelect', () => {
     )
 
     // Open select
-    const trigger = screen.getByRole('combobox') // might need adjustment for MUI select trigger
-    fireEvent.click(trigger) // MUI Select uses mouseDown to open menu
+    const trigger = screen.getByRole('combobox')
+    fireEvent.mouseDown(trigger) // MUI Select uses mouseDown to open menu
 
-    const option = screen.getByRole('option', { name: 'analytics' })
+    const option = await screen.findByRole('option', { name: 'analytics' })
     fireEvent.click(option)
 
     expect(selectNamespaceMock).toHaveBeenCalledWith('analytics')

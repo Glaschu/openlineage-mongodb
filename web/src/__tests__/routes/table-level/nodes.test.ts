@@ -17,8 +17,13 @@ describe('Table Level Nodes', () => {
     expect(jobRenderer).toBe(TableLineageJobNode)
   })
 
-  it('should have exactly 2 renderers', () => {
-    expect(tableLevelNodeRenderer.size).toBe(2)
+  it('should have renderer for GROUP type', () => {
+    const groupRenderer = tableLevelNodeRenderer.get('GROUP')
+    expect(groupRenderer).toBeDefined()
+  })
+
+  it('should have exactly 3 renderers', () => {
+    expect(tableLevelNodeRenderer.size).toBe(3)
   })
 
   it('should return undefined for unknown types', () => {
