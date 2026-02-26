@@ -27,6 +27,33 @@ public class DatasetMapper {
         return toResponse(doc, new HashMap<>());
     }
 
+    /**
+     * Lightweight mapping for list endpoints: columnLineage is [] if present, null
+     * if absent.
+     */
+    public DatasetResponse toResponse(DatasetDocument doc, boolean hasColumnLineage) {
+        return new DatasetResponse(
+                new DatasetResponse.DatasetId(doc.getId().getNamespace(), doc.getId().getName()),
+                "DB_TABLE",
+                doc.getId().getName(),
+                doc.getId().getName(),
+                doc.getUpdatedAt(),
+                doc.getUpdatedAt(),
+                doc.getId().getNamespace(),
+                doc.getSourceName(),
+                doc.getFields(),
+                doc.getTags() != null ? doc.getTags() : Collections.emptySet(),
+                doc.getUpdatedAt(),
+                doc.getDescription(),
+                hasColumnLineage ? Collections.emptyList() : null,
+                Collections.emptyMap(),
+                "",
+                null,
+                null,
+                doc.getIsDeleted() != null ? doc.getIsDeleted() : false,
+                doc.getCurrentVersion());
+    }
+
     public DatasetResponse toResponse(DatasetDocument doc, Map<String, Facet> facets) {
         return new DatasetResponse(
                 new DatasetResponse.DatasetId(doc.getId().getNamespace(), doc.getId().getName()),
