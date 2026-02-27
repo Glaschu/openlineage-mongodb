@@ -447,8 +447,9 @@ public class OpenLineageResource {
 
         if (withDownstream) {
             // Downstream-only BFS
-            while (!queue.isEmpty()) {
-                String current = queue.poll();
+            Queue<String> downQueue = new LinkedList<>(queue);
+            while (!downQueue.isEmpty()) {
+                String current = downQueue.poll();
                 int currentDepth = datasetDepths.get(current);
                 if (currentDepth >= depth)
                     continue;
@@ -458,25 +459,26 @@ public class OpenLineageResource {
                     if (!reachableDatasets.contains(child)) {
                         reachableDatasets.add(child);
                         datasetDepths.put(child, currentDepth + 1);
-                        queue.add(child);
+                        downQueue.add(child);
                     }
                 }
             }
-        } else {
-            // Upstream-only BFS
-            while (!queue.isEmpty()) {
-                String current = queue.poll();
-                int currentDepth = datasetDepths.get(current);
-                if (currentDepth >= depth)
-                    continue;
+        }
 
-                Set<String> parents = upstreamDatasets.getOrDefault(current, Collections.emptySet());
-                for (String parent : parents) {
-                    if (!reachableDatasets.contains(parent)) {
-                        reachableDatasets.add(parent);
-                        datasetDepths.put(parent, currentDepth + 1);
-                        queue.add(parent);
-                    }
+        // Always do Upstream-only BFS as well, so we see the ancestors
+        Queue<String> upQueue = new LinkedList<>(queue); // 'queue' still has the initial center dataset(s)
+        while (!upQueue.isEmpty()) {
+            String current = upQueue.poll();
+            int currentDepth = datasetDepths.getOrDefault(current, 0);
+            if (currentDepth >= depth)
+                continue;
+
+            Set<String> parents = upstreamDatasets.getOrDefault(current, Collections.emptySet());
+            for (String parent : parents) {
+                if (!reachableDatasets.contains(parent)) {
+                    reachableDatasets.add(parent);
+                    datasetDepths.put(parent, currentDepth + 1);
+                    upQueue.add(parent);
                 }
             }
         }
