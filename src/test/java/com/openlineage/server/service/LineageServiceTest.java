@@ -23,6 +23,7 @@ public class LineageServiceTest {
     private RunService runService;
     private DatasetService datasetService;
     private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+    private DatasetNameNormalizer nameNormalizer;
 
     @BeforeEach
     public void setup() {
@@ -32,8 +33,10 @@ public class LineageServiceTest {
         runService = mock(RunService.class);
         datasetService = mock(DatasetService.class);
         mongoTemplate = mock(org.springframework.data.mongodb.core.MongoTemplate.class);
+        nameNormalizer = new DatasetNameNormalizer(true);
 
-        service = new LineageService(eventRepo, governanceService, jobService, runService, datasetService, mongoTemplate);
+        service = new LineageService(eventRepo, governanceService, jobService, runService, datasetService,
+                mongoTemplate, nameNormalizer);
     }
 
     @Test

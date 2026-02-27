@@ -31,19 +31,22 @@ public class LineageService {
     private final RunService runService;
     private final DatasetService datasetService;
     private final MongoTemplate mongoTemplate;
+    private final DatasetNameNormalizer nameNormalizer;
 
     public LineageService(LineageEventRepository eventRepository,
             GovernanceService governanceService,
             JobService jobService,
             RunService runService,
             DatasetService datasetService,
-            MongoTemplate mongoTemplate) {
+            MongoTemplate mongoTemplate,
+            DatasetNameNormalizer nameNormalizer) {
         this.eventRepository = eventRepository;
         this.governanceService = governanceService;
         this.jobService = jobService;
         this.runService = runService;
         this.datasetService = datasetService;
         this.mongoTemplate = mongoTemplate;
+        this.nameNormalizer = nameNormalizer;
     }
 
     @Transactional
@@ -63,7 +66,7 @@ public class LineageService {
             event.inputs().forEach(d -> {
                 namespacesToCheck.add(d.namespace());
                 java.util.UUID version = datasetService.upsertDataset(d, event.eventTime(), true);
-                jobInputs.put(new MarquezId(d.namespace(), d.name()), version);
+                jobInputs.put(new MarquezId(d.namespace(), nameNormalizer.normalize(d.name())), version);
                 datasetService.upsertDataSource(d.namespace(), event.eventTime());
             });
         }
@@ -71,7 +74,7 @@ public class LineageService {
             event.outputs().forEach(d -> {
                 namespacesToCheck.add(d.namespace());
                 java.util.UUID version = datasetService.upsertDataset(d, event.eventTime(), false);
-                jobOutputs.put(new MarquezId(d.namespace(), d.name()), version);
+                jobOutputs.put(new MarquezId(d.namespace(), nameNormalizer.normalize(d.name())), version);
                 datasetService.upsertDataSource(d.namespace(), event.eventTime());
             });
         }
@@ -96,7 +99,8 @@ public class LineageService {
                             parentJobName = pName;
                             // Deterministic UUID for parent job matching VersionService logic
                             String pIdString = pNamespace + pName;
-                            parentJobUuid = java.util.UUID.nameUUIDFromBytes(pIdString.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                            parentJobUuid = java.util.UUID
+                                    .nameUUIDFromBytes(pIdString.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                         }
                     }
                 }
@@ -138,7 +142,7 @@ public class LineageService {
 
         if (event.inputs() != null) {
             for (var input : event.inputs()) {
-                upsertEdge("dataset", input.namespace(), input.name(),
+                upsertEdge("dataset", input.namespace(), nameNormalizer.normalize(input.name()),
                         "job", jobNamespace, jobName,
                         "input", event.eventTime());
             }
@@ -147,7 +151,7 @@ public class LineageService {
         if (event.outputs() != null) {
             for (var output : event.outputs()) {
                 upsertEdge("job", jobNamespace, jobName,
-                        "dataset", output.namespace(), output.name(),
+                        "dataset", output.namespace(), nameNormalizer.normalize(output.name()),
                         "output", event.eventTime());
             }
         }

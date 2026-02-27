@@ -16,12 +16,15 @@ public class DatasetService {
     private final org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
     private final FacetMergeService facetMergeService;
     private final VersionService versionService;
+    private final DatasetNameNormalizer nameNormalizer;
 
     public DatasetService(org.springframework.data.mongodb.core.MongoTemplate mongoTemplate,
-            FacetMergeService facetMergeService, VersionService versionService) {
+            FacetMergeService facetMergeService, VersionService versionService,
+            DatasetNameNormalizer nameNormalizer) {
         this.mongoTemplate = mongoTemplate;
         this.facetMergeService = facetMergeService;
         this.versionService = versionService;
+        this.nameNormalizer = nameNormalizer;
     }
 
     public java.util.UUID upsertDataset(Dataset dataset, ZonedDateTime eventTime, boolean isInput) {
@@ -36,7 +39,8 @@ public class DatasetService {
             }
         }
         String sourceName = dataset.namespace();
-        MarquezId datasetId = new MarquezId(dataset.namespace(), dataset.name());
+        String normalizedName = nameNormalizer.normalize(dataset.name());
+        MarquezId datasetId = new MarquezId(dataset.namespace(), normalizedName);
 
         // Check for existing dataset to handle versioning logic
         DatasetDocument existingDataset = mongoTemplate.findById(datasetId, DatasetDocument.class);
@@ -55,7 +59,7 @@ public class DatasetService {
 
         org.springframework.data.mongodb.core.query.Update update = new org.springframework.data.mongodb.core.query.Update()
                 .setOnInsert("createdAt", eventTime)
-                .setOnInsert("searchName", dataset.name())
+                .setOnInsert("searchName", normalizedName)
                 .set("updatedAt", eventTime)
                 .set("sourceName", sourceName)
                 .set("isDeleted", false)
@@ -67,7 +71,10 @@ public class DatasetService {
 
         if (dataset.facets() != null && !dataset.facets().isEmpty()) {
             for (java.util.Map.Entry<String, com.openlineage.server.domain.Facet> entry : dataset.facets().entrySet()) {
-                update.set("facets." + com.openlineage.server.storage.document.DocumentDbSanitizer.sanitizeKey(entry.getKey()), com.openlineage.server.storage.document.DocumentDbSanitizer.sanitize(entry.getValue()));
+                update.set(
+                        "facets." + com.openlineage.server.storage.document.DocumentDbSanitizer
+                                .sanitizeKey(entry.getKey()),
+                        com.openlineage.server.storage.document.DocumentDbSanitizer.sanitize(entry.getValue()));
             }
 
             // Extract Description
@@ -102,13 +109,25 @@ public class DatasetService {
             }
         }
 
+        // 2. Preserve partition info stripped during name normalization
+        java.util.Map<String, String> partitions = nameNormalizer.extractPartitions(dataset.name());
+        if (!partitions.isEmpty()) {
+            update.set("lastPartitionValues", partitions);
+            // Store original raw name as a symlink identifier (deduped via $addToSet)
+            java.util.Map<String, String> symlink = new java.util.LinkedHashMap<>();
+            symlink.put("namespace", dataset.namespace());
+            symlink.put("name", dataset.name());
+            symlink.put("type", "partition");
+            update.addToSet("symlinks", symlink);
+        }
+
         mongoTemplate.upsert(query, update, DatasetDocument.class);
 
         // 2. Merge Facets into Split Collections
         if (isInput) {
-            facetMergeService.mergeInputFacets(dataset.namespace(), dataset.name(), dataset.facets(), eventTime);
+            facetMergeService.mergeInputFacets(dataset.namespace(), normalizedName, dataset.facets(), eventTime);
         } else {
-            facetMergeService.mergeOutputFacets(dataset.namespace(), dataset.name(), dataset.facets(), eventTime);
+            facetMergeService.mergeOutputFacets(dataset.namespace(), normalizedName, dataset.facets(), eventTime);
         }
 
         return contextVersion;

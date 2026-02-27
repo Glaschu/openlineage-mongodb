@@ -31,6 +31,8 @@ management:
       show-details: always
 
 openlineage:
+  dataset:
+    normalize-names: true   # Strip query params & Hive partition segments from dataset names
   governance:
     cache-ttl-ms: 60000
   retention:

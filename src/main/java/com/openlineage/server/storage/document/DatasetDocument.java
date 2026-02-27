@@ -31,6 +31,15 @@ public class DatasetDocument {
     @TextIndexed
     private String searchName;
 
+    /** Latest partition key-value pairs extracted from the raw dataset name. */
+    private Map<String, String> lastPartitionValues;
+
+    /**
+     * Symlink identifiers: accumulates all raw partition names seen for this
+     * dataset.
+     */
+    private java.util.List<Map<String, String>> symlinks;
+
     public DatasetDocument() {
     }
 
@@ -125,5 +134,21 @@ public class DatasetDocument {
 
     public void setSearchName(String searchName) {
         this.searchName = searchName;
+    }
+
+    public Map<String, String> getLastPartitionValues() {
+        return lastPartitionValues;
+    }
+
+    public void setLastPartitionValues(Map<String, String> lastPartitionValues) {
+        this.lastPartitionValues = lastPartitionValues;
+    }
+
+    public java.util.List<Map<String, String>> getSymlinks() {
+        return symlinks;
+    }
+
+    public void setSymlinks(java.util.List<Map<String, String>> symlinks) {
+        this.symlinks = symlinks;
     }
 }
