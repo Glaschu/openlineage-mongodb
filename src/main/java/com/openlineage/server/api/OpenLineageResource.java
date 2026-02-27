@@ -356,11 +356,15 @@ public class OpenLineageResource {
         int graphDepth = (depth * 2) + 1;
         LineageResponse datasetLineage = getLineage(nodeId, graphDepth, false);
 
-        Map<String, Set<Edge>> inEdgesMap = new HashMap<>();
-        Map<String, Set<Edge>> outEdgesMap = new HashMap<>();
-
         // 2. Create Edges FIRST — identify which datasets participate in column lineage
-        Set<String> participatingDatasets = new HashSet<>(); // "namespace:name"
+        Set<String> allParticipatingDatasets = new HashSet<>(); // "namespace:name"
+
+        Map<String, Set<String>> upstreamDatasets = new HashMap<>();
+        Map<String, Set<String>> downstreamDatasets = new HashMap<>();
+
+        Map<String, Set<Edge>> allInEdgesMap = new HashMap<>();
+        Map<String, Set<Edge>> allOutEdgesMap = new HashMap<>();
+        Map<String, String> fieldToDataset = new HashMap<>();
 
         for (Node node : datasetLineage.graph()) {
             if ("DATASET".equals(node.type()) && node.data() instanceof DatasetData) {
@@ -370,7 +374,8 @@ public class OpenLineageResource {
                     if (facet instanceof ColumnLineageDatasetFacet) {
                         ColumnLineageDatasetFacet colLineageFacet = (ColumnLineageDatasetFacet) facet;
                         if (colLineageFacet.fields() != null) {
-                            participatingDatasets.add(dsData.namespace() + ":" + dsData.name());
+                            String targetDs = dsData.namespace() + ":" + dsData.name();
+                            allParticipatingDatasets.add(targetDs);
 
                             for (Map.Entry<String, ColumnLineageDatasetFacet.Fields> entry : colLineageFacet.fields()
                                     .entrySet()) {
@@ -378,16 +383,22 @@ public class OpenLineageResource {
                                 ColumnLineageDatasetFacet.Fields fields = entry.getValue();
                                 String outputNodeId = "datasetField:" + dsData.namespace() + ":" + dsData.name() + ":"
                                         + outputCol;
+                                fieldToDataset.put(outputNodeId, targetDs);
 
                                 for (ColumnLineageDatasetFacet.InputField inputField : fields.inputFields()) {
+                                    String sourceDs = inputField.namespace() + ":" + inputField.name();
                                     String inputNodeId = "datasetField:" + inputField.namespace() + ":"
                                             + inputField.name() + ":" + inputField.field();
+                                    fieldToDataset.put(inputNodeId, sourceDs);
 
-                                    participatingDatasets.add(inputField.namespace() + ":" + inputField.name());
+                                    allParticipatingDatasets.add(sourceDs);
+
+                                    upstreamDatasets.computeIfAbsent(targetDs, k -> new HashSet<>()).add(sourceDs);
+                                    downstreamDatasets.computeIfAbsent(sourceDs, k -> new HashSet<>()).add(targetDs);
 
                                     Edge edge = new Edge(inputNodeId, outputNodeId);
-                                    outEdgesMap.computeIfAbsent(inputNodeId, k -> new HashSet<>()).add(edge);
-                                    inEdgesMap.computeIfAbsent(outputNodeId, k -> new HashSet<>()).add(edge);
+                                    allOutEdgesMap.computeIfAbsent(inputNodeId, k -> new HashSet<>()).add(edge);
+                                    allInEdgesMap.computeIfAbsent(outputNodeId, k -> new HashSet<>()).add(edge);
                                 }
                             }
                         }
@@ -396,19 +407,78 @@ public class OpenLineageResource {
             }
         }
 
-        // 3. Create Field nodes ONLY for participating datasets (skip massive schemas
-        // with no column lineage)
+        // BFS to determine which datasets are reachable in the specified direction
+        MarquezId centerId = LineageNodeParser.parseNodeId(nodeId);
+        String centerDs = centerId.getNamespace() + ":" + centerId.getName();
+        Set<String> reachableDatasets = new HashSet<>();
+        reachableDatasets.add(centerDs);
+
+        Queue<String> queue = new LinkedList<>();
+        queue.add(centerDs);
+
+        Map<String, Integer> datasetDepths = new HashMap<>();
+        datasetDepths.put(centerDs, 0);
+
+        if (withDownstream) {
+            // Downstream-only BFS
+            while (!queue.isEmpty()) {
+                String current = queue.poll();
+                int currentDepth = datasetDepths.get(current);
+                if (currentDepth >= depth)
+                    continue;
+
+                Set<String> children = downstreamDatasets.getOrDefault(current, Collections.emptySet());
+                for (String child : children) {
+                    if (!reachableDatasets.contains(child)) {
+                        reachableDatasets.add(child);
+                        datasetDepths.put(child, currentDepth + 1);
+                        queue.add(child);
+                    }
+                }
+            }
+        } else {
+            // Upstream-only BFS
+            while (!queue.isEmpty()) {
+                String current = queue.poll();
+                int currentDepth = datasetDepths.get(current);
+                if (currentDepth >= depth)
+                    continue;
+
+                Set<String> parents = upstreamDatasets.getOrDefault(current, Collections.emptySet());
+                for (String parent : parents) {
+                    if (!reachableDatasets.contains(parent)) {
+                        reachableDatasets.add(parent);
+                        datasetDepths.put(parent, currentDepth + 1);
+                        queue.add(parent);
+                    }
+                }
+            }
+        }
+
+        Map<String, Set<Edge>> inEdgesMap = new HashMap<>();
+        Map<String, Set<Edge>> outEdgesMap = new HashMap<>();
+
+        for (Map.Entry<String, Set<Edge>> entry : allOutEdgesMap.entrySet()) {
+            for (Edge edge : entry.getValue()) {
+                String sourceDs = fieldToDataset.get(edge.origin());
+                String targetDs = fieldToDataset.get(edge.destination());
+                if (reachableDatasets.contains(sourceDs) && reachableDatasets.contains(targetDs)) {
+                    outEdgesMap.computeIfAbsent(edge.origin(), k -> new HashSet<>()).add(edge);
+                    inEdgesMap.computeIfAbsent(edge.destination(), k -> new HashSet<>()).add(edge);
+                }
+            }
+        }
+
+        // 3. Create Field nodes ONLY for participating datasets
         Map<String, com.openlineage.server.api.models.LineageResponse.NodeData> nodeDataMap = new HashMap<>();
         Set<String> fieldNodeIds = new HashSet<>();
 
         for (Node node : datasetLineage.graph()) {
-            if ("DATASET".equals(node.type())
-                    && node.data() instanceof com.openlineage.server.api.models.LineageResponse.DatasetData) {
-                com.openlineage.server.api.models.LineageResponse.DatasetData dsData = (com.openlineage.server.api.models.LineageResponse.DatasetData) node
-                        .data();
+            if ("DATASET".equals(node.type()) && node.data() instanceof DatasetData) {
+                DatasetData dsData = (DatasetData) node.data();
 
-                if (!participatingDatasets.contains(dsData.namespace() + ":" + dsData.name())) {
-                    continue; // Skip — this dataset has no column lineage, don't load its schema
+                if (!reachableDatasets.contains(dsData.namespace() + ":" + dsData.name())) {
+                    continue; // Skip — this dataset is not in our directional BFS
                 }
 
                 List<com.openlineage.server.api.models.LineageResponse.DatasetFieldData> fields = lineageNodeMapper
@@ -422,11 +492,12 @@ public class OpenLineageResource {
             }
         }
 
-        // 4. Assemble — only include field nodes that have at least one edge
+        // 4. Assemble — only include field nodes that have at least one valid edge
         Set<Node> resultNodes = new LinkedHashSet<>();
         for (String id : fieldNodeIds) {
             Set<Edge> inEdges = inEdgesMap.getOrDefault(id, Collections.emptySet());
             Set<Edge> outEdges = outEdgesMap.getOrDefault(id, Collections.emptySet());
+
             if (inEdges.isEmpty() && outEdges.isEmpty()) {
                 continue;
             }
