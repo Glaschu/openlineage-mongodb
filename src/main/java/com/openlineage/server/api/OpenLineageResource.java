@@ -62,10 +62,9 @@ public class OpenLineageResource {
         if ("symlink".equals(type)) {
             org.springframework.data.mongodb.core.query.Query symlinkQuery = new org.springframework.data.mongodb.core.query.Query(
                     org.springframework.data.mongodb.core.query.Criteria.where("facets.symlinks.identifiers").elemMatch(
-                            org.springframework.data.mongodb.core.query.Criteria.where("namespace").is(centerId.getNamespace())
-                                    .and("name").is(centerId.getName())
-                    )
-            );
+                            org.springframework.data.mongodb.core.query.Criteria.where("namespace")
+                                    .is(centerId.getNamespace())
+                                    .and("name").is(centerId.getName())));
 
             InputDatasetFacetDocument inputFacet = mongoTemplate.findOne(symlinkQuery, InputDatasetFacetDocument.class);
             if (inputFacet != null) {
@@ -73,13 +72,15 @@ public class OpenLineageResource {
                 type = "dataset";
                 nodeId = "dataset:" + centerId.getNamespace() + ":" + centerId.getName();
             } else {
-                OutputDatasetFacetDocument outputFacet = mongoTemplate.findOne(symlinkQuery, OutputDatasetFacetDocument.class);
+                OutputDatasetFacetDocument outputFacet = mongoTemplate.findOne(symlinkQuery,
+                        OutputDatasetFacetDocument.class);
                 if (outputFacet != null) {
                     centerId = outputFacet.getDatasetId();
                     type = "dataset";
                     nodeId = "dataset:" + centerId.getNamespace() + ":" + centerId.getName();
                 } else {
-                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Symlink not found: " + centerId.getNamespace() + ":" + centerId.getName());
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Symlink not found: " + centerId.getNamespace() + ":" + centerId.getName());
                 }
             }
         }
@@ -96,23 +97,23 @@ public class OpenLineageResource {
             if (aggregateByParent) {
                 JobDocument centerJob = jobRepository.findById(centerId).orElse(null);
                 if (centerJob != null) {
-                    String parentName = centerJob.getParentJobName() != null ? centerJob.getParentJobName() : centerId.getName();
-                    
+                    String parentName = centerJob.getParentJobName() != null ? centerJob.getParentJobName()
+                            : centerId.getName();
+
                     org.springframework.data.mongodb.core.query.Query relatedQuery = new org.springframework.data.mongodb.core.query.Query(
-                            org.springframework.data.mongodb.core.query.Criteria.where("parentJobName").is(parentName)
-                    );
+                            org.springframework.data.mongodb.core.query.Criteria.where("parentJobName").is(parentName));
                     List<JobDocument> relatedJobs = mongoTemplate.find(relatedQuery, JobDocument.class);
                     for (JobDocument related : relatedJobs) {
-                        String relatedNodeId = "job:" + related.getId().getNamespace() + ":" + related.getId().getName();
+                        String relatedNodeId = "job:" + related.getId().getNamespace() + ":"
+                                + related.getId().getName();
                         if (visited.add(relatedNodeId)) {
                             currentLayer.add(new BfsNode("job", related.getId(), 0));
                         }
                     }
-                    
+
                     if (centerJob.getParentJobName() != null) {
                         org.springframework.data.mongodb.core.query.Query parentQuery = new org.springframework.data.mongodb.core.query.Query(
-                                org.springframework.data.mongodb.core.query.Criteria.where("_id.name").is(parentName)
-                        );
+                                org.springframework.data.mongodb.core.query.Criteria.where("_id.name").is(parentName));
                         List<JobDocument> parents = mongoTemplate.find(parentQuery, JobDocument.class);
                         for (JobDocument p : parents) {
                             String pNodeId = "job:" + p.getId().getNamespace() + ":" + p.getId().getName();
@@ -124,9 +125,9 @@ public class OpenLineageResource {
                 }
             } else {
                 org.springframework.data.mongodb.core.query.Query childQuery = new org.springframework.data.mongodb.core.query.Query(
-                        org.springframework.data.mongodb.core.query.Criteria.where("parentJobName").is(centerId.getName())
-                                .and("_id.namespace").is(centerId.getNamespace())
-                );
+                        org.springframework.data.mongodb.core.query.Criteria.where("parentJobName")
+                                .is(centerId.getName())
+                                .and("_id.namespace").is(centerId.getNamespace()));
                 List<JobDocument> childJobs = mongoTemplate.find(childQuery, JobDocument.class);
                 for (JobDocument child : childJobs) {
                     String childNodeId = "job:" + child.getId().getNamespace() + ":" + child.getId().getName();
@@ -138,14 +139,17 @@ public class OpenLineageResource {
         }
 
         for (int currentDepth = 0; currentDepth < depth; currentDepth++) {
-            if (currentLayer.isEmpty()) break;
+            if (currentLayer.isEmpty())
+                break;
 
             List<MarquezId> jobIdsToFetch = new ArrayList<>();
             List<MarquezId> datasetIdsToFetch = new ArrayList<>();
 
             for (BfsNode node : currentLayer) {
-                if ("job".equals(node.type)) jobIdsToFetch.add(node.id);
-                else if ("dataset".equals(node.type)) datasetIdsToFetch.add(node.id);
+                if ("job".equals(node.type))
+                    jobIdsToFetch.add(node.id);
+                else if ("dataset".equals(node.type))
+                    datasetIdsToFetch.add(node.id);
             }
 
             List<BfsNode> nextLayer = new ArrayList<>();
@@ -168,18 +172,18 @@ public class OpenLineageResource {
                     List<org.springframework.data.mongodb.core.query.Criteria> edgeConditions = new ArrayList<>();
                     for (MarquezId dsId : batch) {
                         edgeConditions.add(
-                                org.springframework.data.mongodb.core.query.Criteria.where("sourceNamespace").is(dsId.getNamespace()).and("sourceName").is(dsId.getName())
-                        );
+                                org.springframework.data.mongodb.core.query.Criteria.where("sourceNamespace")
+                                        .is(dsId.getNamespace()).and("sourceName").is(dsId.getName()));
                         edgeConditions.add(
-                                org.springframework.data.mongodb.core.query.Criteria.where("targetNamespace").is(dsId.getNamespace()).and("targetName").is(dsId.getName())
-                        );
+                                org.springframework.data.mongodb.core.query.Criteria.where("targetNamespace")
+                                        .is(dsId.getNamespace()).and("targetName").is(dsId.getName()));
                     }
                     if (!edgeConditions.isEmpty()) {
                         allEdges.addAll(mongoTemplate.find(
                                 new org.springframework.data.mongodb.core.query.Query(
-                                        new org.springframework.data.mongodb.core.query.Criteria().orOperator(edgeConditions)
-                                ), LineageEdgeDocument.class
-                        ));
+                                        new org.springframework.data.mongodb.core.query.Criteria()
+                                                .orOperator(edgeConditions)),
+                                LineageEdgeDocument.class));
                     }
                 }
 
@@ -195,7 +199,8 @@ public class OpenLineageResource {
                 Map<MarquezId, InputDatasetFacetDocument> inputFacetMap = new HashMap<>();
                 inputFacets.forEach(f -> inputFacetMap.put(f.getDatasetId(), f));
 
-                Iterable<OutputDatasetFacetDocument> outputFacets = outputFacetRepository.findAllById(datasetIdsToFetch);
+                Iterable<OutputDatasetFacetDocument> outputFacets = outputFacetRepository
+                        .findAllById(datasetIdsToFetch);
                 Map<MarquezId, OutputDatasetFacetDocument> outputFacetMap = new HashMap<>();
                 outputFacets.forEach(f -> outputFacetMap.put(f.getDatasetId(), f));
 
@@ -209,8 +214,6 @@ public class OpenLineageResource {
 
             currentLayer = nextLayer;
         }
-
-
 
         // Phase 2: Batch-load latest runs for all discovered jobs
         if (!discoveredJobs.isEmpty()) {
@@ -245,14 +248,16 @@ public class OpenLineageResource {
     private Map<String, RunDocument> batchLoadLatestRuns(java.util.Collection<JobDocument> jobs) {
         Map<String, RunDocument> result = new java.util.concurrent.ConcurrentHashMap<>();
 
-        // DocumentDB/MongoDB handles parallel independent `.limit(1)` queries extremely fast,
+        // DocumentDB/MongoDB handles parallel independent `.limit(1)` queries extremely
+        // fast,
         // avoiding millions of historical run documents being shipped over the wire.
         jobs.parallelStream().forEach(job -> {
             org.springframework.data.mongodb.core.query.Query query = new org.springframework.data.mongodb.core.query.Query(
                     org.springframework.data.mongodb.core.query.Criteria
                             .where("jobNamespace").is(job.getId().getNamespace())
                             .and("jobName").is(job.getId().getName()))
-                    .with(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "eventTime"))
+                    .with(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC,
+                            "eventTime"))
                     .limit(1);
 
             RunDocument latestRun = mongoTemplate.findOne(query, RunDocument.class);
@@ -267,7 +272,7 @@ public class OpenLineageResource {
 
     private void processJobBatch(JobDocument job, Set<Node> nodes, List<BfsNode> nextLayer, Set<String> visited,
             int currentDepth, Map<String, JobDocument> discoveredJobs) {
-        
+
         String jobNodeId = "job:" + job.getId().getNamespace() + ":" + job.getId().getName();
         Set<Edge> inEdges = new HashSet<>();
         Set<Edge> outEdges = new HashSet<>();
@@ -293,21 +298,22 @@ public class OpenLineageResource {
         }
 
         discoveredJobs.put(jobNodeId, job);
-        JobData placeholderData = lineageNodeMapper.mapJob(job); 
+        JobData placeholderData = lineageNodeMapper.mapJob(job);
         nodes.add(new Node(jobNodeId, "JOB", placeholderData, inEdges, outEdges));
     }
 
     private void processDatasetBatch(DatasetDocument ds, Set<Node> nodes, List<BfsNode> nextLayer, Set<String> visited,
-            int currentDepth, List<LineageEdgeDocument> dsEdges, 
+            int currentDepth, List<LineageEdgeDocument> dsEdges,
             InputDatasetFacetDocument inputFacet, OutputDatasetFacetDocument outputFacet) {
-            
+
         MarquezId datasetId = ds.getId();
         String dsNodeId = "dataset:" + datasetId.getNamespace() + ":" + datasetId.getName();
         Set<Edge> inEdges = new HashSet<>();
         Set<Edge> outEdges = new HashSet<>();
 
         for (LineageEdgeDocument edge : dsEdges) {
-            if ("job".equals(edge.getSourceType()) && edge.getTargetNamespace().equals(datasetId.getNamespace()) && edge.getTargetName().equals(datasetId.getName())) {
+            if ("job".equals(edge.getSourceType()) && edge.getTargetNamespace().equals(datasetId.getNamespace())
+                    && edge.getTargetName().equals(datasetId.getName())) {
                 String jobNodeId = "job:" + edge.getSourceNamespace() + ":" + edge.getSourceName();
                 inEdges.add(new Edge(jobNodeId, dsNodeId));
                 MarquezId jobId = new MarquezId(edge.getSourceNamespace(), edge.getSourceName());
@@ -315,7 +321,8 @@ public class OpenLineageResource {
                     nextLayer.add(new BfsNode("job", jobId, currentDepth + 1));
                 }
             }
-            if ("job".equals(edge.getTargetType()) && edge.getSourceNamespace().equals(datasetId.getNamespace()) && edge.getSourceName().equals(datasetId.getName())) {
+            if ("job".equals(edge.getTargetType()) && edge.getSourceNamespace().equals(datasetId.getNamespace())
+                    && edge.getSourceName().equals(datasetId.getName())) {
                 String jobNodeId = "job:" + edge.getTargetNamespace() + ":" + edge.getTargetName();
                 outEdges.add(new Edge(dsNodeId, jobNodeId));
                 MarquezId jobId = new MarquezId(edge.getTargetNamespace(), edge.getTargetName());
@@ -336,6 +343,7 @@ public class OpenLineageResource {
         DatasetData data = lineageNodeMapper.mapDataset(ds, mergedFacets);
         nodes.add(new Node(dsNodeId, "DATASET", data, inEdges, outEdges));
     }
+
     @GetMapping("/column-lineage")
     public LineageResponse getColumnLineage(
             @RequestParam("nodeId") String nodeId,
@@ -343,21 +351,65 @@ public class OpenLineageResource {
             @RequestParam(value = "withDownstream", defaultValue = "false") boolean withDownstream) {
 
         // 1. Fetch Dataset/Job Graph
-        // A column lineage dataset hop is 2 graph edges. We add 1 to ensure the target dataset nodes are fetched.
+        // A column lineage dataset hop is 2 graph edges. We add 1 to ensure the target
+        // dataset nodes are fetched.
         int graphDepth = (depth * 2) + 1;
         LineageResponse datasetLineage = getLineage(nodeId, graphDepth, false);
 
         Map<String, Set<Edge>> inEdgesMap = new HashMap<>();
         Map<String, Set<Edge>> outEdgesMap = new HashMap<>();
+
+        // 2. Create Edges FIRST — identify which datasets participate in column lineage
+        Set<String> participatingDatasets = new HashSet<>(); // "namespace:name"
+
+        for (Node node : datasetLineage.graph()) {
+            if ("DATASET".equals(node.type()) && node.data() instanceof DatasetData) {
+                DatasetData dsData = (DatasetData) node.data();
+                if (dsData.facets() != null && dsData.facets().containsKey("columnLineage")) {
+                    com.openlineage.server.domain.Facet facet = dsData.facets().get("columnLineage");
+                    if (facet instanceof ColumnLineageDatasetFacet) {
+                        ColumnLineageDatasetFacet colLineageFacet = (ColumnLineageDatasetFacet) facet;
+                        if (colLineageFacet.fields() != null) {
+                            participatingDatasets.add(dsData.namespace() + ":" + dsData.name());
+
+                            for (Map.Entry<String, ColumnLineageDatasetFacet.Fields> entry : colLineageFacet.fields()
+                                    .entrySet()) {
+                                String outputCol = entry.getKey();
+                                ColumnLineageDatasetFacet.Fields fields = entry.getValue();
+                                String outputNodeId = "datasetField:" + dsData.namespace() + ":" + dsData.name() + ":"
+                                        + outputCol;
+
+                                for (ColumnLineageDatasetFacet.InputField inputField : fields.inputFields()) {
+                                    String inputNodeId = "datasetField:" + inputField.namespace() + ":"
+                                            + inputField.name() + ":" + inputField.field();
+
+                                    participatingDatasets.add(inputField.namespace() + ":" + inputField.name());
+
+                                    Edge edge = new Edge(inputNodeId, outputNodeId);
+                                    outEdgesMap.computeIfAbsent(inputNodeId, k -> new HashSet<>()).add(edge);
+                                    inEdgesMap.computeIfAbsent(outputNodeId, k -> new HashSet<>()).add(edge);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Create Field nodes ONLY for participating datasets (skip massive schemas
+        // with no column lineage)
         Map<String, com.openlineage.server.api.models.LineageResponse.NodeData> nodeDataMap = new HashMap<>();
         Set<String> fieldNodeIds = new HashSet<>();
 
-        // 2. Create Nodes for Fields
         for (Node node : datasetLineage.graph()) {
             if ("DATASET".equals(node.type())
                     && node.data() instanceof com.openlineage.server.api.models.LineageResponse.DatasetData) {
                 com.openlineage.server.api.models.LineageResponse.DatasetData dsData = (com.openlineage.server.api.models.LineageResponse.DatasetData) node
                         .data();
+
+                if (!participatingDatasets.contains(dsData.namespace() + ":" + dsData.name())) {
+                    continue; // Skip — this dataset has no column lineage, don't load its schema
+                }
 
                 List<com.openlineage.server.api.models.LineageResponse.DatasetFieldData> fields = lineageNodeMapper
                         .mapSchemaToFields(dsData);
@@ -370,48 +422,20 @@ public class OpenLineageResource {
             }
         }
 
-        // 3. Create Edges
-        for (Node node : datasetLineage.graph()) {
-            if ("DATASET".equals(node.type()) && node.data() instanceof DatasetData) {
-                DatasetData dsData = (DatasetData) node.data();
-                if (dsData.facets() != null && dsData.facets().containsKey("columnLineage")) {
-                    com.openlineage.server.domain.Facet facet = dsData.facets().get("columnLineage");
-                    if (facet instanceof ColumnLineageDatasetFacet) {
-                        ColumnLineageDatasetFacet colLineageFacet = (ColumnLineageDatasetFacet) facet;
-                        if (colLineageFacet.fields() != null) {
-                            for (Map.Entry<String, ColumnLineageDatasetFacet.Fields> entry : colLineageFacet.fields()
-                                    .entrySet()) {
-                                String outputCol = entry.getKey();
-                                ColumnLineageDatasetFacet.Fields fields = entry.getValue();
-                                String outputNodeId = "datasetField:" + dsData.namespace() + ":" + dsData.name() + ":"
-                                        + outputCol;
-
-                                for (ColumnLineageDatasetFacet.InputField inputField : fields.inputFields()) {
-                                    String inputNodeId = "datasetField:" + inputField.namespace() + ":"
-                                            + inputField.name() + ":" + inputField.field();
-
-                                    // Add Edge
-                                    Edge edge = new Edge(inputNodeId, outputNodeId);
-
-                                    outEdgesMap.computeIfAbsent(inputNodeId, k -> new HashSet<>()).add(edge);
-                                    inEdgesMap.computeIfAbsent(outputNodeId, k -> new HashSet<>()).add(edge);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // 4. Assemble
+        // 4. Assemble — only include field nodes that have at least one edge
         Set<Node> resultNodes = new LinkedHashSet<>();
         for (String id : fieldNodeIds) {
+            Set<Edge> inEdges = inEdgesMap.getOrDefault(id, Collections.emptySet());
+            Set<Edge> outEdges = outEdgesMap.getOrDefault(id, Collections.emptySet());
+            if (inEdges.isEmpty() && outEdges.isEmpty()) {
+                continue;
+            }
             resultNodes.add(new Node(
                     id,
                     "column",
                     nodeDataMap.get(id),
-                    inEdgesMap.getOrDefault(id, Collections.emptySet()),
-                    outEdgesMap.getOrDefault(id, Collections.emptySet())));
+                    inEdges,
+                    outEdges));
         }
 
         return new LineageResponse(resultNodes);
