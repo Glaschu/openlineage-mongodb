@@ -408,16 +408,42 @@ public class OpenLineageResource {
         }
 
         // BFS to determine which datasets are reachable in the specified direction
-        MarquezId centerId = LineageNodeParser.parseNodeId(nodeId);
-        String centerDs = centerId.getNamespace() + ":" + centerId.getName();
         Set<String> reachableDatasets = new HashSet<>();
-        reachableDatasets.add(centerDs);
-
         Queue<String> queue = new LinkedList<>();
-        queue.add(centerDs);
-
         Map<String, Integer> datasetDepths = new HashMap<>();
-        datasetDepths.put(centerDs, 0);
+
+        String centerType = LineageNodeParser.parseType(nodeId);
+        if ("job".equals(centerType)) {
+            for (Node node : datasetLineage.graph()) {
+                if ("JOB".equals(node.type()) && node.id().equals(nodeId)) {
+                    if (withDownstream) {
+                        for (Edge outEdge : node.outEdges()) {
+                            if (outEdge.destination().startsWith("dataset:")) {
+                                String ds = outEdge.destination().substring("dataset:".length());
+                                reachableDatasets.add(ds);
+                                queue.add(ds);
+                                datasetDepths.put(ds, 0);
+                            }
+                        }
+                    } else {
+                        for (Edge inEdge : node.inEdges()) {
+                            if (inEdge.origin().startsWith("dataset:")) {
+                                String ds = inEdge.origin().substring("dataset:".length());
+                                reachableDatasets.add(ds);
+                                queue.add(ds);
+                                datasetDepths.put(ds, 0);
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            MarquezId centerId = LineageNodeParser.parseNodeId(nodeId);
+            String centerDs = centerId.getNamespace() + ":" + centerId.getName();
+            reachableDatasets.add(centerDs);
+            queue.add(centerDs);
+            datasetDepths.put(centerDs, 0);
+        }
 
         if (withDownstream) {
             // Downstream-only BFS
