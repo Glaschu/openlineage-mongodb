@@ -11,6 +11,12 @@ import java.util.UUID;
 @Service
 public class VersionService {
 
+    private final DatasetNameNormalizer nameNormalizer;
+
+    public VersionService(DatasetNameNormalizer nameNormalizer) {
+        this.nameNormalizer = nameNormalizer;
+    }
+
     public UUID computeJobVersion(Job job, java.util.Map<MarquezId, UUID> inputs,
             java.util.Map<MarquezId, UUID> outputs) {
         // Version = UUID(Namespace + Name + Inputs(with versions) + Outputs(with
@@ -47,7 +53,7 @@ public class VersionService {
         // Version = UUID(Namespace + Name + SourceName + Fields + Tags)
         StringBuilder sb = new StringBuilder();
         sb.append(dataset.namespace());
-        sb.append(dataset.name());
+        sb.append(nameNormalizer.normalize(dataset.name()));
 
         // SourceName is usually namespace for now
         sb.append(dataset.namespace());

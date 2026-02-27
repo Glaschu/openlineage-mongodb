@@ -123,14 +123,61 @@ public class DatasetService {
 
         mongoTemplate.upsert(query, update, DatasetDocument.class);
 
-        // 2. Merge Facets into Split Collections
+        // 3. Normalize column lineage InputField names, then merge facets into split
+        // collections
+        java.util.Map<String, com.openlineage.server.domain.Facet> normalizedFacets = normalizeColumnLineageFacets(
+                dataset.facets());
         if (isInput) {
-            facetMergeService.mergeInputFacets(dataset.namespace(), normalizedName, dataset.facets(), eventTime);
+            facetMergeService.mergeInputFacets(dataset.namespace(), normalizedName, normalizedFacets, eventTime);
         } else {
-            facetMergeService.mergeOutputFacets(dataset.namespace(), normalizedName, dataset.facets(), eventTime);
+            facetMergeService.mergeOutputFacets(dataset.namespace(), normalizedName, normalizedFacets, eventTime);
         }
 
         return contextVersion;
+    }
+
+    /**
+     * Returns a copy of the facets map where any {@code columnLineage} facet has
+     * its
+     * {@link com.openlineage.server.domain.ColumnLineageDatasetFacet.InputField}
+     * dataset names normalized.
+     * This ensures that column-level lineage references point to the canonical
+     * (normalized) dataset identity.
+     */
+    private java.util.Map<String, com.openlineage.server.domain.Facet> normalizeColumnLineageFacets(
+            java.util.Map<String, com.openlineage.server.domain.Facet> facets) {
+        if (facets == null || !facets.containsKey("columnLineage")) {
+            return facets;
+        }
+        com.openlineage.server.domain.Facet facet = facets.get("columnLineage");
+        if (!(facet instanceof com.openlineage.server.domain.ColumnLineageDatasetFacet colFacet)) {
+            return facets;
+        }
+        if (colFacet.fields() == null || colFacet.fields().isEmpty()) {
+            return facets;
+        }
+
+        java.util.Map<String, com.openlineage.server.domain.ColumnLineageDatasetFacet.Fields> normalizedFields = new java.util.LinkedHashMap<>();
+        for (java.util.Map.Entry<String, com.openlineage.server.domain.ColumnLineageDatasetFacet.Fields> entry : colFacet
+                .fields().entrySet()) {
+            com.openlineage.server.domain.ColumnLineageDatasetFacet.Fields fields = entry.getValue();
+            if (fields.inputFields() == null || fields.inputFields().isEmpty()) {
+                normalizedFields.put(entry.getKey(), fields);
+                continue;
+            }
+            List<com.openlineage.server.domain.ColumnLineageDatasetFacet.InputField> normalizedInputs = fields
+                    .inputFields().stream()
+                    .map(inp -> new com.openlineage.server.domain.ColumnLineageDatasetFacet.InputField(
+                            inp.namespace(), nameNormalizer.normalize(inp.name()), inp.field()))
+                    .collect(Collectors.toList());
+            normalizedFields.put(entry.getKey(),
+                    new com.openlineage.server.domain.ColumnLineageDatasetFacet.Fields(normalizedInputs,
+                            fields.transformationDescription(), fields.transformationType()));
+        }
+
+        java.util.Map<String, com.openlineage.server.domain.Facet> result = new java.util.HashMap<>(facets);
+        result.put("columnLineage", new com.openlineage.server.domain.ColumnLineageDatasetFacet(normalizedFields));
+        return result;
     }
 
     public void upsertDataSource(String namespace, ZonedDateTime eventTime) {
