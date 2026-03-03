@@ -30,183 +30,151 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @EnableAutoConfiguration(exclude = { MongoAutoConfiguration.class, MongoDataAutoConfiguration.class,
-                org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class })
+        org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class })
 public class ColumnLineageGraphTest {
 
-        @Autowired
-        private MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-        @MockBean
-        private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+    @MockBean
+    private org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
 
-        @MockBean
-        private JobRepository jobRepo;
+    @MockBean
+    private JobRepository jobRepo;
 
-        @MockBean
-        private DatasetRepository datasetRepo;
+    @MockBean
+    private DatasetRepository datasetRepo;
 
-        @MockBean
-        private InputDatasetFacetRepository inputRepo;
+    @MockBean
+    private InputDatasetFacetRepository inputRepo;
 
-        @MockBean
-        private OutputDatasetFacetRepository outputRepo;
+    @MockBean
+    private OutputDatasetFacetRepository outputRepo;
 
-        @MockBean
-        private com.openlineage.server.storage.repository.LineageEdgeRepository lineageEdgeRepo;
+    @MockBean
+    private com.openlineage.server.storage.repository.LineageEdgeRepository lineageEdgeRepo;
 
-        @MockBean
-        private com.openlineage.server.storage.repository.LineageEventRepository eventRepo;
+    @MockBean
+    private com.openlineage.server.storage.repository.LineageEventRepository eventRepo;
 
-        @MockBean
-        private com.openlineage.server.storage.repository.TagRepository tagRepo;
+    @MockBean
+    private com.openlineage.server.storage.repository.TagRepository tagRepo;
 
-        @MockBean
-        private com.openlineage.server.storage.repository.RunRepository runRepo;
+    @MockBean
+    private com.openlineage.server.storage.repository.RunRepository runRepo;
 
-        @MockBean
-        private com.openlineage.server.storage.repository.DataSourceRepository dataSourceRepo; // Add this mock
+    @MockBean
+    private com.openlineage.server.storage.repository.DataSourceRepository dataSourceRepo;
 
-        @MockBean
-        private com.openlineage.server.storage.repository.NamespaceRepository nsRepo; // Add this mock
+    @MockBean
+    private com.openlineage.server.storage.repository.NamespaceRepository nsRepo;
 
-        @org.junit.jupiter.api.Disabled("Disabled: MockMvc MongoTemplate $or edge search mapping requires a dedicated integration container context")
-        @Test
-        public void testGetColumnLineageWithFacets() throws Exception {
-                String jobNs = "jobNs";
-                String jobName = "job1";
-                String inNs = "inNs";
-                String inName = "inDs";
-                String outNs = "outNs";
-                String outName = "outDs";
+    @Test
+    public void testGetColumnLineageWithFacets() throws Exception {
+        String inNs = "inNs";
+        String inName = "inDs";
+        String outNs = "outNs";
+        String outName = "outDs";
 
-                // 1. Setup Job (Job consumed input and produced output)
-                MarquezId jobId = new MarquezId(jobNs, jobName);
-                MarquezId inputId = new MarquezId(inNs, inName);
-                MarquezId outputId = new MarquezId(outNs, outName);
+        MarquezId inputId = new MarquezId(inNs, inName);
+        MarquezId outputId = new MarquezId(outNs, outName);
 
-                JobDocument jobDoc = new JobDocument(jobNs, jobName, Collections.emptyMap(),
-                                Set.of(inputId), Set.of(outputId), ZonedDateTime.now());
+        // 1. Setup Datasets
+        DatasetDocument inDs = new DatasetDocument();
+        inDs.setId(inputId);
+        inDs.setUpdatedAt(ZonedDateTime.now());
 
-                // Mock Job Fetch (used by processJob during BFS)
-                when(jobRepo.findAllById(any())).thenReturn(List.of(jobDoc));
+        DatasetDocument outDs = new DatasetDocument();
+        outDs.setId(outputId);
+        outDs.setUpdatedAt(ZonedDateTime.now());
 
-                // Mock RunRepository for latest run lookup (returns empty page = no runs)
-                when(runRepo.findByJobNamespaceAndJobName(any(), any(), any()))
-                                .thenReturn(org.springframework.data.domain.Page.empty());
+        when(datasetRepo.findAllById(any())).thenAnswer(invocation -> {
+            Iterable<MarquezId> ids = invocation.getArgument(0);
+            List<DatasetDocument> docs = new ArrayList<>();
+            for (MarquezId id : ids) {
+                if (id.equals(inputId))
+                    docs.add(inDs);
+                if (id.equals(outputId))
+                    docs.add(outDs);
+            }
+            return docs;
+        });
 
-                // Mock lineage edges for BFS traversal
-                // Job produces outputId: edge from job → output dataset (target = output)
-                LineageEdgeDocument jobToOutput = new LineageEdgeDocument(
-                                "job", jobNs, jobName, "dataset", outNs, outName, "output", ZonedDateTime.now());
-                // Job consumes inputId: edge from input dataset → job (source = input, target =
-                // job)
-                LineageEdgeDocument inputToJob = new LineageEdgeDocument(
-                                "dataset", inNs, inName, "job", jobNs, jobName, "input", ZonedDateTime.now());
-                // When looking up edges using mongoTemplate for the bulk lookup algorithm
-                when(mongoTemplate.find(any(org.springframework.data.mongodb.core.query.Query.class), org.mockito.ArgumentMatchers.eq(LineageEdgeDocument.class)))
-                        .thenAnswer(invocation -> {
-                            org.springframework.data.mongodb.core.query.Query query = invocation.getArgument(0);
-                            String qString = query.toString();
-                            List<LineageEdgeDocument> result = new ArrayList<>();
-                            if (qString.contains(outName)) result.add(jobToOutput);
-                            if (qString.contains(inName)) result.add(inputToJob);
-                            return result;
-                        });
+        // 2. Setup Facets (Column Lineage on Output, Schema on both)
+        // Schema Facet
+        com.openlineage.server.domain.SchemaDatasetFacet.SchemaField col1 = new com.openlineage.server.domain.SchemaDatasetFacet.SchemaField(
+                "inputCol", "VARCHAR", "desc");
+        com.openlineage.server.domain.SchemaDatasetFacet inputSchema = new com.openlineage.server.domain.SchemaDatasetFacet(
+                List.of(col1));
 
-                // 2. Setup Datasets
-                DatasetDocument inDs = new DatasetDocument();
-                inDs.setId(inputId);
-                inDs.setUpdatedAt(ZonedDateTime.now());
+        com.openlineage.server.domain.SchemaDatasetFacet.SchemaField col2 = new com.openlineage.server.domain.SchemaDatasetFacet.SchemaField(
+                "outputCol", "VARCHAR", "desc");
+        com.openlineage.server.domain.SchemaDatasetFacet outputSchema = new com.openlineage.server.domain.SchemaDatasetFacet(
+                List.of(col2));
 
-                DatasetDocument outDs = new DatasetDocument();
-                outDs.setId(outputId);
-                outDs.setUpdatedAt(ZonedDateTime.now());
+        // inputCol -> outputCol
+        InputField inputField = new InputField(inNs, inName, "inputCol");
+        Fields fields = new Fields(List.of(inputField), "desc", "type");
+        ColumnLineageDatasetFacet colLineage = new ColumnLineageDatasetFacet(Map.of("outputCol", fields));
 
-                when(datasetRepo.findAllById(any())).thenAnswer(invocation -> {
-                    Iterable<MarquezId> ids = invocation.getArgument(0);
-                    List<DatasetDocument> docs = new ArrayList<>();
-                    for (MarquezId id : ids) {
-                        if (id.equals(inputId)) docs.add(inDs);
-                        if (id.equals(outputId)) docs.add(outDs);
-                    }
-                    return docs;
-                });
+        OutputDatasetFacetDocument outFacetDoc = new OutputDatasetFacetDocument(outputId,
+                Map.of("columnLineage", colLineage, "schema", outputSchema), ZonedDateTime.now());
 
-                // 3. Setup Facets (Column Lineage on Output, Schema on both)
-                // Schema Facet
-                com.openlineage.server.domain.SchemaDatasetFacet.SchemaField col1 = new com.openlineage.server.domain.SchemaDatasetFacet.SchemaField(
-                                "inputCol", "VARCHAR", "desc");
-                com.openlineage.server.domain.SchemaDatasetFacet inputSchema = new com.openlineage.server.domain.SchemaDatasetFacet(
-                                List.of(col1));
+        InputDatasetFacetDocument inFacetDoc = new InputDatasetFacetDocument(inputId,
+                Map.of("schema", inputSchema), ZonedDateTime.now());
 
-                com.openlineage.server.domain.SchemaDatasetFacet.SchemaField col2 = new com.openlineage.server.domain.SchemaDatasetFacet.SchemaField(
-                                "outputCol", "VARCHAR", "desc");
-                com.openlineage.server.domain.SchemaDatasetFacet outputSchema = new com.openlineage.server.domain.SchemaDatasetFacet(
-                                List.of(col2));
+        when(outputRepo.findAllById(any())).thenAnswer(invocation -> {
+            Iterable<MarquezId> ids = invocation.getArgument(0);
+            List<OutputDatasetFacetDocument> docs = new ArrayList<>();
+            for (MarquezId id : ids) {
+                if (id.equals(outputId))
+                    docs.add(outFacetDoc);
+            }
+            return docs;
+        });
 
-                // inputCol -> outputCol
-                InputField inputField = new InputField(inNs, inName, "inputCol");
-                Fields fields = new Fields(List.of(inputField), "desc", "type");
-                ColumnLineageDatasetFacet colLineage = new ColumnLineageDatasetFacet(Map.of("outputCol", fields));
+        when(inputRepo.findAllById(any())).thenAnswer(invocation -> {
+            Iterable<MarquezId> ids = invocation.getArgument(0);
+            List<InputDatasetFacetDocument> docs = new ArrayList<>();
+            for (MarquezId id : ids) {
+                if (id.equals(inputId))
+                    docs.add(inFacetDoc);
+            }
+            return docs;
+        });
 
-                OutputDatasetFacetDocument outFacetDoc = new OutputDatasetFacetDocument(outputId,
-                                Map.of("columnLineage", colLineage, "schema", outputSchema), ZonedDateTime.now());
+        // 3. Perform Request — start from the output dataset
+        String nodeId = "dataset:" + outNs + ":" + outName;
 
-                InputDatasetFacetDocument inFacetDoc = new InputDatasetFacetDocument(inputId,
-                                Map.of("schema", inputSchema), ZonedDateTime.now());
+        String response = mockMvc.perform(get("/api/v2/column-lineage")
+                .param("nodeId", nodeId)
+                .param("depth", "5"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
 
-                when(outputRepo.findAllById(any())).thenAnswer(invocation -> {
-                    Iterable<MarquezId> ids = invocation.getArgument(0);
-                    List<OutputDatasetFacetDocument> docs = new ArrayList<>();
-                    for (MarquezId id : ids) {
-                        if (id.equals(outputId)) docs.add(outFacetDoc);
-                    }
-                    return docs;
-                });
-                
-                when(inputRepo.findAllById(any())).thenAnswer(invocation -> {
-                    Iterable<MarquezId> ids = invocation.getArgument(0);
-                    List<InputDatasetFacetDocument> docs = new ArrayList<>();
-                    for (MarquezId id : ids) {
-                        if (id.equals(inputId)) docs.add(inFacetDoc);
-                    }
-                    return docs;
-                });
+        System.out.println("Response: " + response);
 
-                // 4. Perform Request
-                // Request lineage for the output dataset
-                String nodeId = "dataset:" + outNs + ":" + outName;
-
-                String response = mockMvc.perform(get("/api/v2/column-lineage")
-                                .param("nodeId", nodeId)
-                                .param("depth", "5"))
-                                .andExpect(status().isOk())
-                                .andReturn().getResponse().getContentAsString();
-
-                System.out.println("Response: " + response);
-
-                // Verification logic can be added here or just visual inspection of the failure
-                if (!response.contains("\"id\":\"datasetField:" + inNs + ":" + inName + ":inputCol\"")) {
-                        throw new RuntimeException("Missing input column node");
-                }
-
-                // Check for edge (Exact string match dependent on serialization)
-                // Edge: origin -> destination
-                String expectedEdge = "\"origin\":\"datasetField:" + inNs + ":" + inName
-                                + ":inputCol\",\"destination\":\"datasetField:" + outNs + ":" + outName
-                                + ":outputCol\"";
-                if (!response.contains(expectedEdge) && !response.contains(expectedEdge.replace(",", ", "))) {
-                        throw new RuntimeException("Missing column lineage edge. Response: " + response);
-                }
-
-                // Verify input node has outEdges and output node has inEdges
-                if (!response.contains("\"id\":\"datasetField:" + inNs + ":" + inName + ":inputCol\"")
-                                || !response.contains("\"outEdges\":[{\"origin\"")) {
-                        throw new RuntimeException("Input node missing outEdges");
-                }
-                if (!response.contains("\"id\":\"datasetField:" + outNs + ":" + outName + ":outputCol\"")
-                                || !response.contains("\"inEdges\":[{\"origin\"")) {
-                        throw new RuntimeException("Output node missing inEdges");
-                }
+        // 4. Verify input column node was discovered via column lineage BFS
+        if (!response.contains("\"id\":\"datasetField:" + inNs + ":" + inName + ":inputCol\"")) {
+            throw new RuntimeException("Missing input column node");
         }
+
+        // Check for edge (origin -> destination)
+        String expectedEdge = "\"origin\":\"datasetField:" + inNs + ":" + inName
+                + ":inputCol\",\"destination\":\"datasetField:" + outNs + ":" + outName
+                + ":outputCol\"";
+        if (!response.contains(expectedEdge) && !response.contains(expectedEdge.replace(",", ", "))) {
+            throw new RuntimeException("Missing column lineage edge. Response: " + response);
+        }
+
+        // Verify input node has outEdges and output node has inEdges
+        if (!response.contains("\"id\":\"datasetField:" + inNs + ":" + inName + ":inputCol\"")
+                || !response.contains("\"outEdges\":[{\"origin\"")) {
+            throw new RuntimeException("Input node missing outEdges");
+        }
+        if (!response.contains("\"id\":\"datasetField:" + outNs + ":" + outName + ":outputCol\"")
+                || !response.contains("\"inEdges\":[{\"origin\"")) {
+            throw new RuntimeException("Output node missing inEdges");
+        }
+    }
 }

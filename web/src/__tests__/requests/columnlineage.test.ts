@@ -24,10 +24,10 @@ describe('Column Lineage Requests', () => {
         graph: { nodes: [], edges: [] },
       }
 
-      ;(global.fetch as any).mockResolvedValue({
-        ok: true,
-        text: async () => JSON.stringify(mockLineage),
-      })
+        ; (global.fetch as any).mockResolvedValue({
+          ok: true,
+          text: async () => JSON.stringify(mockLineage),
+        })
 
       const result = await getColumnLineage('DATASET', 'test-namespace', 'test-dataset', 3)
 
@@ -43,10 +43,10 @@ describe('Column Lineage Requests', () => {
         graph: { nodes: [], edges: [] },
       }
 
-      ;(global.fetch as any).mockResolvedValue({
-        ok: true,
-        text: async () => JSON.stringify(mockLineage),
-      })
+        ; (global.fetch as any).mockResolvedValue({
+          ok: true,
+          text: async () => JSON.stringify(mockLineage),
+        })
 
       await getColumnLineage('JOB', 'test-namespace', 'test-job', 2)
 
@@ -54,7 +54,7 @@ describe('Column Lineage Requests', () => {
     })
 
     it('includes nodeId parameter generated from inputs', async () => {
-      ;(global.fetch as any).mockResolvedValue({
+      ; (global.fetch as any).mockResolvedValue({
         ok: true,
         text: async () => JSON.stringify({ graph: {} }),
       })
@@ -66,7 +66,7 @@ describe('Column Lineage Requests', () => {
     })
 
     it('includes depth parameter', async () => {
-      ;(global.fetch as any).mockResolvedValue({
+      ; (global.fetch as any).mockResolvedValue({
         ok: true,
         text: async () => JSON.stringify({ graph: {} }),
       })
@@ -79,22 +79,10 @@ describe('Column Lineage Requests', () => {
       )
     })
 
-    it('includes withDownstream=true parameter', async () => {
-      ;(global.fetch as any).mockResolvedValue({
-        ok: true,
-        text: async () => JSON.stringify({ graph: {} }),
-      })
 
-      await getColumnLineage('DATASET', 'ns', 'ds', 3)
-
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('withDownstream=true'),
-        expect.any(Object)
-      )
-    })
 
     it('encodes namespace correctly', async () => {
-      ;(global.fetch as any).mockResolvedValue({
+      ; (global.fetch as any).mockResolvedValue({
         ok: true,
         text: async () => JSON.stringify({ graph: {} }),
       })
@@ -106,7 +94,7 @@ describe('Column Lineage Requests', () => {
     })
 
     it('encodes dataset name correctly', async () => {
-      ;(global.fetch as any).mockResolvedValue({
+      ; (global.fetch as any).mockResolvedValue({
         ok: true,
         text: async () => JSON.stringify({ graph: {} }),
       })
@@ -118,7 +106,7 @@ describe('Column Lineage Requests', () => {
     })
 
     it('handles depth of 0', async () => {
-      ;(global.fetch as any).mockResolvedValue({
+      ; (global.fetch as any).mockResolvedValue({
         ok: true,
         text: async () => JSON.stringify({ graph: {} }),
       })
@@ -132,7 +120,7 @@ describe('Column Lineage Requests', () => {
     })
 
     it('handles large depth values', async () => {
-      ;(global.fetch as any).mockResolvedValue({
+      ; (global.fetch as any).mockResolvedValue({
         ok: true,
         text: async () => JSON.stringify({ graph: {} }),
       })
@@ -146,7 +134,7 @@ describe('Column Lineage Requests', () => {
     })
 
     it('handles complex dataset names', async () => {
-      ;(global.fetch as any).mockResolvedValue({
+      ; (global.fetch as any).mockResolvedValue({
         ok: true,
         text: async () => JSON.stringify({ graph: {} }),
       })
@@ -157,7 +145,7 @@ describe('Column Lineage Requests', () => {
     })
 
     it('handles fetch errors', async () => {
-      ;(global.fetch as any).mockResolvedValue({
+      ; (global.fetch as any).mockResolvedValue({
         ok: false,
         status: 404,
         text: async () => JSON.stringify({ code: 404, message: 'Not found', details: '' }),
@@ -167,7 +155,7 @@ describe('Column Lineage Requests', () => {
     })
 
     it('handles network errors', async () => {
-      ;(global.fetch as any).mockRejectedValue(new Error('Network failure'))
+      ; (global.fetch as any).mockRejectedValue(new Error('Network failure'))
 
       await expect(getColumnLineage('DATASET', 'ns', 'ds', 1)).rejects.toThrow('Network failure')
     })

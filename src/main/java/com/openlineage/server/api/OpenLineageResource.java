@@ -347,168 +347,57 @@ public class OpenLineageResource {
     @GetMapping("/column-lineage")
     public LineageResponse getColumnLineage(
             @RequestParam("nodeId") String nodeId,
-            @RequestParam(value = "depth", defaultValue = "20") int depth,
-            @RequestParam(value = "withDownstream", defaultValue = "false") boolean withDownstream) {
+            @RequestParam(value = "depth", defaultValue = "20") int depth) {
 
-        // 1. Fetch Dataset/Job Graph
-        // A column lineage dataset hop is 2 graph edges. We add 1 to ensure the target
-        // dataset nodes are fetched.
-        int graphDepth = (depth * 2) + 1;
-        LineageResponse datasetLineage = getLineage(nodeId, graphDepth, false);
+        MarquezId centerId = LineageNodeParser.parseNodeId(nodeId);
 
-        // 2. Create Edges FIRST — identify which datasets participate in column lineage
-        Set<String> allParticipatingDatasets = new HashSet<>(); // "namespace:name"
-
-        Map<String, Set<String>> upstreamDatasets = new HashMap<>();
-        Map<String, Set<String>> downstreamDatasets = new HashMap<>();
-
-        Map<String, Set<Edge>> allInEdgesMap = new HashMap<>();
-        Map<String, Set<Edge>> allOutEdgesMap = new HashMap<>();
-        Map<String, String> fieldToDataset = new HashMap<>();
-
-        for (Node node : datasetLineage.graph()) {
-            if ("DATASET".equals(node.type()) && node.data() instanceof DatasetData) {
-                DatasetData dsData = (DatasetData) node.data();
-                if (dsData.facets() != null && dsData.facets().containsKey("columnLineage")) {
-                    com.openlineage.server.domain.Facet facet = dsData.facets().get("columnLineage");
-                    if (facet instanceof ColumnLineageDatasetFacet) {
-                        ColumnLineageDatasetFacet colLineageFacet = (ColumnLineageDatasetFacet) facet;
-                        if (colLineageFacet.fields() != null) {
-                            String targetDs = dsData.namespace() + ":" + dsData.name();
-                            allParticipatingDatasets.add(targetDs);
-
-                            for (Map.Entry<String, ColumnLineageDatasetFacet.Fields> entry : colLineageFacet.fields()
-                                    .entrySet()) {
-                                String outputCol = entry.getKey();
-                                ColumnLineageDatasetFacet.Fields fields = entry.getValue();
-                                String outputNodeId = "datasetField:" + dsData.namespace() + ":" + dsData.name() + ":"
-                                        + outputCol;
-                                fieldToDataset.put(outputNodeId, targetDs);
-
-                                for (ColumnLineageDatasetFacet.InputField inputField : fields.inputFields()) {
-                                    String sourceDs = inputField.namespace() + ":" + inputField.name();
-                                    String inputNodeId = "datasetField:" + inputField.namespace() + ":"
-                                            + inputField.name() + ":" + inputField.field();
-                                    fieldToDataset.put(inputNodeId, sourceDs);
-
-                                    allParticipatingDatasets.add(sourceDs);
-
-                                    upstreamDatasets.computeIfAbsent(targetDs, k -> new HashSet<>()).add(sourceDs);
-                                    downstreamDatasets.computeIfAbsent(sourceDs, k -> new HashSet<>()).add(targetDs);
-
-                                    Edge edge = new Edge(inputNodeId, outputNodeId);
-                                    allOutEdgesMap.computeIfAbsent(inputNodeId, k -> new HashSet<>()).add(edge);
-                                    allInEdgesMap.computeIfAbsent(outputNodeId, k -> new HashSet<>()).add(edge);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // BFS to determine which datasets are reachable in the specified direction
-        Set<String> reachableDatasets = new HashSet<>();
-        Queue<String> queue = new LinkedList<>();
-        Map<String, Integer> datasetDepths = new HashMap<>();
-
-        String centerType = LineageNodeParser.parseType(nodeId);
-        if ("job".equals(centerType)) {
-            for (Node node : datasetLineage.graph()) {
-                if ("JOB".equals(node.type()) && node.id().equals(nodeId)) {
-                    if (withDownstream) {
-                        for (Edge outEdge : node.outEdges()) {
-                            if (outEdge.destination().startsWith("dataset:")) {
-                                String ds = outEdge.destination().substring("dataset:".length());
-                                reachableDatasets.add(ds);
-                                queue.add(ds);
-                                datasetDepths.put(ds, 0);
-                            }
-                        }
-                    } else {
-                        for (Edge inEdge : node.inEdges()) {
-                            if (inEdge.origin().startsWith("dataset:")) {
-                                String ds = inEdge.origin().substring("dataset:".length());
-                                reachableDatasets.add(ds);
-                                queue.add(ds);
-                                datasetDepths.put(ds, 0);
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            MarquezId centerId = LineageNodeParser.parseNodeId(nodeId);
-            String centerDs = centerId.getNamespace() + ":" + centerId.getName();
-            reachableDatasets.add(centerDs);
-            queue.add(centerDs);
-            datasetDepths.put(centerDs, 0);
-        }
-
-        if (withDownstream) {
-            // Downstream-only BFS
-            Queue<String> downQueue = new LinkedList<>(queue);
-            while (!downQueue.isEmpty()) {
-                String current = downQueue.poll();
-                int currentDepth = datasetDepths.get(current);
-                if (currentDepth >= depth)
-                    continue;
-
-                Set<String> children = downstreamDatasets.getOrDefault(current, Collections.emptySet());
-                for (String child : children) {
-                    if (!reachableDatasets.contains(child)) {
-                        reachableDatasets.add(child);
-                        datasetDepths.put(child, currentDepth + 1);
-                        downQueue.add(child);
-                    }
-                }
-            }
-        }
-
-        // Always do Upstream-only BFS as well, so we see the ancestors
-        Queue<String> upQueue = new LinkedList<>(queue); // 'queue' still has the initial center dataset(s)
-        while (!upQueue.isEmpty()) {
-            String current = upQueue.poll();
-            int currentDepth = datasetDepths.getOrDefault(current, 0);
-            if (currentDepth >= depth)
-                continue;
-
-            Set<String> parents = upstreamDatasets.getOrDefault(current, Collections.emptySet());
-            for (String parent : parents) {
-                if (!reachableDatasets.contains(parent)) {
-                    reachableDatasets.add(parent);
-                    datasetDepths.put(parent, currentDepth + 1);
-                    upQueue.add(parent);
-                }
-            }
-        }
-
+        // Maps to accumulate field nodes and column-lineage edges
         Map<String, Set<Edge>> inEdgesMap = new HashMap<>();
         Map<String, Set<Edge>> outEdgesMap = new HashMap<>();
-
-        for (Map.Entry<String, Set<Edge>> entry : allOutEdgesMap.entrySet()) {
-            for (Edge edge : entry.getValue()) {
-                String sourceDs = fieldToDataset.get(edge.origin());
-                String targetDs = fieldToDataset.get(edge.destination());
-                if (reachableDatasets.contains(sourceDs) && reachableDatasets.contains(targetDs)) {
-                    outEdgesMap.computeIfAbsent(edge.origin(), k -> new HashSet<>()).add(edge);
-                    inEdgesMap.computeIfAbsent(edge.destination(), k -> new HashSet<>()).add(edge);
-                }
-            }
-        }
-
-        // 3. Create Field nodes ONLY for participating datasets
         Map<String, com.openlineage.server.api.models.LineageResponse.NodeData> nodeDataMap = new HashMap<>();
         Set<String> fieldNodeIds = new HashSet<>();
 
-        for (Node node : datasetLineage.graph()) {
-            if ("DATASET".equals(node.type()) && node.data() instanceof DatasetData) {
-                DatasetData dsData = (DatasetData) node.data();
+        // BFS state: datasets to process at the current depth level
+        Set<MarquezId> currentLayer = new LinkedHashSet<>();
+        currentLayer.add(centerId);
+        Set<MarquezId> visitedDatasets = new HashSet<>();
+        visitedDatasets.add(centerId);
 
-                if (!reachableDatasets.contains(dsData.namespace() + ":" + dsData.name())) {
-                    continue; // Skip — this dataset is not in our directional BFS
+        for (int currentDepth = 0; currentDepth < depth; currentDepth++) {
+            if (currentLayer.isEmpty())
+                break;
+
+            // Batch-load datasets
+            List<MarquezId> batchIds = new ArrayList<>(currentLayer);
+            Iterable<DatasetDocument> datasets = datasetRepository.findAllById(batchIds);
+
+            // Batch-load facets for this layer
+            Iterable<InputDatasetFacetDocument> inputFacets = inputFacetRepository.findAllById(batchIds);
+            Map<MarquezId, InputDatasetFacetDocument> inputFacetMap = new HashMap<>();
+            inputFacets.forEach(f -> inputFacetMap.put(f.getDatasetId(), f));
+
+            Iterable<OutputDatasetFacetDocument> outputFacets = outputFacetRepository.findAllById(batchIds);
+            Map<MarquezId, OutputDatasetFacetDocument> outputFacetMap = new HashMap<>();
+            outputFacets.forEach(f -> outputFacetMap.put(f.getDatasetId(), f));
+
+            Set<MarquezId> nextLayer = new LinkedHashSet<>();
+
+            for (DatasetDocument ds : datasets) {
+                MarquezId dsId = ds.getId();
+
+                // Merge facets from input and output facet documents
+                Map<String, com.openlineage.server.domain.Facet> mergedFacets = new HashMap<>();
+                InputDatasetFacetDocument inFacet = inputFacetMap.get(dsId);
+                if (inFacet != null && inFacet.getFacets() != null) {
+                    mergedFacets.putAll(inFacet.getFacets());
+                }
+                OutputDatasetFacetDocument outFacet = outputFacetMap.get(dsId);
+                if (outFacet != null && outFacet.getFacets() != null) {
+                    mergedFacets.putAll(outFacet.getFacets());
                 }
 
+                // Create field nodes from schema
+                DatasetData dsData = lineageNodeMapper.mapDataset(ds, mergedFacets);
                 List<com.openlineage.server.api.models.LineageResponse.DatasetFieldData> fields = lineageNodeMapper
                         .mapSchemaToFields(dsData);
                 for (com.openlineage.server.api.models.LineageResponse.DatasetFieldData fieldData : fields) {
@@ -517,24 +406,50 @@ public class OpenLineageResource {
                     fieldNodeIds.add(fieldNodeId);
                     nodeDataMap.put(fieldNodeId, fieldData);
                 }
+
+                // Process columnLineage facet — create edges and discover next datasets
+                if (mergedFacets.containsKey("columnLineage")) {
+                    com.openlineage.server.domain.Facet facet = mergedFacets.get("columnLineage");
+                    if (facet instanceof ColumnLineageDatasetFacet colLineageFacet) {
+                        if (colLineageFacet.fields() != null) {
+                            for (Map.Entry<String, ColumnLineageDatasetFacet.Fields> entry : colLineageFacet.fields()
+                                    .entrySet()) {
+                                String outputCol = entry.getKey();
+                                String outputNodeId = "datasetField:" + dsData.namespace() + ":" + dsData.name() + ":"
+                                        + outputCol;
+
+                                for (ColumnLineageDatasetFacet.InputField inputField : entry.getValue().inputFields()) {
+                                    String inputNodeId = "datasetField:" + inputField.namespace() + ":"
+                                            + inputField.name() + ":" + inputField.field();
+
+                                    Edge edge = new Edge(inputNodeId, outputNodeId);
+                                    outEdgesMap.computeIfAbsent(inputNodeId, k -> new HashSet<>()).add(edge);
+                                    inEdgesMap.computeIfAbsent(outputNodeId, k -> new HashSet<>()).add(edge);
+
+                                    // Discover the input dataset for the next BFS layer
+                                    MarquezId inputDsId = new MarquezId(inputField.namespace(), inputField.name());
+                                    if (visitedDatasets.add(inputDsId)) {
+                                        nextLayer.add(inputDsId);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
+
+            currentLayer = nextLayer;
         }
 
-        // 4. Assemble — only include field nodes that have at least one valid edge
+        // Assemble result — only field nodes that are part of the column lineage path
         Set<Node> resultNodes = new LinkedHashSet<>();
         for (String id : fieldNodeIds) {
-            Set<Edge> inEdges = inEdgesMap.getOrDefault(id, Collections.emptySet());
-            Set<Edge> outEdges = outEdgesMap.getOrDefault(id, Collections.emptySet());
-
-            if (inEdges.isEmpty() && outEdges.isEmpty()) {
-                continue;
-            }
             resultNodes.add(new Node(
                     id,
                     "column",
                     nodeDataMap.get(id),
-                    inEdges,
-                    outEdges));
+                    inEdgesMap.getOrDefault(id, Collections.emptySet()),
+                    outEdgesMap.getOrDefault(id, Collections.emptySet())));
         }
 
         return new LineageResponse(resultNodes);
