@@ -30,13 +30,16 @@ public class RunController {
     private final JobRepository jobRepository;
     private final LineageService lineageService;
     private final com.openlineage.server.mapper.RunMapper runMapper;
+    private final com.openlineage.server.archival.S3ArchiveClient s3ArchiveClient;
 
     public RunController(RunRepository repository, JobRepository jobRepository, LineageService lineageService,
-            com.openlineage.server.mapper.RunMapper runMapper) {
+            com.openlineage.server.mapper.RunMapper runMapper,
+            @org.springframework.beans.factory.annotation.Autowired(required = false) com.openlineage.server.archival.S3ArchiveClient s3ArchiveClient) {
         this.repository = repository;
         this.jobRepository = jobRepository;
         this.lineageService = lineageService;
         this.runMapper = runMapper;
+        this.s3ArchiveClient = s3ArchiveClient;
     }
 
     // List runs for a job
@@ -64,19 +67,34 @@ public class RunController {
         return new RunsResponse(runs, totalEstimate);
     }
 
-    // Get run by ID
+    // Get run by ID — transparent S3 fallback for archived runs
     @GetMapping("/runs/{runId}")
     public RunResponse getRun(@PathVariable String runId) {
-        return repository.findById(runId)
-                .map(doc -> runMapper.toRunResponse(doc, true))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Run not found"));
+        // Try MongoDB first
+        Optional<RunDocument> doc = repository.findById(runId);
+        if (doc.isPresent()) {
+            return runMapper.toRunResponse(doc.get(), true);
+        }
+        // Fallback to S3 archive
+        if (s3ArchiveClient != null) {
+            return s3ArchiveClient.fetchRun(runId)
+                    .map(archived -> runMapper.toRunResponse(archived, true))
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Run not found"));
+        }
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Run not found");
     }
 
     @GetMapping("/jobs/runs/{runId}/facets")
     public Map<String, Object> getRunFacets(@PathVariable String runId,
             @RequestParam(required = false) String type) {
-        RunDocument run = repository.findById(runId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Run not found"));
+        // Try MongoDB first, then S3 fallback
+        RunDocument run = repository.findById(runId).orElse(null);
+        if (run == null && s3ArchiveClient != null) {
+            run = s3ArchiveClient.fetchRun(runId).orElse(null);
+        }
+        if (run == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Run not found");
+        }
 
         if ("job".equalsIgnoreCase(type)) {
             JobDocument job = jobRepository.findById(run.getJob())

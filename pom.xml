@@ -54,6 +54,30 @@
 			<version>7.4</version>
 		</dependency>
 
+		<!-- S3 Archival -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.25.16</version>
+		</dependency>
+
+		<!-- Parquet -->
+		<dependency>
+			<groupId>org.apache.parquet</groupId>
+			<artifactId>parquet-avro</artifactId>
+			<version>1.14.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-common</artifactId>
+			<version>3.3.6</version>
+			<exclusions>
+				<exclusion><groupId>org.slf4j</groupId><artifactId>*</artifactId></exclusion>
+				<exclusion><groupId>log4j</groupId><artifactId>*</artifactId></exclusion>
+				<exclusion><groupId>org.apache.logging.log4j</groupId><artifactId>*</artifactId></exclusion>
+			</exclusions>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>

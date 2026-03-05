@@ -43,3 +43,13 @@ openlineage:
     # Jobs and datasets have no TTL — they are reference data
   bulk:
     max-size: 500      # Maximum events per bulk ingestion request
+
+archival:
+  enabled: ${ARCHIVAL_ENABLED:false}
+  retention-days: ${ARCHIVAL_RETENTION_DAYS:90}
+  batch-size: ${ARCHIVAL_BATCH_SIZE:500}
+  cron: ${ARCHIVAL_CRON:0 0 3 * * *}
+  s3:
+    bucket: ${ARCHIVAL_S3_BUCKET:}
+    prefix: ${ARCHIVAL_S3_PREFIX:openlineage/archive}
+    region: ${ARCHIVAL_S3_REGION:eu-west-1}

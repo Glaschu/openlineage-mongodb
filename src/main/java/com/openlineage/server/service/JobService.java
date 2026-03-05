@@ -3,6 +3,10 @@ package com.openlineage.server.service;
 import com.openlineage.server.domain.Job;
 import com.openlineage.server.storage.document.JobDocument;
 import com.openlineage.server.storage.document.MarquezId;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
@@ -10,25 +14,27 @@ import java.time.ZonedDateTime;
 @Service
 public class JobService {
 
-    private final org.springframework.data.mongodb.core.MongoTemplate mongoTemplate;
+    private final MongoTemplate mongoTemplate;
     private final VersionService versionService;
 
-    public JobService(org.springframework.data.mongodb.core.MongoTemplate mongoTemplate,
-            VersionService versionService) {
+    public JobService(MongoTemplate mongoTemplate, VersionService versionService) {
         this.mongoTemplate = mongoTemplate;
         this.versionService = versionService;
     }
 
     public void upsertJob(Job job, ZonedDateTime eventTime, java.util.Map<MarquezId, java.util.UUID> inputs,
-            java.util.Map<MarquezId, java.util.UUID> outputs, String parentJobName, java.util.UUID parentJobUuid) {
-        org.springframework.data.mongodb.core.query.Query query = org.springframework.data.mongodb.core.query.Query
-                .query(org.springframework.data.mongodb.core.query.Criteria.where("_id")
-                        .is(new MarquezId(job.namespace(), job.name())));
+            java.util.Map<MarquezId, java.util.UUID> outputs, String parentJobName,
+            java.util.UUID parentJobUuid, String runId, boolean isNewRun) {
 
-        org.springframework.data.mongodb.core.query.Update update = new org.springframework.data.mongodb.core.query.Update()
+        MarquezId jobId = new MarquezId(job.namespace(), job.name());
+
+        Query query = Query.query(Criteria.where("_id").is(jobId));
+
+        Update update = new Update()
                 .setOnInsert("createdAt", eventTime)
                 .setOnInsert("searchName", job.name())
                 .set("updatedAt", eventTime)
+                .set("latestRunId", runId)
                 .set("currentVersion", versionService.computeJobVersion(job, inputs, outputs));
 
         if (parentJobName != null) {
@@ -39,15 +45,28 @@ public class JobService {
         }
 
         if (inputs != null && !inputs.isEmpty()) {
-            update.addToSet("inputs").each(inputs.keySet().toArray());
+            if (isNewRun) {
+                // New run: replace inputs with this run's inputs
+                update.set("inputs", inputs.keySet());
+            } else {
+                // Same run: merge inputs (Glue partial events)
+                update.addToSet("inputs").each(inputs.keySet().toArray());
+            }
         }
         if (outputs != null && !outputs.isEmpty()) {
-            update.addToSet("outputs").each(outputs.keySet().toArray());
+            if (isNewRun) {
+                update.set("outputs", outputs.keySet());
+            } else {
+                update.addToSet("outputs").each(outputs.keySet().toArray());
+            }
         }
 
         if (job.facets() != null && !job.facets().isEmpty()) {
             for (java.util.Map.Entry<String, com.openlineage.server.domain.Facet> entry : job.facets().entrySet()) {
-                update.set("facets." + com.openlineage.server.storage.document.DocumentDbSanitizer.sanitizeKey(entry.getKey()), com.openlineage.server.storage.document.DocumentDbSanitizer.sanitize(entry.getValue()));
+                update.set(
+                        "facets." + com.openlineage.server.storage.document.DocumentDbSanitizer
+                                .sanitizeKey(entry.getKey()),
+                        com.openlineage.server.storage.document.DocumentDbSanitizer.sanitize(entry.getValue()));
             }
 
             // Extract Description

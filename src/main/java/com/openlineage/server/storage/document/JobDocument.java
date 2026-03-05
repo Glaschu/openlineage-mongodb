@@ -30,6 +30,7 @@ public class JobDocument {
     private java.util.UUID currentVersion;
     private java.util.UUID parentJobUuid;
     private String parentJobName;
+    private String latestRunId;
 
     @Indexed
     private ZonedDateTime createdAt;
@@ -154,5 +155,13 @@ public class JobDocument {
 
     public void setSearchName(String searchName) {
         this.searchName = searchName;
+    }
+
+    public String getLatestRunId() {
+        return latestRunId;
+    }
+
+    public void setLatestRunId(String latestRunId) {
+        this.latestRunId = latestRunId;
     }
 }

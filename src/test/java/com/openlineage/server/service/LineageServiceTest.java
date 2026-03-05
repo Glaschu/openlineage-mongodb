@@ -49,7 +49,7 @@ public class LineageServiceTest {
         service.ingestEvent(event);
 
         verify(governanceService, times(1)).validateOrRegisterNamespace("new-ns", "producer-x");
-        verify(jobService, times(1)).upsertJob(any(), any(), any(), any(), any(), any());
+        verify(jobService, times(1)).upsertJob(any(), any(), any(), any(), any(), any(), any(), anyBoolean());
         verify(runService, times(1)).upsertRun(any());
         verify(eventRepo, times(1)).save(any());
     }

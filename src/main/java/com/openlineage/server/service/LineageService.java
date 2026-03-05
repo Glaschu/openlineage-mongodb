@@ -106,11 +106,24 @@ public class LineageService {
                 }
             }
 
-            jobService.upsertJob(event.job(), event.eventTime(), jobInputs, jobOutputs, parentJobName, parentJobUuid);
+            String runId = event.run() != null ? event.run().runId() : null;
+
+            // Determine merge vs replace logic for job and lineage edges
+            MarquezId jobId = new MarquezId(jobNamespace, event.job().name());
+            com.openlineage.server.storage.document.JobDocument existingJob = mongoTemplate.findById(jobId,
+                    com.openlineage.server.storage.document.JobDocument.class);
+            boolean isNewRun = false;
+            if (existingJob != null && existingJob.getLatestRunId() != null
+                    && runId != null && !runId.equals(existingJob.getLatestRunId())) {
+                isNewRun = true;
+            }
+
+            jobService.upsertJob(event.job(), event.eventTime(), jobInputs, jobOutputs, parentJobName, parentJobUuid,
+                    runId, isNewRun);
             runService.upsertRun(event);
 
             // Upsert materialized lineage edges for fast graph queries
-            upsertLineageEdges(event);
+            upsertLineageEdges(event, isNewRun);
         }
 
         // Governance Check - Job Namespace Ownership (x-user)
@@ -133,14 +146,23 @@ public class LineageService {
 
     /**
      * Upserts materialized lineage edges for fast graph traversal.
-     * - Input datasets: dataset → job (edgeType = "input")
-     * - Output datasets: job → dataset (edgeType = "output")
+     * - Same run ID: upsert-only (merge edges from partial Glue events)
+     * - New run ID: delete old edges first, then create new ones (replace)
+     * - Empty inputs/outputs: skip (preserve existing edges)
      */
-    private void upsertLineageEdges(RunEvent event) {
+    private void upsertLineageEdges(RunEvent event, boolean isNewRun) {
         String jobNamespace = event.job().namespace();
         String jobName = event.job().name();
 
-        if (event.inputs() != null) {
+        if (event.inputs() != null && !event.inputs().isEmpty()) {
+            if (isNewRun) {
+                // New run: delete old input edges, then create fresh ones
+                mongoTemplate.remove(
+                        Query.query(Criteria.where("targetNamespace").is(jobNamespace)
+                                .and("targetName").is(jobName)
+                                .and("edgeType").is("input")),
+                        LineageEdgeDocument.class);
+            }
             for (var input : event.inputs()) {
                 upsertEdge("dataset", input.namespace(), nameNormalizer.normalize(input.name()),
                         "job", jobNamespace, jobName,
@@ -148,7 +170,15 @@ public class LineageService {
             }
         }
 
-        if (event.outputs() != null) {
+        if (event.outputs() != null && !event.outputs().isEmpty()) {
+            if (isNewRun) {
+                // New run: delete old output edges, then create fresh ones
+                mongoTemplate.remove(
+                        Query.query(Criteria.where("sourceNamespace").is(jobNamespace)
+                                .and("sourceName").is(jobName)
+                                .and("edgeType").is("output")),
+                        LineageEdgeDocument.class);
+            }
             for (var output : event.outputs()) {
                 upsertEdge("job", jobNamespace, jobName,
                         "dataset", output.namespace(), nameNormalizer.normalize(output.name()),
