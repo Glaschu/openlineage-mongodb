@@ -24,6 +24,7 @@ const Datasets = lazy(() => import('../routes/datasets/Datasets'))
 const Events = lazy(() => import('../routes/events/Events'))
 const Jobs = lazy(() => import('../routes/jobs/Jobs'))
 const TableLevel = lazy(() => import('../routes/table-level/TableLevel'))
+const AlationMappings = lazy(() => import('../routes/alation-mappings/AlationMappings'))
 
 import { history, default as store } from '../store/store'
 
@@ -72,6 +73,7 @@ const App = (): ReactElement => {
                           path={'/lineage/:nodeType/:namespace/:name'}
                           element={<TableLevel />}
                         />
+                        <Route path={'/alation-mappings'} element={<AlationMappings />} />
                         <Route path='*' element={<NotFound />} />
                       </Routes>
                     </Suspense>

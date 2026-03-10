@@ -3,6 +3,8 @@
 
 import { APIError, HttpMethod } from '../../types'
 
+export const API_URL = '/api/v1'
+
 export const genericErrorMessageConstructor = (functionName: string, error: APIError): string => {
   const { code, message, details } = error
   throw `${functionName} responded with error code ${code}: ${message}.  Here are the details: ${details}`

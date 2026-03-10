@@ -10,7 +10,7 @@ import Box from '@mui/material/Box'
 import { DRAWER_WIDTH, HEADER_HEIGHT } from '../../helpers/theme'
 import { Divider, Drawer, createTheme } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCogs, faDatabase } from '@fortawesome/free-solid-svg-icons'
+import { faCogs, faDatabase, faLink } from '@fortawesome/free-solid-svg-icons'
 import MqIconButton from '../core/icon-button/MqIconButton'
 
 // for i18n
@@ -106,6 +106,14 @@ const Sidenav = () => {
             active={location.pathname === '/events'}
           >
             <SVG src={iconSearchArrow} width={'20px'} />
+          </MqIconButton>
+          <MqIconButton
+            id={'alationMappingsButton'}
+            to={'/alation-mappings'}
+            title={'Alation Mappings'}
+            active={location.pathname === '/alation-mappings'}
+          >
+            <FontAwesomeIcon icon={faLink} fontSize={20} />
           </MqIconButton>
         </Box>
         <FormControl

@@ -8,6 +8,9 @@ import com.openlineage.server.storage.repository.JobRepository;
 import com.openlineage.server.storage.repository.RunRepository;
 import com.openlineage.server.storage.repository.DatasetRepository;
 import com.openlineage.server.storage.repository.OutputDatasetFacetRepository;
+import com.openlineage.server.storage.repository.AlationMappingRepository;
+import com.openlineage.server.storage.document.AlationDatasetMappingDocument;
+import com.openlineage.server.storage.document.MappingStatus;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -28,15 +31,18 @@ public class LineageExportService {
     private final DatasetRepository datasetRepository;
     private final RunRepository runRepository;
     private final OutputDatasetFacetRepository outputFacetRepository;
+    private final AlationMappingRepository mappingRepository;
 
     public LineageExportService(MongoTemplate mongoTemplate, JobRepository jobRepository,
             DatasetRepository datasetRepository, RunRepository runRepository,
-            OutputDatasetFacetRepository outputFacetRepository) {
+            OutputDatasetFacetRepository outputFacetRepository,
+            AlationMappingRepository mappingRepository) {
         this.mongoTemplate = mongoTemplate;
         // this.jobRepository = jobRepository;
         this.datasetRepository = datasetRepository;
         this.runRepository = runRepository;
         this.outputFacetRepository = outputFacetRepository;
+        this.mappingRepository = mappingRepository;
     }
 
     public LineageExportResult exportLineage(int days, List<String> requestedNamespaces) {
@@ -71,6 +77,15 @@ public class LineageExportService {
 
         List<JobLineageRow> jobRows = new ArrayList<>();
         List<ColumnLineageRow> colRows = new ArrayList<>();
+
+        // Fetch Alation Mappings for the namespace
+        List<AlationDatasetMappingDocument> mappings = mappingRepository.findByOpenLineageNamespace(namespace).stream()
+                .filter(m -> m.getStatus() == MappingStatus.ACCEPTED)
+                .toList();
+        Map<String, Long> alationMap = new HashMap<>();
+        for (AlationDatasetMappingDocument m : mappings) {
+            alationMap.put(m.getOpenLineageDatasetName(), m.getAlationDatasetId());
+        }
 
         // Cache datasets
         Set<MarquezId> datasetIdsToFetch = new HashSet<>();
@@ -129,9 +144,14 @@ public class LineageExportService {
                 for (MarquezId outputId : outputs) {
                     DatasetDocument outputDs = datasetMap.get(outputId);
 
+                    Long sourceAlationId = alationMap.get(inputId.getName());
+                    Long targetAlationId = alationMap.get(outputId.getName());
+
                     jobRows.add(new JobLineageRow(
                             getUuid(inputId), inputId.getNamespace(), inputId.getName(), getPhysicalName(inputDs),
+                            sourceAlationId,
                             getUuid(outputId), outputId.getNamespace(), outputId.getName(), getPhysicalName(outputDs),
+                            targetAlationId,
                             getUuid(job.getId()), job.getId().getNamespace(), job.getId().getName(), "JOB",
                             null, // Desc
                             lastRunTime, lastRunState,
