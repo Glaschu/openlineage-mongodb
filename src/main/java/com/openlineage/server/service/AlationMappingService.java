@@ -9,6 +9,9 @@ import com.openlineage.server.storage.document.OutputDatasetFacetDocument;
 import com.openlineage.server.storage.repository.AlationMappingRepository;
 import com.openlineage.server.storage.repository.DatasetRepository;
 import com.openlineage.server.storage.repository.OutputDatasetFacetRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -20,13 +23,15 @@ import java.util.stream.Collectors;
 @Service
 public class AlationMappingService {
 
+    private static final Logger log = LoggerFactory.getLogger(AlationMappingService.class);
+
     private final AlationMappingRepository mappingRepository;
-    private final AlationClientService alationClientService;
+    private final Optional<AlationClientService> alationClientService;
     private final DatasetRepository datasetRepository;
     private final OutputDatasetFacetRepository outputFacetRepository;
 
     public AlationMappingService(AlationMappingRepository mappingRepository,
-            AlationClientService alationClientService,
+            Optional<AlationClientService> alationClientService,
             DatasetRepository datasetRepository,
             OutputDatasetFacetRepository outputFacetRepository) {
         this.mappingRepository = mappingRepository;
@@ -36,24 +41,37 @@ public class AlationMappingService {
     }
 
     public void suggestMappingsForSchema(String openLineageNamespace, Long alationSchemaId) {
-        List<DatasetDocument> olDatasets = datasetRepository.findAll().stream()
-                .filter(d -> d.getId().getNamespace().equals(openLineageNamespace))
-                .collect(Collectors.toList());
+        if (alationClientService.isEmpty()) {
+            log.warn("Alation client is not configured (alation.host not set). Cannot suggest mappings.");
+            throw new IllegalStateException("Alation integration is not configured");
+        }
+
+        AlationClientService client = alationClientService.get();
+
+        List<DatasetDocument> olDatasets = datasetRepository
+                .findByIdNamespace(openLineageNamespace, Pageable.unpaged())
+                .getContent();
 
         if (olDatasets.isEmpty()) {
+            log.info("No OpenLineage datasets found for namespace='{}'. Skipping suggestion.", openLineageNamespace);
             return;
         }
 
-        List<AlationDataset> alationDatasets = alationClientService.getDatasetsBySchema(alationSchemaId);
+        log.info("Found {} OpenLineage datasets for namespace='{}'. Fetching Alation datasets for schemaId={}",
+                olDatasets.size(), openLineageNamespace, alationSchemaId);
+
+        List<AlationDataset> alationDatasets = client.getDatasetsBySchema(alationSchemaId);
         if (alationDatasets.isEmpty()) {
+            log.info("No Alation datasets found for schemaId={}. Skipping suggestion.", alationSchemaId);
             return;
         }
 
-        List<AlationColumn> allAlationColumns = alationClientService.getColumnsForSchema(alationSchemaId);
+        List<AlationColumn> allAlationColumns = client.getColumnsForSchema(alationSchemaId);
 
         List<AlationDatasetMappingDocument> existingMappings = mappingRepository
                 .findByOpenLineageNamespace(openLineageNamespace);
 
+        int suggestedCount = 0;
         for (DatasetDocument olDataset : olDatasets) {
             String olName = olDataset.getId().getName();
 
@@ -77,8 +95,12 @@ public class AlationMappingService {
 
             if (bestMatch != null && highestScore > 0.4) {
                 saveSuggestion(openLineageNamespace, olName, bestMatch, highestScore);
+                suggestedCount++;
             }
         }
+
+        log.info("Completed mapping suggestions for namespace='{}': {} suggestions created",
+                openLineageNamespace, suggestedCount);
     }
 
     private double calculateMatchScore(DatasetDocument olDataset, AlationDataset alDataset,
@@ -98,8 +120,7 @@ public class AlationMappingService {
             score += 0.4; // Partial match
         }
 
-        // 2. Schema/Column matching (Optional Enhancement)
-        // If we can get column lineage or schema facet, we compare columns
+        // 2. Schema/Column matching
         Optional<OutputDatasetFacetDocument> facetOpt = outputFacetRepository.findById(olDataset.getId());
         if (facetOpt.isPresent() && facetOpt.get().getFacets() != null) {
             Object schemaFacet = facetOpt.get().getFacets().get("schema");
@@ -123,18 +144,19 @@ public class AlationMappingService {
                     }
                     if (!olFields.isEmpty()) {
                         double columnMatchRatio = (double) matchCount / olFields.size();
-                        score += (columnMatchRatio * 0.5); // Add up to 0.5 for schema match
+                        score += (columnMatchRatio * 0.5);
                     }
                 }
             }
         }
 
-        return Math.min(score, 1.0); // Cap at 1.0
+        return Math.min(score, 1.0);
     }
 
     private void saveSuggestion(String olNamespace, String olName, AlationDataset bestMatch, double score) {
         String id = olNamespace + ":" + olName;
-        AlationDatasetMappingDocument doc = mappingRepository.findById(id).orElse(new AlationDatasetMappingDocument());
+        AlationDatasetMappingDocument doc = mappingRepository.findById(id)
+                .orElse(new AlationDatasetMappingDocument());
 
         // Don't overwrite if it's already rejected or accepted
         if (doc.getStatus() == MappingStatus.ACCEPTED || doc.getStatus() == MappingStatus.REJECTED) {
@@ -145,7 +167,8 @@ public class AlationMappingService {
         doc.setOpenLineageNamespace(olNamespace);
         doc.setOpenLineageDatasetName(olName);
         doc.setAlationDatasetId(bestMatch.getId());
-        doc.setAlationDatasetName(bestMatch.getName() != null ? bestMatch.getName() : bestMatch.getNameInDatasource());
+        doc.setAlationDatasetName(
+                bestMatch.getName() != null ? bestMatch.getName() : bestMatch.getNameInDatasource());
         doc.setConfidenceScore(score);
         doc.setStatus(MappingStatus.SUGGESTED);
         doc.setUpdatedAt(Instant.now());
@@ -154,5 +177,7 @@ public class AlationMappingService {
         }
 
         mappingRepository.save(doc);
+        log.debug("Saved mapping suggestion: OL='{}:{}' -> Alation='{}' (score={})",
+                olNamespace, olName, doc.getAlationDatasetName(), score);
     }
 }

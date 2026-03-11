@@ -4,6 +4,8 @@ import com.openlineage.server.service.AlationMappingService;
 import com.openlineage.server.storage.document.AlationDatasetMappingDocument;
 import com.openlineage.server.storage.document.MappingStatus;
 import com.openlineage.server.storage.repository.AlationMappingRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +16,8 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/v2/alation-mappings")
 public class AlationMappingController {
+
+    private static final Logger log = LoggerFactory.getLogger(AlationMappingController.class);
 
     private final AlationMappingService mappingService;
     private final AlationMappingRepository mappingRepository;
@@ -27,8 +31,14 @@ public class AlationMappingController {
     @PostMapping("/suggest")
     public ResponseEntity<Void> suggestMappings(@RequestParam String namespace,
             @RequestParam Long schemaId) {
-        mappingService.suggestMappingsForSchema(namespace, schemaId);
-        return ResponseEntity.accepted().build();
+        log.info("Triggering mapping suggestions for namespace='{}', schemaId={}", namespace, schemaId);
+        try {
+            mappingService.suggestMappingsForSchema(namespace, schemaId);
+            return ResponseEntity.accepted().build();
+        } catch (Exception e) {
+            log.error("Failed to suggest mappings for namespace='{}', schemaId={}", namespace, schemaId, e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @GetMapping
@@ -37,16 +47,14 @@ public class AlationMappingController {
             @RequestParam(required = false) MappingStatus status) {
 
         List<AlationDatasetMappingDocument> mappings;
-        if (namespace != null) {
+        if (namespace != null && status != null) {
+            mappings = mappingRepository.findByOpenLineageNamespaceAndStatus(namespace, status);
+        } else if (namespace != null) {
             mappings = mappingRepository.findByOpenLineageNamespace(namespace);
-            if (status != null) {
-                mappings = mappings.stream().filter(m -> m.getStatus() == status).toList();
-            }
+        } else if (status != null) {
+            mappings = mappingRepository.findByStatus(status);
         } else {
             mappings = mappingRepository.findAll();
-            if (status != null) {
-                mappings = mappings.stream().filter(m -> m.getStatus() == status).toList();
-            }
         }
 
         return ResponseEntity.ok(mappings);
@@ -56,6 +64,7 @@ public class AlationMappingController {
     public ResponseEntity<AlationDatasetMappingDocument> acceptMapping(@PathVariable String id) {
         Optional<AlationDatasetMappingDocument> docOpt = mappingRepository.findById(id);
         if (docOpt.isEmpty()) {
+            log.warn("Mapping not found for accept: id='{}'", id);
             return ResponseEntity.notFound().build();
         }
 
@@ -64,6 +73,7 @@ public class AlationMappingController {
         doc.setUpdatedAt(Instant.now());
         mappingRepository.save(doc);
 
+        log.info("Mapping accepted: id='{}', dataset='{}'", id, doc.getAlationDatasetName());
         return ResponseEntity.ok(doc);
     }
 
@@ -71,6 +81,7 @@ public class AlationMappingController {
     public ResponseEntity<AlationDatasetMappingDocument> rejectMapping(@PathVariable String id) {
         Optional<AlationDatasetMappingDocument> docOpt = mappingRepository.findById(id);
         if (docOpt.isEmpty()) {
+            log.warn("Mapping not found for reject: id='{}'", id);
             return ResponseEntity.notFound().build();
         }
 
@@ -79,6 +90,7 @@ public class AlationMappingController {
         doc.setUpdatedAt(Instant.now());
         mappingRepository.save(doc);
 
+        log.info("Mapping rejected: id='{}', dataset='{}'", id, doc.getAlationDatasetName());
         return ResponseEntity.ok(doc);
     }
 }

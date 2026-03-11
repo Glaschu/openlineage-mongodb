@@ -53,3 +53,12 @@ archival:
     bucket: ${ARCHIVAL_S3_BUCKET:}
     prefix: ${ARCHIVAL_S3_PREFIX:openlineage/archive}
     region: ${ARCHIVAL_S3_REGION:eu-west-1}
+
+# Alation integration (optional — set alation.host to enable)
+# See https://developer.alation.com/dev/reference/overview
+#alation:
+#  host: ${ALATION_HOST:}                        # e.g. https://alation.yourcompany.com
+#  api-token: ${ALATION_API_TOKEN:}              # Short-lived API access token (for dev)
+#  refresh-token: ${ALATION_REFRESH_TOKEN:}      # Long-lived refresh token (for prod)
+#  page-size: ${ALATION_PAGE_SIZE:100}           # Results per page (max 1000)
+

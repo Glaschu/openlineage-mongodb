@@ -1,73 +1,127 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import {
+    Alert,
+    Autocomplete,
     Box,
     Button,
+    Chip,
     CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
     Paper,
+    Snackbar,
     Table,
     TableBody,
     TableCell,
     TableContainer,
     TableHead,
     TableRow,
+    TextField,
     Typography,
 } from '@mui/material'
 import {
-    acceptAlationMapping,
-    getAlationMappings,
-    rejectAlationMapping,
-    suggestAlationMappings,
-} from '../../store/requests/alation'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+    useAcceptMapping,
+    useAlationMappings,
+    useRejectMapping,
+    useSuggestMappings,
+} from '../../queries/alation'
+import { useNamespaces } from '../../queries/namespaces'
+import { Namespace } from '../../types/api'
 
 import { formatDatePicker } from '../../helpers/time'
 import { useTranslation } from 'react-i18next'
 
-interface AlationMapping {
-    id: string
-    openLineageNamespace: string
-    openLineageDatasetName: string
-    alationDatasetId: number
-    alationDatasetName: string
-    confidenceScore: number
-    status: 'SUGGESTED' | 'ACCEPTED' | 'REJECTED'
-    updatedAt: string
-}
+type StatusFilter = '' | 'SUGGESTED' | 'ACCEPTED' | 'REJECTED'
 
 const AlationMappings = () => {
     const { t } = useTranslation()
-    const queryClient = useQueryClient()
 
-    // Fetch all mappings (in a real app we might want to paginate or filter by namespace)
-    const { data: mappings, isLoading, error } = useQuery<AlationMapping[]>({
-        queryKey: ['alationMappings'],
-        queryFn: () => getAlationMappings(),
-    })
+    // Filter state
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>('')
+
+    // Suggest dialog state
+    const [suggestOpen, setSuggestOpen] = useState(false)
+    const [suggestNamespace, setSuggestNamespace] = useState('')
+    const [suggestSchemaId, setSuggestSchemaId] = useState('')
+
+    // Toast state
+    const [snackbar, setSnackbar] = useState<{
+        open: boolean
+        message: string
+        severity: 'success' | 'error'
+    }>({ open: false, message: '', severity: 'success' })
+
+    // Queries
+    const {
+        data: mappings,
+        isLoading,
+        error,
+    } = useAlationMappings(undefined, statusFilter || undefined)
+    const { data: namespacesData } = useNamespaces()
+    const namespaces: Namespace[] = namespacesData?.namespaces || []
 
     // Mutations
-    const acceptMutation = useMutation({
-        mutationFn: acceptAlationMapping,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['alationMappings'] })
-        },
-    })
+    const acceptMutation = useAcceptMapping()
+    const rejectMutation = useRejectMapping()
+    const suggestMutation = useSuggestMappings()
 
-    const rejectMutation = useMutation({
-        mutationFn: rejectAlationMapping,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['alationMappings'] })
-        },
-    })
-
-    // To trigger suggestion logic, you need an OL namespace and an Alation Schema ID.
-    // We'll hardcode some inputs here for demonstration, but normally these would come from form inputs.
-    const handleSuggest = async () => {
-        // Example only - would normally prompt the user or integrate this automatically
-        const defaultNamespace = 'my-namespace'
-        const defaultSchemaId = 1
-        await suggestAlationMappings(defaultNamespace, defaultSchemaId)
-        queryClient.invalidateQueries({ queryKey: ['alationMappings'] })
+    const showSnackbar = (message: string, severity: 'success' | 'error') => {
+        setSnackbar({ open: true, message, severity })
     }
+
+    const handleAccept = (id: string) => {
+        acceptMutation.mutate(id, {
+            onSuccess: () => showSnackbar(t('alation_mappings.accept_success'), 'success'),
+            onError: () => showSnackbar(t('alation_mappings.action_error'), 'error'),
+        })
+    }
+
+    const handleReject = (id: string) => {
+        rejectMutation.mutate(id, {
+            onSuccess: () => showSnackbar(t('alation_mappings.reject_success'), 'success'),
+            onError: () => showSnackbar(t('alation_mappings.action_error'), 'error'),
+        })
+    }
+
+    const handleSuggestSubmit = () => {
+        const schemaId = parseInt(suggestSchemaId, 10)
+        if (!suggestNamespace || isNaN(schemaId)) {
+            return
+        }
+
+        suggestMutation.mutate(
+            { namespace: suggestNamespace, schemaId },
+            {
+                onSuccess: () => {
+                    showSnackbar(t('alation_mappings.suggest_success'), 'success')
+                    setSuggestOpen(false)
+                    setSuggestNamespace('')
+                    setSuggestSchemaId('')
+                },
+                onError: () => {
+                    showSnackbar(t('alation_mappings.suggest_error'), 'error')
+                },
+            }
+        )
+    }
+
+    const handleSuggestClose = () => {
+        setSuggestOpen(false)
+        setSuggestNamespace('')
+        setSuggestSchemaId('')
+    }
+
+    const isMutating = acceptMutation.isPending || rejectMutation.isPending
+
+    const statusFilters: { label: string; value: StatusFilter }[] = [
+        { label: t('alation_mappings.filter_all'), value: '' },
+        { label: t('alation_mappings.filter_suggested'), value: 'SUGGESTED' },
+        { label: t('alation_mappings.filter_accepted'), value: 'ACCEPTED' },
+        { label: t('alation_mappings.filter_rejected'), value: 'REJECTED' },
+    ]
 
     if (isLoading) {
         return (
@@ -87,76 +141,129 @@ const AlationMappings = () => {
 
     return (
         <Box p={3}>
+            {/* Header */}
             <Box display='flex' justifyContent='space-between' alignItems='center' mb={3}>
-                <Typography variant='h5'>Alation Mappings</Typography>
-                <Button variant='contained' color='primary' onClick={handleSuggest}>
-                    Suggest Mappings (Demo)
+                <Typography variant='h5'>{t('alation_mappings.heading')}</Typography>
+                <Button
+                    id='suggestMappingsButton'
+                    variant='contained'
+                    color='primary'
+                    onClick={() => setSuggestOpen(true)}
+                >
+                    {t('alation_mappings.suggest_button')}
                 </Button>
             </Box>
 
+            {/* Status Filters */}
+            <Box display='flex' gap={1} mb={3}>
+                {statusFilters.map((f) => (
+                    <Chip
+                        key={f.value}
+                        label={f.label}
+                        color={statusFilter === f.value ? 'primary' : 'default'}
+                        variant={statusFilter === f.value ? 'filled' : 'outlined'}
+                        onClick={() => setStatusFilter(f.value)}
+                        clickable
+                    />
+                ))}
+            </Box>
+
+            {/* Mappings Table */}
             <TableContainer component={Paper}>
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>OpenLineage Dataset</TableCell>
-                            <TableCell>Alation Dataset</TableCell>
-                            <TableCell>Confidence Score</TableCell>
-                            <TableCell>Status</TableCell>
-                            <TableCell>Last Updated</TableCell>
-                            <TableCell align='right'>Actions</TableCell>
+                            <TableCell>{t('alation_mappings.col_ol_dataset')}</TableCell>
+                            <TableCell>{t('alation_mappings.col_alation_dataset')}</TableCell>
+                            <TableCell>{t('alation_mappings.col_confidence')}</TableCell>
+                            <TableCell>{t('alation_mappings.col_status')}</TableCell>
+                            <TableCell>{t('alation_mappings.col_updated')}</TableCell>
+                            <TableCell align='right'>{t('alation_mappings.col_actions')}</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {mappings?.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={6} align='center'>
-                                    No mappings found.
+                                    <Box py={4}>
+                                        <Typography variant='h6' gutterBottom>
+                                            {t('alation_mappings.empty_title')}
+                                        </Typography>
+                                        <Typography color='text.secondary'>
+                                            {t('alation_mappings.empty_body')}
+                                        </Typography>
+                                    </Box>
                                 </TableCell>
                             </TableRow>
                         )}
                         {mappings?.map((row) => (
                             <TableRow key={row.id}>
                                 <TableCell>
-                                    {row.openLineageNamespace} / {row.openLineageDatasetName}
+                                    <Typography variant='body2' fontWeight={500}>
+                                        {row.openLineageDatasetName}
+                                    </Typography>
+                                    <Typography variant='caption' color='text.secondary'>
+                                        {row.openLineageNamespace}
+                                    </Typography>
                                 </TableCell>
                                 <TableCell>
-                                    {row.alationDatasetName} (ID: {row.alationDatasetId})
+                                    <Typography variant='body2' fontWeight={500}>
+                                        {row.alationDatasetName}
+                                    </Typography>
+                                    <Typography variant='caption' color='text.secondary'>
+                                        ID: {row.alationDatasetId}
+                                    </Typography>
                                 </TableCell>
-                                <TableCell>{(row.confidenceScore * 100).toFixed(1)}%</TableCell>
                                 <TableCell>
-                                    <Typography
+                                    <Chip
+                                        size='small'
+                                        label={`${(row.confidenceScore * 100).toFixed(0)}%`}
+                                        color={
+                                            row.confidenceScore >= 0.8
+                                                ? 'success'
+                                                : row.confidenceScore >= 0.5
+                                                    ? 'warning'
+                                                    : 'default'
+                                        }
+                                        variant='outlined'
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <Chip
+                                        size='small'
+                                        label={row.status}
                                         color={
                                             row.status === 'ACCEPTED'
-                                                ? 'success.main'
+                                                ? 'success'
                                                 : row.status === 'REJECTED'
-                                                    ? 'error.main'
-                                                    : 'text.secondary'
+                                                    ? 'error'
+                                                    : 'default'
                                         }
-                                    >
-                                        {row.status}
-                                    </Typography>
+                                    />
                                 </TableCell>
                                 <TableCell>{formatDatePicker(row.updatedAt)}</TableCell>
                                 <TableCell align='right'>
                                     {row.status === 'SUGGESTED' && (
                                         <Box display='flex' gap={1} justifyContent='flex-end'>
                                             <Button
+                                                id={`acceptMapping-${row.id}`}
                                                 size='small'
                                                 variant='contained'
                                                 color='success'
-                                                disabled={acceptMutation.isPending || rejectMutation.isPending}
-                                                onClick={() => acceptMutation.mutate(row.id)}
+                                                disabled={isMutating}
+                                                onClick={() => handleAccept(row.id)}
                                             >
-                                                Accept
+                                                {t('alation_mappings.accept')}
                                             </Button>
                                             <Button
+                                                id={`rejectMapping-${row.id}`}
                                                 size='small'
                                                 variant='outlined'
                                                 color='error'
-                                                disabled={acceptMutation.isPending || rejectMutation.isPending}
-                                                onClick={() => rejectMutation.mutate(row.id)}
+                                                disabled={isMutating}
+                                                onClick={() => handleReject(row.id)}
                                             >
-                                                Reject
+                                                {t('alation_mappings.reject')}
                                             </Button>
                                         </Box>
                                     )}
@@ -166,6 +273,86 @@ const AlationMappings = () => {
                     </TableBody>
                 </Table>
             </TableContainer>
+
+            {/* Suggest Dialog */}
+            <Dialog
+                open={suggestOpen}
+                onClose={handleSuggestClose}
+                maxWidth='sm'
+                fullWidth
+            >
+                <DialogTitle>{t('alation_mappings.suggest_dialog_title')}</DialogTitle>
+                <DialogContent>
+                    <DialogContentText sx={{ mb: 2 }}>
+                        {t('alation_mappings.suggest_dialog_body')}
+                    </DialogContentText>
+                    <Autocomplete
+                        id='suggest-namespace-select'
+                        options={namespaces}
+                        getOptionLabel={(option) => option.name}
+                        value={namespaces.find((n) => n.name === suggestNamespace) || null}
+                        onChange={(_event, newValue) => {
+                            setSuggestNamespace(newValue?.name || '')
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label={t('alation_mappings.namespace_label')}
+                                fullWidth
+                                margin='normal'
+                            />
+                        )}
+                    />
+                    <TextField
+                        id='suggest-schema-id'
+                        label={t('alation_mappings.schema_id_label')}
+                        type='number'
+                        fullWidth
+                        margin='normal'
+                        value={suggestSchemaId}
+                        onChange={(e) => setSuggestSchemaId(e.target.value)}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleSuggestClose}>
+                        {t('alation_mappings.cancel')}
+                    </Button>
+                    <Button
+                        id='submitSuggestMappings'
+                        onClick={handleSuggestSubmit}
+                        variant='contained'
+                        disabled={
+                            !suggestNamespace ||
+                            !suggestSchemaId ||
+                            isNaN(parseInt(suggestSchemaId, 10)) ||
+                            suggestMutation.isPending
+                        }
+                    >
+                        {suggestMutation.isPending ? (
+                            <CircularProgress size={20} />
+                        ) : (
+                            t('alation_mappings.submit')
+                        )}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Snackbar */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            >
+                <Alert
+                    onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+                    severity={snackbar.severity}
+                    variant='filled'
+                    sx={{ width: '100%' }}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     )
 }

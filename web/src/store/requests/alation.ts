@@ -1,72 +1,48 @@
-import { API_URL } from './index'
+import { API_URL } from '../../globals'
+import { genericFetchWrapper } from './index'
 
-export const getAlationMappings = async (namespace?: string, status?: string) => {
-    const url = new URL(`${API_URL}/alation-mappings`)
+export interface AlationMapping {
+    id: string
+    openLineageNamespace: string
+    openLineageDatasetName: string
+    alationDatasetId: number
+    alationDatasetName: string
+    confidenceScore: number
+    status: 'SUGGESTED' | 'ACCEPTED' | 'REJECTED'
+    createdAt: string
+    updatedAt: string
+}
+
+export const getAlationMappings = async (
+    namespace?: string,
+    status?: string
+): Promise<AlationMapping[]> => {
+    const params = new URLSearchParams()
     if (namespace) {
-        url.searchParams.append('namespace', namespace)
+        params.append('namespace', namespace)
     }
     if (status) {
-        url.searchParams.append('status', status)
+        params.append('status', status)
     }
-    const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: {
-            Accept: 'application/json',
-        },
-    })
-
-    if (!response.ok) {
-        throw new Error('Failed to fetch alation mappings')
-    }
-
-    return response.json()
+    const queryString = params.toString()
+    const url = `${API_URL}/alation-mappings${queryString ? `?${queryString}` : ''}`
+    return genericFetchWrapper(url, { method: 'GET' }, 'getAlationMappings')
 }
 
-export const suggestAlationMappings = async (namespace: string, schemaId: number) => {
-    const url = new URL(`${API_URL}/alation-mappings/suggest`)
-    url.searchParams.append('namespace', namespace)
-    url.searchParams.append('schemaId', schemaId.toString())
-
-    const response = await fetch(url.toString(), {
-        method: 'POST',
-        headers: {
-            Accept: 'application/json',
-        },
-    })
-
-    if (!response.ok) {
-        throw new Error('Failed to trigger mappings suggestion')
-    }
+export const suggestAlationMappings = async (namespace: string, schemaId: number): Promise<void> => {
+    const params = new URLSearchParams()
+    params.append('namespace', namespace)
+    params.append('schemaId', schemaId.toString())
+    const url = `${API_URL}/alation-mappings/suggest?${params.toString()}`
+    return genericFetchWrapper(url, { method: 'POST' }, 'suggestAlationMappings')
 }
 
-export const acceptAlationMapping = async (id: string) => {
-    const url = new URL(`${API_URL}/alation-mappings/${id}/accept`)
-    const response = await fetch(url.toString(), {
-        method: 'PUT',
-        headers: {
-            Accept: 'application/json',
-        },
-    })
-
-    if (!response.ok) {
-        throw new Error('Failed to accept alation mapping')
-    }
-
-    return response.json()
+export const acceptAlationMapping = async (id: string): Promise<AlationMapping> => {
+    const url = `${API_URL}/alation-mappings/${encodeURIComponent(id)}/accept`
+    return genericFetchWrapper(url, { method: 'PUT' }, 'acceptAlationMapping')
 }
 
-export const rejectAlationMapping = async (id: string) => {
-    const url = new URL(`${API_URL}/alation-mappings/${id}/reject`)
-    const response = await fetch(url.toString(), {
-        method: 'PUT',
-        headers: {
-            Accept: 'application/json',
-        },
-    })
-
-    if (!response.ok) {
-        throw new Error('Failed to reject alation mapping')
-    }
-
-    return response.json()
+export const rejectAlationMapping = async (id: string): Promise<AlationMapping> => {
+    const url = `${API_URL}/alation-mappings/${encodeURIComponent(id)}/reject`
+    return genericFetchWrapper(url, { method: 'PUT' }, 'rejectAlationMapping')
 }
