@@ -57,19 +57,11 @@ public class AlationMappingService {
             return;
         }
 
-        log.info("Found {} OpenLineage datasets for namespace='{}'. Fetching Alation datasets for schemaId={}",
-                olDatasets.size(), openLineageNamespace, alationSchemaId);
-
-        List<AlationDataset> alationDatasets = client.getDatasetsBySchema(alationSchemaId);
-        if (alationDatasets.isEmpty()) {
-            log.info("No Alation datasets found for schemaId={}. Skipping suggestion.", alationSchemaId);
-            return;
-        }
-
-        List<AlationColumn> allAlationColumns = client.getColumnsForSchema(alationSchemaId);
-
         List<AlationDatasetMappingDocument> existingMappings = mappingRepository
                 .findByOpenLineageNamespace(openLineageNamespace);
+
+        log.info("Found {} OpenLineage datasets for namespace='{}'. Searching Alation by name for schemaId={}",
+                olDatasets.size(), openLineageNamespace, alationSchemaId);
 
         int suggestedCount = 0;
         for (DatasetDocument olDataset : olDatasets) {
@@ -82,11 +74,20 @@ public class AlationMappingService {
             if (alreadyAccepted)
                 continue;
 
+            // Search Alation for tables matching this OL dataset name
+            List<AlationDataset> matchingTables = client.searchTablesByName(alationSchemaId, olName);
+            if (matchingTables.isEmpty()) {
+                log.debug("No Alation table found for olName='{}' in schemaId={}", olName, alationSchemaId);
+                continue;
+            }
+
             AlationDataset bestMatch = null;
             double highestScore = 0.0;
 
-            for (AlationDataset alDataset : alationDatasets) {
-                double score = calculateMatchScore(olDataset, alDataset, allAlationColumns);
+            for (AlationDataset alDataset : matchingTables) {
+                // Fetch columns only for this specific matched table
+                List<AlationColumn> tableColumns = client.getColumnsForDataset(alDataset.getId());
+                double score = calculateMatchScore(olDataset, alDataset, tableColumns);
                 if (score > highestScore) {
                     highestScore = score;
                     bestMatch = alDataset;

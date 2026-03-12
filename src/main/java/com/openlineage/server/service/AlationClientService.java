@@ -65,7 +65,7 @@ public class AlationClientService {
             return Collections.emptyList();
         }
 
-        String url = UriComponentsBuilder.fromPath("/integration/v2/dataset/")
+        String url = UriComponentsBuilder.fromPath("/integration/v2/table/")
                 .queryParam("schema_id", schemaId)
                 .queryParam("limit", pageSize)
                 .toUriString();
@@ -81,7 +81,7 @@ public class AlationClientService {
             return null;
         }
 
-        String url = UriComponentsBuilder.fromPath("/integration/v2/dataset/")
+        String url = UriComponentsBuilder.fromPath("/integration/v2/table/")
                 .queryParam("id", datasetId)
                 .queryParam("limit", 1)
                 .toUriString();
@@ -107,7 +107,7 @@ public class AlationClientService {
         }
 
         String url = UriComponentsBuilder.fromPath("/integration/v2/column/")
-                .queryParam("dataset_id", datasetId)
+                .queryParam("table_id", datasetId)
                 .queryParam("limit", pageSize)
                 .toUriString();
 
@@ -130,6 +130,27 @@ public class AlationClientService {
         List<AlationColumn> results = fetchAllPages(url, new ParameterizedTypeReference<>() {
         });
         log.debug("Fetched {} columns for schemaId={}", results.size(), schemaId);
+        return results;
+    }
+
+    /**
+     * Search for tables matching a given name within a specific schema.
+     * This avoids bulk-loading all tables for large schemas.
+     */
+    public List<AlationDataset> searchTablesByName(Long schemaId, String name) {
+        if (schemaId == null || name == null || name.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String url = UriComponentsBuilder.fromPath("/integration/v2/table/")
+                .queryParam("schema_id", schemaId)
+                .queryParam("name", name)
+                .queryParam("limit", pageSize)
+                .toUriString();
+
+        List<AlationDataset> results = fetchAllPages(url, new ParameterizedTypeReference<>() {
+        });
+        log.debug("Searched Alation tables for name='{}' in schemaId={}: {} results", name, schemaId, results.size());
         return results;
     }
 
@@ -158,7 +179,8 @@ public class AlationClientService {
                 // Alation returns the next page URL in the X-Next-Page header
                 String nextPage = response.getHeaders().getFirst("X-Next-Page");
                 if (nextPage != null && !nextPage.isEmpty()) {
-                    // X-Next-Page is a relative path like /integration/v2/dataset/?skip=100&limit=100
+                    // X-Next-Page is a relative path like
+                    // /integration/v2/dataset/?skip=100&limit=100
                     currentUrl = nextPage;
                     log.debug("Following X-Next-Page: {}", nextPage);
                 } else {
