@@ -2,6 +2,7 @@ package com.openlineage.server.service;
 
 import com.openlineage.server.domain.alation.AlationColumn;
 import com.openlineage.server.domain.alation.AlationDataset;
+import com.openlineage.server.domain.alation.AlationSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,7 +61,31 @@ public class AlationClientService {
 
     // ── Public API ──────────────────────────────────────────────
 
-    public List<AlationDataset> getDatasetsBySchema(Long schemaId) {
+    /**
+     * Get all schemas for a given data source ID.
+     * Uses GET /integration/v2/schema/?ds_id={dsId}
+     */
+    public List<AlationSchema> getSchemasByDsId(Long dsId) {
+        if (dsId == null) {
+            return Collections.emptyList();
+        }
+
+        String url = UriComponentsBuilder.fromPath("/integration/v2/schema/")
+                .queryParam("ds_id", dsId)
+                .queryParam("limit", pageSize)
+                .toUriString();
+
+        List<AlationSchema> results = fetchAllPages(url, new ParameterizedTypeReference<>() {
+        });
+        log.debug("Fetched {} schemas for dsId={}", results.size(), dsId);
+        return results;
+    }
+
+    /**
+     * Get tables for a given schema ID.
+     * Uses GET /integration/v2/table/?schema_id={schemaId}
+     */
+    public List<AlationDataset> getTablesBySchema(Long schemaId) {
         if (schemaId == null) {
             return Collections.emptyList();
         }
@@ -72,70 +97,34 @@ public class AlationClientService {
 
         List<AlationDataset> results = fetchAllPages(url, new ParameterizedTypeReference<>() {
         });
-        log.debug("Fetched {} datasets for schemaId={}", results.size(), schemaId);
+        log.debug("Fetched {} tables for schemaId={}", results.size(), schemaId);
         return results;
     }
 
-    public AlationDataset getDataset(Long datasetId) {
-        if (datasetId == null) {
-            return null;
-        }
-
-        String url = UriComponentsBuilder.fromPath("/integration/v2/table/")
-                .queryParam("id", datasetId)
-                .queryParam("limit", 1)
-                .toUriString();
-
-        try {
-            ResponseEntity<List<AlationDataset>> response = executeWithAuth(
-                    url, new ParameterizedTypeReference<>() {
-                    });
-
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null
-                    && !response.getBody().isEmpty()) {
-                return response.getBody().get(0);
-            }
-        } catch (Exception e) {
-            log.error("Failed to fetch dataset from Alation for datasetId={}", datasetId, e);
-        }
-        return null;
-    }
-
-    public List<AlationColumn> getColumnsForDataset(Long datasetId) {
-        if (datasetId == null) {
+    /**
+     * Get columns for a specific table.
+     * Uses GET /integration/v2/column/?table_id={tableId}
+     */
+    public List<AlationColumn> getColumnsForTable(Long tableId) {
+        if (tableId == null) {
             return Collections.emptyList();
         }
 
         String url = UriComponentsBuilder.fromPath("/integration/v2/column/")
-                .queryParam("table_id", datasetId)
+                .queryParam("table_id", tableId)
                 .queryParam("limit", pageSize)
                 .toUriString();
 
         List<AlationColumn> results = fetchAllPages(url, new ParameterizedTypeReference<>() {
         });
-        log.debug("Fetched {} columns for datasetId={}", results.size(), datasetId);
-        return results;
-    }
-
-    public List<AlationColumn> getColumnsForSchema(Long schemaId) {
-        if (schemaId == null) {
-            return Collections.emptyList();
-        }
-
-        String url = UriComponentsBuilder.fromPath("/integration/v2/column/")
-                .queryParam("schema_id", schemaId)
-                .queryParam("limit", pageSize)
-                .toUriString();
-
-        List<AlationColumn> results = fetchAllPages(url, new ParameterizedTypeReference<>() {
-        });
-        log.debug("Fetched {} columns for schemaId={}", results.size(), schemaId);
+        log.debug("Fetched {} columns for tableId={}", results.size(), tableId);
         return results;
     }
 
     /**
      * Search for tables matching a given name within a specific schema.
      * This avoids bulk-loading all tables for large schemas.
+     * Uses GET /integration/v2/table/?schema_id={schemaId}&name={name}
      */
     public List<AlationDataset> searchTablesByName(Long schemaId, String name) {
         if (schemaId == null || name == null || name.isEmpty()) {
@@ -180,7 +169,7 @@ public class AlationClientService {
                 String nextPage = response.getHeaders().getFirst("X-Next-Page");
                 if (nextPage != null && !nextPage.isEmpty()) {
                     // X-Next-Page is a relative path like
-                    // /integration/v2/dataset/?skip=100&limit=100
+                    // /integration/v2/schema/?skip=100&limit=100
                     currentUrl = nextPage;
                     log.debug("Following X-Next-Page: {}", nextPage);
                 } else {

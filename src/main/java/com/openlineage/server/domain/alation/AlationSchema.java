@@ -4,17 +4,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AlationColumn {
+public class AlationSchema {
     private Long id;
 
     @JsonProperty("name")
     private String name;
 
-    @JsonProperty("column_type")
-    private String columnType;
-
-    @JsonProperty("table_id")
-    private Long tableId;
+    @JsonProperty("ds_id")
+    private Long dsId;
 
     public Long getId() {
         return id;
@@ -32,19 +29,11 @@ public class AlationColumn {
         this.name = name;
     }
 
-    public String getColumnType() {
-        return columnType;
+    public Long getDsId() {
+        return dsId;
     }
 
-    public void setColumnType(String columnType) {
-        this.columnType = columnType;
-    }
-
-    public Long getTableId() {
-        return tableId;
-    }
-
-    public void setTableId(Long tableId) {
-        this.tableId = tableId;
+    public void setDsId(Long dsId) {
+        this.dsId = dsId;
     }
 }

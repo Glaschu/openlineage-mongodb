@@ -2,6 +2,7 @@ package com.openlineage.server.service;
 
 import com.openlineage.server.domain.alation.AlationColumn;
 import com.openlineage.server.domain.alation.AlationDataset;
+import com.openlineage.server.domain.alation.AlationSchema;
 import com.openlineage.server.storage.document.AlationDatasetMappingDocument;
 import com.openlineage.server.storage.document.DatasetDocument;
 import com.openlineage.server.storage.document.MappingStatus;
@@ -18,7 +19,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class AlationMappingService {
@@ -40,7 +40,7 @@ public class AlationMappingService {
         this.outputFacetRepository = outputFacetRepository;
     }
 
-    public void suggestMappingsForSchema(String openLineageNamespace, Long alationSchemaId) {
+    public void suggestMappingsForDataSource(String openLineageNamespace, Long dsId) {
         if (alationClientService.isEmpty()) {
             log.warn("Alation client is not configured (alation.host not set). Cannot suggest mappings.");
             throw new IllegalStateException("Alation integration is not configured");
@@ -48,6 +48,7 @@ public class AlationMappingService {
 
         AlationClientService client = alationClientService.get();
 
+        // 1. Load OL datasets for the given namespace
         List<DatasetDocument> olDatasets = datasetRepository
                 .findByIdNamespace(openLineageNamespace, Pageable.unpaged())
                 .getContent();
@@ -60,8 +61,15 @@ public class AlationMappingService {
         List<AlationDatasetMappingDocument> existingMappings = mappingRepository
                 .findByOpenLineageNamespace(openLineageNamespace);
 
-        log.info("Found {} OpenLineage datasets for namespace='{}'. Searching Alation by name for schemaId={}",
-                olDatasets.size(), openLineageNamespace, alationSchemaId);
+        // 2. Discover all schemas within the data source
+        List<AlationSchema> schemas = client.getSchemasByDsId(dsId);
+        if (schemas.isEmpty()) {
+            log.info("No Alation schemas found for dsId={}. Skipping suggestion.", dsId);
+            return;
+        }
+
+        log.info("Found {} OL datasets for namespace='{}', {} Alation schemas for dsId={}. Searching by name.",
+                olDatasets.size(), openLineageNamespace, schemas.size(), dsId);
 
         int suggestedCount = 0;
         for (DatasetDocument olDataset : olDatasets) {
@@ -74,23 +82,29 @@ public class AlationMappingService {
             if (alreadyAccepted)
                 continue;
 
-            // Search Alation for tables matching this OL dataset name
-            List<AlationDataset> matchingTables = client.searchTablesByName(alationSchemaId, olName);
-            if (matchingTables.isEmpty()) {
-                log.debug("No Alation table found for olName='{}' in schemaId={}", olName, alationSchemaId);
-                continue;
-            }
-
+            // 3. Search each schema for a table matching this OL dataset name
             AlationDataset bestMatch = null;
             double highestScore = 0.0;
 
-            for (AlationDataset alDataset : matchingTables) {
-                // Fetch columns only for this specific matched table
-                List<AlationColumn> tableColumns = client.getColumnsForDataset(alDataset.getId());
-                double score = calculateMatchScore(olDataset, alDataset, tableColumns);
-                if (score > highestScore) {
-                    highestScore = score;
-                    bestMatch = alDataset;
+            for (AlationSchema schema : schemas) {
+                List<AlationDataset> matchingTables = client.searchTablesByName(schema.getId(), olName);
+                if (matchingTables.isEmpty()) {
+                    continue;
+                }
+
+                for (AlationDataset alDataset : matchingTables) {
+                    // Fetch columns only for this specific matched table
+                    List<AlationColumn> tableColumns = client.getColumnsForTable(alDataset.getId());
+                    double score = calculateMatchScore(olDataset, alDataset, tableColumns);
+                    if (score > highestScore) {
+                        highestScore = score;
+                        bestMatch = alDataset;
+                    }
+                }
+
+                // If we found a strong match in this schema, no need to check other schemas
+                if (highestScore >= 0.8) {
+                    break;
                 }
             }
 
@@ -130,7 +144,7 @@ public class AlationMappingService {
                 if (fieldsObj instanceof List) {
                     List<?> olFields = (List<?>) fieldsObj;
                     List<String> alationColNames = allAlationColumns.stream()
-                            .filter(c -> c.getDatasetId().equals(alDataset.getId()))
+                            .filter(c -> c.getTableId() != null && c.getTableId().equals(alDataset.getId()))
                             .map(c -> c.getName() != null ? c.getName().toLowerCase() : "")
                             .toList();
 

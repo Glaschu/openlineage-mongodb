@@ -30,13 +30,13 @@ public class AlationMappingController {
 
     @PostMapping("/suggest")
     public ResponseEntity<Void> suggestMappings(@RequestParam String namespace,
-            @RequestParam Long schemaId) {
-        log.info("Triggering mapping suggestions for namespace='{}', schemaId={}", namespace, schemaId);
+            @RequestParam Long dsId) {
+        log.info("Triggering mapping suggestions for namespace='{}', dsId={}", namespace, dsId);
         try {
-            mappingService.suggestMappingsForSchema(namespace, schemaId);
+            mappingService.suggestMappingsForDataSource(namespace, dsId);
             return ResponseEntity.accepted().build();
         } catch (Exception e) {
-            log.error("Failed to suggest mappings for namespace='{}', schemaId={}", namespace, schemaId, e);
+            log.error("Failed to suggest mappings for namespace='{}', dsId={}", namespace, dsId, e);
             return ResponseEntity.internalServerError().build();
         }
     }
