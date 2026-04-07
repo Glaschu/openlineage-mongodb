@@ -122,6 +122,32 @@ public class AlationClientService {
     }
 
     /**
+     * Search for tables matching a given name across an entire data source.
+     * Uses ds_id range filters to pin to a single data source, avoiding the
+     * need to iterate through all schemas individually.
+     * Uses GET /integration/v2/table/?ds_id__gte={dsId}&ds_id__lte={dsId}&name={name}
+     */
+    public List<AlationDataset> searchTablesByNameInDataSource(Long dsId, String name) {
+        if (dsId == null || name == null || name.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String url = UriComponentsBuilder.fromPath("/integration/v2/table/")
+                .queryParam("ds_id__gte", dsId)
+                .queryParam("ds_id__lte", dsId)
+                .queryParam("name", name)
+                .queryParam("limit", pageSize)
+                .encode()
+                .toUriString();
+
+        log.info("Alation table search across dsId={}, name='{}', url='{}'", dsId, name, url);
+        List<AlationDataset> results = fetchAllPages(url, new ParameterizedTypeReference<>() {
+        });
+        log.info("Searched Alation tables for name='{}' in dsId={}: {} results", name, dsId, results.size());
+        return results;
+    }
+
+    /**
      * Search for tables matching a given name within a specific schema.
      * This avoids bulk-loading all tables for large schemas.
      * Uses GET /integration/v2/table/?schema_id={schemaId}&name={name}
@@ -138,10 +164,10 @@ public class AlationClientService {
                 .encode()
                 .toUriString();
 
-        log.info("Alation table search: schemaId={}, name='{}', url='{}'", schemaId, name, url);
+        log.debug("Alation table search: schemaId={}, name='{}', url='{}'", schemaId, name, url);
         List<AlationDataset> results = fetchAllPages(url, new ParameterizedTypeReference<>() {
         });
-        log.info("Searched Alation tables for name='{}' in schemaId={}: {} results", name, schemaId, results.size());
+        log.debug("Searched Alation tables for name='{}' in schemaId={}: {} results", name, schemaId, results.size());
         return results;
     }
 

@@ -61,17 +61,20 @@ public class AlationMappingService {
         List<AlationDatasetMappingDocument> existingMappings = mappingRepository
                 .findByOpenLineageNamespace(openLineageNamespace);
 
-        // 2. Discover all schemas within the data source
+        // 2. Build a schema lookup map for score boosting (schema_id -> schema_name)
+        //    This is a single API call regardless of how many schemas exist.
+        Map<Long, String> schemaNameById = new java.util.HashMap<>();
         List<AlationSchema> schemas = client.getSchemasByDsId(dsId);
-        if (schemas.isEmpty()) {
-            log.info("No Alation schemas found for dsId={}. Skipping suggestion.", dsId);
-            return;
+        for (AlationSchema schema : schemas) {
+            schemaNameById.put(schema.getId(), schema.getName());
         }
 
         log.info("Found {} OL datasets for namespace='{}', {} Alation schemas for dsId={}. Searching by name.",
                 olDatasets.size(), openLineageNamespace, schemas.size(), dsId);
 
         int suggestedCount = 0;
+        int apiCallCount = 0;
+
         for (DatasetDocument olDataset : olDatasets) {
             String olName = olDataset.getId().getName();
 
@@ -89,61 +92,50 @@ public class AlationMappingService {
             log.debug("OL dataset '{}' parsed -> tableName='{}', schemaHint='{}'",
                     olName, parsed.tableName, parsed.schemaHint);
 
-            // 3. Search each schema for a table matching this OL dataset name
+            // 3. Search across the entire data source by name (single API call)
+            List<AlationDataset> matchingTables = client.searchTablesByNameInDataSource(dsId, parsed.tableName);
+            apiCallCount++;
+
+            // If no result with the extracted table name and the original name is
+            // different, fall back to searching with the full OL name
+            if (matchingTables.isEmpty() && !parsed.tableName.equals(olName)) {
+                log.debug("No Alation match for tableName='{}', retrying with full olName='{}'",
+                        parsed.tableName, olName);
+                matchingTables = client.searchTablesByNameInDataSource(dsId, olName);
+                apiCallCount++;
+            }
+
+            if (matchingTables.isEmpty()) {
+                log.debug("No Alation tables found for OL dataset '{}'", olName);
+                continue;
+            }
+
+            log.debug("Found {} Alation table(s) for OL dataset '{}'", matchingTables.size(), olName);
+
+            // 4. Score each matching table
             AlationDataset bestMatch = null;
             double highestScore = 0.0;
 
-            for (AlationSchema schema : schemas) {
-                // If we extracted a schema hint, optionally prioritise matching schemas
-                if (parsed.schemaHint != null) {
-                    boolean schemaNameMatches = parsed.schemaHint.equalsIgnoreCase(schema.getName());
-                    if (!schemaNameMatches) {
-                        log.trace("Skipping Alation schema '{}' (doesn't match hint '{}')",
-                                schema.getName(), parsed.schemaHint);
-                        // Don't skip entirely — we'll still try if no hint-match succeeds
-                    }
-                }
+            for (AlationDataset alDataset : matchingTables) {
+                // Fetch columns only for this specific matched table
+                List<AlationColumn> tableColumns = client.getColumnsForTable(alDataset.getId());
+                apiCallCount++;
 
-                // Try the extracted table name first
-                List<AlationDataset> matchingTables = client.searchTablesByName(schema.getId(), parsed.tableName);
+                double score = calculateMatchScore(olDataset, alDataset, tableColumns);
 
-                // If no result with the extracted table name and the original name is
-                // different, fall back to searching with the full OL name
-                if (matchingTables.isEmpty() && !parsed.tableName.equals(olName)) {
-                    log.debug("No Alation match for tableName='{}' in schema='{}', retrying with full olName='{}'",
-                            parsed.tableName, schema.getName(), olName);
-                    matchingTables = client.searchTablesByName(schema.getId(), olName);
-                }
-
-                if (matchingTables.isEmpty()) {
-                    continue;
-                }
-
-                log.debug("Found {} Alation table(s) in schema '{}' for OL dataset '{}'",
-                        matchingTables.size(), schema.getName(), olName);
-
-                for (AlationDataset alDataset : matchingTables) {
-                    // Fetch columns only for this specific matched table
-                    List<AlationColumn> tableColumns = client.getColumnsForTable(alDataset.getId());
-                    double score = calculateMatchScore(olDataset, alDataset, tableColumns);
-
-                    // Boost score if the schema name also matches
-                    if (parsed.schemaHint != null
-                            && parsed.schemaHint.equalsIgnoreCase(schema.getName())) {
+                // Boost score if the schema name matches the parsed schema hint
+                if (parsed.schemaHint != null && alDataset.getSchemaId() != null) {
+                    String alSchemaName = schemaNameById.get(alDataset.getSchemaId());
+                    if (parsed.schemaHint.equalsIgnoreCase(alSchemaName)) {
                         score = Math.min(score + 0.1, 1.0);
                         log.debug("Schema hint '{}' matched Alation schema '{}', boosted score to {}",
-                                parsed.schemaHint, schema.getName(), score);
-                    }
-
-                    if (score > highestScore) {
-                        highestScore = score;
-                        bestMatch = alDataset;
+                                parsed.schemaHint, alSchemaName, score);
                     }
                 }
 
-                // If we found a strong match in this schema, no need to check other schemas
-                if (highestScore >= 0.8) {
-                    break;
+                if (score > highestScore) {
+                    highestScore = score;
+                    bestMatch = alDataset;
                 }
             }
 
@@ -156,8 +148,8 @@ public class AlationMappingService {
             }
         }
 
-        log.info("Completed mapping suggestions for namespace='{}': {} suggestions created",
-                openLineageNamespace, suggestedCount);
+        log.info("Completed mapping suggestions for namespace='{}': {} suggestions created, {} Alation API calls made",
+                openLineageNamespace, suggestedCount, apiCallCount);
     }
 
     private double calculateMatchScore(DatasetDocument olDataset, AlationDataset alDataset,
