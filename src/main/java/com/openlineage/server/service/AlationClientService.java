@@ -135,11 +135,13 @@ public class AlationClientService {
                 .queryParam("schema_id", schemaId)
                 .queryParam("name", name)
                 .queryParam("limit", pageSize)
+                .encode()
                 .toUriString();
 
+        log.info("Alation table search: schemaId={}, name='{}', url='{}'", schemaId, name, url);
         List<AlationDataset> results = fetchAllPages(url, new ParameterizedTypeReference<>() {
         });
-        log.debug("Searched Alation tables for name='{}' in schemaId={}: {} results", name, schemaId, results.size());
+        log.info("Searched Alation tables for name='{}' in schemaId={}: {} results", name, schemaId, results.size());
         return results;
     }
 
