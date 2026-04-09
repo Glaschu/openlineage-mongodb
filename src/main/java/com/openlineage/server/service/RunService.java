@@ -14,7 +14,7 @@ public class RunService {
         this.mongoTemplate = mongoTemplate;
     }
 
-    public void upsertRun(RunEvent event) {
+    public void upsertRun(RunEvent event, boolean isNewRun) {
         String runId = event.run().runId();
         org.springframework.data.mongodb.core.query.Query query = org.springframework.data.mongodb.core.query.Query
                 .query(org.springframework.data.mongodb.core.query.Criteria.where("_id").is(runId));
@@ -28,17 +28,28 @@ public class RunService {
                 .set("updatedAt", event.eventTime());
 
         if (event.inputs() != null && !event.inputs().isEmpty()) {
-            update.addToSet("inputs").each(event.inputs().toArray());
+            if (isNewRun) {
+                update.set("inputs", event.inputs());
+            } else {
+                update.addToSet("inputs").each(event.inputs().toArray());
+            }
         }
         if (event.outputs() != null && !event.outputs().isEmpty()) {
-            update.addToSet("outputs").each(event.outputs().toArray());
+            if (isNewRun) {
+                update.set("outputs", event.outputs());
+            } else {
+                update.addToSet("outputs").each(event.outputs().toArray());
+            }
         }
 
         if (event.run().facets() != null && !event.run().facets().isEmpty()) {
             // Facets logic: replace atomic or merge? For Run, replacing run facets map is
             // standard as they naturally specific to the run state.
             for (java.util.Map.Entry<String, Object> entry : event.run().facets().entrySet()) {
-                update.set("runFacets." + com.openlineage.server.storage.document.DocumentDbSanitizer.sanitizeKey(entry.getKey()), com.openlineage.server.storage.document.DocumentDbSanitizer.sanitize(entry.getValue()));
+                update.set(
+                        "runFacets." + com.openlineage.server.storage.document.DocumentDbSanitizer
+                                .sanitizeKey(entry.getKey()),
+                        com.openlineage.server.storage.document.DocumentDbSanitizer.sanitize(entry.getValue()));
             }
         }
 

@@ -58,7 +58,7 @@ class RunServiceTest {
         when(event.eventType()).thenReturn("RUNNING");
         when(event.eventTime()).thenReturn(now);
 
-        runService.upsertRun(event);
+        runService.upsertRun(event, false);
 
         ArgumentCaptor<Update> updateCaptor = ArgumentCaptor.forClass(Update.class);
         verify(mongoTemplate).upsert(

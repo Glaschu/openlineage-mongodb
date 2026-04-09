@@ -155,33 +155,35 @@ def generate_events(num_parent_jobs=5, children_per_parent=3, datasets_per_job=2
         
     return events
 
-def post_events(events, target_url):
-    print(f"Posting {len(events)} events to {target_url}...")
+def post_events(events, target_urls):
+    print(f"Posting {len(events)} events to {', '.join(target_urls)} one by one...")
     headers = {'Content-Type': 'application/json'}
     
-    # Chunk into groups of 50 to avoid Tomcat default maxPostSize (2MB)
-    chunk_size = 50
-    chunks = [events[i:i + chunk_size] for i in range(0, len(events), chunk_size)]
+    success_counts = {url: 0 for url in target_urls}
     
-    success_count = 0
-    for chunk in chunks:
-        req = urllib.request.Request(target_url, data=json.dumps(chunk).encode('utf-8'), headers=headers, method='POST')
-        try:
-            urllib.request.urlopen(req)
-            success_count += len(chunk)
-            print(f"Successfully posted chunk of {len(chunk)} events. Total: {success_count}/{len(events)}")
-        except Exception as e:
-            print(f"Error posting chunk: {e}")
-            break
+    for i, event in enumerate(events):
+        event_json = json.dumps(event).encode('utf-8')
+        for target_url in target_urls:
+            req = urllib.request.Request(target_url, data=event_json, headers=headers, method='POST')
+            try:
+                urllib.request.urlopen(req)
+                success_counts[target_url] += 1
+            except Exception as e:
+                print(f"Error posting event {i} to {target_url}: {e}")
+                
+        if (i + 1) % 50 == 0:
+            print(f"Progress: {i + 1}/{len(events)} events processed.")
             
-    print(f"Finished. Successfully posted {success_count}/{len(events)} events.")
+    for url, count in success_counts.items():
+        print(f"Finished. Successfully posted {count}/{len(events)} events to {url}.")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate synthetic OpenLineage events")
     parser.add_argument("--parents", type=int, default=10, help="Number of parent jobs (DAGs)")
     parser.add_argument("--children", type=int, default=5, help="Number of child tasks per parent")
-    parser.add_argument("--post", type=str, help="URL to POST events directly (e.g. http://localhost:8080/api/v1/events/lineage)")
+    parser.add_argument("--marquez", type=str, help="URL to POST events to Marquez directly (e.g. http://localhost:5000/api/v1/lineage)")
+    parser.add_argument("--docdb", type=str, help="URL to POST events to DocumentDB directly (e.g. http://localhost:8080/api/v2/lineage)")
     parser.add_argument("--output", type=str, default="generated_events.json", help="Output JSON file path")
     
     args = parser.parse_args()
@@ -194,5 +196,11 @@ if __name__ == "__main__":
         json.dump(events, f, indent=2)
     print(f"Saved generated events to {args.output}")
     
-    if args.post:
-        post_events(events, args.post)
+    target_urls = []
+    if args.marquez:
+        target_urls.append(args.marquez)
+    if args.docdb:
+        target_urls.append(args.docdb)
+        
+    if target_urls:
+        post_events(events, target_urls)

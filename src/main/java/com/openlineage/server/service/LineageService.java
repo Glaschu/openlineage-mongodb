@@ -120,7 +120,7 @@ public class LineageService {
 
             jobService.upsertJob(event.job(), event.eventTime(), jobInputs, jobOutputs, parentJobName, parentJobUuid,
                     runId, isNewRun);
-            runService.upsertRun(event);
+            runService.upsertRun(event, isNewRun);
 
             // Upsert materialized lineage edges for fast graph queries
             upsertLineageEdges(event, isNewRun);
