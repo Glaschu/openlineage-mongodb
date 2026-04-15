@@ -20,6 +20,11 @@ spring:
         min-size: 5
         max-size: 50
         max-wait-time: 2000
+      # Set to true to use AWS IAM authentication (MONGODB-AWS mechanism) for DocumentDB.
+      # When enabled, credentials are resolved automatically from the default AWS credential chain
+      # (environment variables, EC2 instance profile, ECS task role, etc.).
+      # Username and password should NOT be set when this is enabled.
+      iam-auth: ${MONGODB_IAM_AUTH:false}
 
 management:
   endpoints:
