@@ -38,6 +38,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @EnableAutoConfiguration(exclude = { MongoAutoConfiguration.class, MongoDataAutoConfiguration.class,
                 org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class })
 public class RunEventIntegrationTest {
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.openlineage.server.storage.repository.AlationMappingRepository alationMappingRepository;
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.openlineage.server.service.AlationClientService alationClientService;
+
 
         @Autowired
         private MockMvc mockMvc;

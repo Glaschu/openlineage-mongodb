@@ -66,6 +66,15 @@ public class VersioningIntegrationTest {
     @MockBean
     private com.openlineage.server.storage.repository.LineageEdgeRepository lineageEdgeRepository;
 
+    @MockBean
+    private com.openlineage.server.storage.repository.AlationMappingRepository alationMappingRepository;
+
+    @MockBean
+    private org.springframework.boot.autoconfigure.mongo.MongoProperties mongoProperties;
+
+    @MockBean
+    private com.openlineage.server.service.AlationClientService alationClientService;
+
     private Map<Object, Object> store = new HashMap<>();
 
     @BeforeEach

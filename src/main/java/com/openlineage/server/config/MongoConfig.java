@@ -77,6 +77,7 @@ public class MongoConfig {
      */
     @Bean
     @Order(org.springframework.core.Ordered.LOWEST_PRECEDENCE)
+    @org.springframework.boot.autoconfigure.condition.ConditionalOnBean(MongoProperties.class)
     public org.springframework.boot.autoconfigure.mongo.MongoClientSettingsBuilderCustomizer mongoClientSettingsBuilderCustomizer(
             @Value("${spring.data.mongodb.iam-auth:false}") boolean iamAuth,
             MongoProperties mongoProperties) {

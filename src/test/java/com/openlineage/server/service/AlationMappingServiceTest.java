@@ -80,7 +80,7 @@ class AlationMappingServiceTest {
         alTable.setId(500L);
         alTable.setName("orders");
         alTable.setSchemaId(100L);
-        when(alationClient.searchTablesByName(100L, "orders")).thenReturn(List.of(alTable));
+        when(alationClient.searchTablesByNameInDataSource(10L, "orders")).thenReturn(List.of(alTable));
         when(alationClient.getColumnsForTable(500L)).thenReturn(Collections.emptyList());
 
         when(outputFacetRepository.findById(dsId)).thenReturn(Optional.empty());
@@ -90,7 +90,7 @@ class AlationMappingServiceTest {
 
         // Verify correct API flow
         verify(alationClient).getSchemasByDsId(10L);
-        verify(alationClient).searchTablesByName(100L, "orders");
+        verify(alationClient).searchTablesByNameInDataSource(10L, "orders");
         verify(alationClient).getColumnsForTable(500L);
         verify(mappingRepository).save(argThat(doc ->
                 doc.getAlationDatasetId().equals(500L)
@@ -123,7 +123,7 @@ class AlationMappingServiceTest {
         service.suggestMappingsForDataSource("ns1", 10L);
 
         // Should never search Alation for an already-accepted dataset
-        verify(alationClient, never()).searchTablesByName(anyLong(), anyString());
+        verify(alationClient, never()).searchTablesByNameInDataSource(anyLong(), anyString());
         verify(mappingRepository, never()).save(any());
     }
 
@@ -145,8 +145,7 @@ class AlationMappingServiceTest {
         schema.setDsId(10L);
         when(alationClient.getSchemasByDsId(10L)).thenReturn(List.of(schema));
 
-        // No matching table in Alation
-        when(alationClient.searchTablesByName(100L, "my_table")).thenReturn(Collections.emptyList());
+        when(alationClient.searchTablesByNameInDataSource(10L, "my_table")).thenReturn(Collections.emptyList());
 
         service.suggestMappingsForDataSource("ns1", 10L);
 

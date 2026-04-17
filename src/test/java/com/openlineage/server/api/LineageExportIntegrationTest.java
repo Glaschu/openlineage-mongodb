@@ -37,6 +37,11 @@ import com.openlineage.server.domain.ColumnLineageDatasetFacet;
                 org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class
 })
 public class LineageExportIntegrationTest {
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.openlineage.server.storage.repository.AlationMappingRepository alationMappingRepository;
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.openlineage.server.service.AlationClientService alationClientService;
+
 
         @Autowired
         private MockMvc mockMvc;

@@ -39,6 +39,11 @@ import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 @EnableAutoConfiguration(exclude = { MongoAutoConfiguration.class, MongoDataAutoConfiguration.class,
                 org.springframework.boot.autoconfigure.data.mongo.MongoRepositoriesAutoConfiguration.class })
 public class MarquezCompatibilityTest {
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.openlineage.server.storage.repository.AlationMappingRepository alationMappingRepository;
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.openlineage.server.service.AlationClientService alationClientService;
+
 
         @Autowired
         private MockMvc mockMvc;

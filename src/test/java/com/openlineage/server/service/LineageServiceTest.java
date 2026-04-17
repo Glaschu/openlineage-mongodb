@@ -50,7 +50,7 @@ public class LineageServiceTest {
 
         verify(governanceService, times(1)).validateOrRegisterNamespace("new-ns", "producer-x");
         verify(jobService, times(1)).upsertJob(any(), any(), any(), any(), any(), any(), any(), anyBoolean());
-        verify(runService, times(1)).upsertRun(any());
+        verify(runService, times(1)).upsertRun(any(), anyBoolean());
         verify(eventRepo, times(1)).save(any());
     }
 
@@ -69,5 +69,51 @@ public class LineageServiceTest {
         });
 
         verify(eventRepo, never()).save(any());
+    }
+    @Test
+    public void testIngestEventWithInputsOutputsAndParent() {
+        java.util.Map<String, Object> jobMap = new java.util.HashMap<>();
+        jobMap.put("namespace", "parent-ns");
+        jobMap.put("name", "parent-job");
+
+        java.util.Map<String, Object> parentMap = new java.util.HashMap<>();
+        parentMap.put("job", jobMap);
+
+        java.util.Map<String, Object> runFacets = new java.util.HashMap<>();
+        com.openlineage.server.domain.GenericFacet parentFacet = new com.openlineage.server.domain.GenericFacet();
+        parentFacet.getAdditionalProperties().putAll(parentMap);
+        runFacets.put("parent", parentFacet);
+
+        com.openlineage.server.domain.Dataset inputDs = new com.openlineage.server.domain.Dataset("in-ns", "in-name", null);
+        com.openlineage.server.domain.Dataset outputDs = new com.openlineage.server.domain.Dataset("out-ns", "out-name", null);
+
+        RunEvent event = new RunEvent("COMPLETE", ZonedDateTime.now(),
+                new RunEvent.Run("runId2", runFacets),
+                new Job("job-ns", "job-name", null),
+                java.util.Collections.singletonList(inputDs),
+                java.util.Collections.singletonList(outputDs),
+                "producer-x", "schema-url");
+
+        com.openlineage.server.storage.document.JobDocument existingJob = new com.openlineage.server.storage.document.JobDocument();
+        existingJob.setLatestRunId("oldRunId");
+        
+        when(mongoTemplate.findById(any(), eq(com.openlineage.server.storage.document.JobDocument.class))).thenReturn(existingJob);
+        when(datasetService.upsertDataset(any(), any(), anyBoolean())).thenReturn(java.util.UUID.randomUUID());
+
+        service.ingestEvent(event, "owner1");
+
+        // Verify that governance validates the job namespace ownership
+        verify(governanceService, times(1)).validateJobNamespaceOwnership("job-ns", "owner1");
+
+        // Verify dataset upserts are called
+        verify(datasetService, times(1)).upsertDataset(eq(inputDs), any(), eq(true));
+        verify(datasetService, times(1)).upsertDataset(eq(outputDs), any(), eq(false));
+        
+        // Ensure lineage edges are deleted before inserting for a new run
+        verify(mongoTemplate, times(2)).remove(any(org.springframework.data.mongodb.core.query.Query.class), eq(com.openlineage.server.storage.document.LineageEdgeDocument.class));
+        verify(mongoTemplate, times(2)).upsert(any(org.springframework.data.mongodb.core.query.Query.class), any(org.springframework.data.mongodb.core.query.Update.class), eq(com.openlineage.server.storage.document.LineageEdgeDocument.class));
+
+        // verify event saved
+        verify(eventRepo, times(1)).save(any());
     }
 }
