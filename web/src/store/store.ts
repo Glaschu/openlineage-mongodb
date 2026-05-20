@@ -3,8 +3,8 @@ import { createBrowserHistory } from 'history'
 import { createRouterMiddleware, createRouterReducer } from '@lagunovsky/redux-react-router'
 
 import displayReducer from './slices/displaySlice'
-import lineageReducer from './slices/lineageSlice'
-import namespacesReducer from './slices/namespacesSlice'
+import lineageReducer from '@/features/lineage/slice'
+import namespacesReducer from '@/features/namespaces/slice'
 
 export const history = createBrowserHistory()
 const routerMiddleware = createRouterMiddleware(history)

@@ -7,7 +7,7 @@ export default mergeConfig(
     test: {
       globals: true,
       environment: 'happy-dom',
-      setupFiles: ['./src/setupTests.ts'],
+      setupFiles: ['./src/test/setup.ts'],
       css: {
         modules: {
           classNameStrategy: 'non-scoped',
@@ -28,20 +28,21 @@ export default mergeConfig(
           '*.config.ts',
           '*.config.js',
           // Setup and config files
-          'globalSetup.ts',
-          'setupEnzyme.ts',
-          'setupJest.ts',
           'setupProxy.js',
-          'src/setupTests.ts',
+          'src/test/**',
           'src/serviceWorker.js',
           // Entry points (covered by integration tests)
-          'src/index.tsx',
-          'src/globals.ts',
+          'src/main.tsx',
+          'src/app/globals.ts',
           // Type definition files
-          'src/types/**',
-          'src/i18n/config.ts',
+          'src/shared/types/**',
+          'src/i18n/**',
           'src/vite-env.d.ts',
           'src/styles.d.ts',
+          // Barrel files (only re-exports, no real code to cover)
+          'src/features/**/index.ts',
+          'src/shared/**/index.ts',
+          'src/features/lineage/components/graph/types.ts',
         ],
       },
     },

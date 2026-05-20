@@ -1,0 +1,33 @@
+// Copyright 2018-2025 contributors to the Marquez project
+// SPDX-License-Identifier: Apache-2.0
+
+import { describe, it, expect } from 'vitest'
+import { tableLevelNodeRenderer } from '@/features/lineage/components/table-level/nodes'
+import TableLineageDatasetNode from '@/features/lineage/components/table-level/TableLineageDatasetNode'
+import TableLineageJobNode from '@/features/lineage/components/table-level/TableLineageJobNode'
+
+describe('Table Level Nodes', () => {
+  it('should have renderer for DATASET type', () => {
+    const datasetRenderer = tableLevelNodeRenderer.get('DATASET')
+    expect(datasetRenderer).toBe(TableLineageDatasetNode)
+  })
+
+  it('should have renderer for JOB type', () => {
+    const jobRenderer = tableLevelNodeRenderer.get('JOB')
+    expect(jobRenderer).toBe(TableLineageJobNode)
+  })
+
+  it('should have renderer for GROUP type', () => {
+    const groupRenderer = tableLevelNodeRenderer.get('GROUP')
+    expect(groupRenderer).toBeDefined()
+  })
+
+  it('should have exactly 3 renderers', () => {
+    expect(tableLevelNodeRenderer.size).toBe(3)
+  })
+
+  it('should return undefined for unknown types', () => {
+    const unknownRenderer = tableLevelNodeRenderer.get('UNKNOWN' as any)
+    expect(unknownRenderer).toBeUndefined()
+  })
+})

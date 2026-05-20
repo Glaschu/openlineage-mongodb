@@ -59,13 +59,37 @@ module.exports = {
       "ignoreCase": false,
       "ignoreMemberSort": false,
       "memberSyntaxSortOrder": ["none", "all", "multiple", "single"]
+    }],
+    // Feature boundary: features must not reach into other features' internals.
+    // They can only import from another feature's public barrel (index.ts).
+    'no-restricted-imports': ['error', {
+      patterns: [
+        {
+          group: ['@/features/*/components/*', '@/features/*/api/*', '@/features/*/slice'],
+          message: 'Import from a feature\'s public barrel (e.g. @/features/datasets) instead of its internals.'
+        }
+      ]
     }]
   },
   'overrides': [
     {
-      'files': './src/i18n/config.ts',
+      'files': './src/i18n/resources.ts',
       'rules': {
         '@typescript-eslint/quotes': 'off'
+      }
+    },
+    {
+      // Allow features to import their own internals; restriction is for cross-feature imports.
+      'files': './src/features/**/*',
+      'rules': {
+        'no-restricted-imports': 'off'
+      }
+    },
+    {
+      // App and shared/Sidenav need to lazy-load feature pages and entry points
+      'files': ['./src/app/**/*', './src/shared/**/*', './src/store/**/*'],
+      'rules': {
+        'no-restricted-imports': 'off'
       }
     }
   ]

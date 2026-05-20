@@ -17,9 +17,10 @@ export default defineConfig({
   resolve: {
     extensions: ['.tsx', '.ts', '.js', '.json'],
     alias: {
+      '@': path.resolve(__dirname, 'src'),
       // elkjs tries to require 'web-worker' in Node.js environments
       // but we're in a browser, so we can safely ignore it
-      'web-worker': path.resolve(__dirname, 'src/helpers/web-worker-stub.ts'),
+      'web-worker': path.resolve(__dirname, 'src/shared/utils/web-worker-stub.ts'),
     },
   },
   server: {
@@ -48,7 +49,7 @@ export default defineConfig({
     },
   },
   define: {
-    __API_URL__: JSON.stringify('/api/v2'),
+    __API_URL__: JSON.stringify('/api/v1'),
     __API_BETA_URL__: JSON.stringify('/api/v2beta'),
     __FEEDBACK_FORM_URL__: JSON.stringify('https://forms.gle/f3tTSrZ8wPj3sHTA7'),
     __REACT_APP_ADVANCED_SEARCH__: false,
