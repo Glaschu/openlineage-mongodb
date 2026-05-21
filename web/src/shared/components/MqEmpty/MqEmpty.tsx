@@ -3,8 +3,7 @@
 
 import { Box } from '@mui/material'
 import { type ReactElement } from 'react'
-import { createTheme } from '@mui/material/styles'
-import { useTheme } from '@emotion/react'
+import { useTheme } from '@mui/material/styles'
 import MqText from '../MqText/MqText'
 
 interface MqEmptyProps {
@@ -15,7 +14,7 @@ interface MqEmptyProps {
 }
 
 const MqEmpty = ({ title, body, emoji, children }: MqEmptyProps) => {
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   return (
     <Box

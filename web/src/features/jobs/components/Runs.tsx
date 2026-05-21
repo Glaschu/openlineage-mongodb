@@ -13,12 +13,11 @@ import {
   TableRow,
 } from '@mui/material'
 import { Run } from '@/shared/types/api'
-import { alpha, createTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 import { formatUpdatedAt } from '@/shared/utils'
 import { runStateColor } from '@/shared/utils/nodes'
 import { stopWatchDuration } from '@/shared/utils/time'
 import { useJobRuns } from '@/features/jobs/api'
-import { useTheme } from '@emotion/react'
 import { useTranslation } from 'react-i18next'
 import ArrowBackIosRounded from '@mui/icons-material/ArrowBackIosRounded'
 import MQTooltip from '@/shared/components/MqTooltip/MQTooltip'
@@ -74,7 +73,7 @@ const Runs = (props: RunsProps) => {
     setState({ ...state, page: directionPage })
   }
 
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   if (runsLoading) {
     return (

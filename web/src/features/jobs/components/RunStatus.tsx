@@ -1,11 +1,11 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { Box, createTheme } from '@mui/material'
+import { Box } from '@mui/material'
 import { Run } from '@/shared/types/api'
 import { runStateColor } from '@/shared/utils/nodes'
 
-import { useTheme } from '@emotion/react'
+import { useTheme } from '@mui/material/styles'
 import MQTooltip from '@/shared/components/MqTooltip/MQTooltip'
 import React, { FunctionComponent } from 'react'
 
@@ -15,7 +15,7 @@ interface RunStatusProps {
 
 const RunStatus: FunctionComponent<RunStatusProps> = (props) => {
   const { run } = props
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   return (
     <MQTooltip title={run.state}>

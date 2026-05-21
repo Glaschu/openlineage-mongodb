@@ -1,9 +1,7 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { createTheme } from '@mui/material/styles'
-
-import { useTheme } from '@emotion/react'
+import { useTheme } from '@mui/material/styles'
 import Button from '@mui/material/Button'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
@@ -25,7 +23,7 @@ const AlertDialog: FunctionComponent<IProps> = (props) => {
     props.dialogToggle('')
   }
 
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   return (
     <Dialog open={props.dialogIsOpen}>

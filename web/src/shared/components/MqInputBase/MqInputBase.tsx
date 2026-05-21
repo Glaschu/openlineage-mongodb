@@ -1,14 +1,13 @@
 // Copyright 2018-2024 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { createTheme } from '@mui/material/styles'
-import { useTheme } from '@emotion/react'
+import { useTheme } from '@mui/material/styles'
 import InputBase, { InputBaseProps } from '@mui/material/InputBase'
 
 export interface MqInputBaseProps extends InputBaseProps {}
 
 export const MqInputBase = (props: MqInputBaseProps) => {
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
   return (
     <InputBase
       {...props}
@@ -26,7 +25,7 @@ export const MqInputBase = (props: MqInputBaseProps) => {
 }
 
 export const MqInputNoIcon = (props: InputBaseProps) => {
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   return (
     <InputBase

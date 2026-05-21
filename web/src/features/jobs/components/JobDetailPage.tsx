@@ -1,6 +1,7 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import { FEATURE_FLAGS } from '@/shared/config/featureFlags'
 import { useDeleteJob, useJob } from '@/features/jobs/api'
 import { useTranslation } from 'react-i18next'
 import React, { ChangeEvent, useEffect } from 'react'
@@ -21,7 +22,7 @@ import { LineageJob } from '@/shared/types/lineage'
 import { MqInfo } from '@/shared/components/MqInfo/MqInfo'
 import { RootState } from '@/store/store'
 import { Run } from '@/shared/types/api'
-import { alpha, createTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 import { dialogToggle } from '@/store/slices/displaySlice'
 import { faCog } from '@fortawesome/free-solid-svg-icons/faCog'
 import { formatUpdatedAt } from '@/shared/utils'
@@ -31,7 +32,6 @@ import { stopWatchDuration } from '@/shared/utils/time'
 import { truncateText } from '@/shared/utils/text'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useTheme } from '@emotion/react'
 import CloseIcon from '@mui/icons-material/Close'
 import Dialog from '@/shared/components/Dialog'
 import IconButton from '@mui/material/IconButton'
@@ -53,7 +53,7 @@ const JobDetailPage: React.FC<JobDetailPageProps> = ({ lineageJob }) => {
   const { data: job, isLoading: isJobLoading } = useJob(lineageJob.namespace, lineageJob.name)
   const dialogIsOpen = useSelector((state: RootState) => state.display.dialogIsOpen)
   const tabIndex = useSelector((state: RootState) => state.lineage.tabIndex)
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
   const navigate = useNavigate()
   const [, setSearchParams] = useSearchParams()
 
@@ -131,38 +131,43 @@ const JobDetailPage: React.FC<JobDetailPageProps> = ({ lineageJob }) => {
             )}
           </Box>
           <Box display={'flex'} alignItems={'center'}>
-            <Box mr={1}>
-              <Button
-                variant='outlined'
-                size={'small'}
-                sx={{
-                  borderColor: theme.palette.error.main,
-                  color: theme.palette.error.main,
-                  '&:hover': {
-                    borderColor: alpha(theme.palette.error.main, 0.3),
-                    backgroundColor: alpha(theme.palette.error.main, 0.3),
-                  },
-                }}
-                onClick={() => {
-                  dispatch(dialogToggle(''))
-                }}
-              >
-                {t('jobs.dialog_delete')}
-              </Button>
-              <Dialog
-                dialogIsOpen={dialogIsOpen}
-                dialogToggle={(field) => dispatch(dialogToggle(field))}
-                title={t('jobs.dialog_confirmation_title')}
-                ignoreWarning={() => {
-                  deleteJobMutation.mutate({ jobName: job.name, namespace: job.namespace }, {
-                    onSuccess: () => {
-                      navigate('/')
-                      dispatch(dialogToggle(''))
-                    }
-                  })
-                }}
-              />
-            </Box>
+            {FEATURE_FLAGS.enableDelete && (
+              <Box mr={1}>
+                <Button
+                  variant='outlined'
+                  size={'small'}
+                  sx={{
+                    borderColor: theme.palette.error.main,
+                    color: theme.palette.error.main,
+                    '&:hover': {
+                      borderColor: alpha(theme.palette.error.main, 0.3),
+                      backgroundColor: alpha(theme.palette.error.main, 0.3),
+                    },
+                  }}
+                  onClick={() => {
+                    dispatch(dialogToggle(''))
+                  }}
+                >
+                  {t('jobs.dialog_delete')}
+                </Button>
+                <Dialog
+                  dialogIsOpen={dialogIsOpen}
+                  dialogToggle={(field) => dispatch(dialogToggle(field))}
+                  title={t('jobs.dialog_confirmation_title')}
+                  ignoreWarning={() => {
+                    deleteJobMutation.mutate(
+                      { jobName: job.name, namespace: job.namespace },
+                      {
+                        onSuccess: () => {
+                          navigate('/')
+                          dispatch(dialogToggle(''))
+                        },
+                      }
+                    )
+                  }}
+                />
+              </Box>
+            )}
             <Box mr={1}>
               <Button
                 size={'small'}

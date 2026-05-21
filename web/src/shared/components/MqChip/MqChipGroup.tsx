@@ -5,8 +5,7 @@ import { useState } from 'react'
 
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { Undefinable } from '@/shared/types/util/Nullable'
-import { createTheme } from '@mui/material/styles'
-import { useTheme } from '@emotion/react'
+import { useTheme } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import MqChip from './MqChip'
 
@@ -46,7 +45,7 @@ const MqChipGroup = ({ chips, initialSelection, onSelect }: MqChipGroupProps) =>
     }, 1)
   }
 
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   return (
     <Box

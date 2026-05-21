@@ -1,24 +1,15 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import {
-  Box,
-  Button,
-  Divider,
-  FormControlLabel,
-  Grid,
-  Switch,
-  Tab,
-  Tabs,
-  createTheme,
-} from '@mui/material'
+import { Box, Button, Divider, FormControlLabel, Grid, Switch, Tab, Tabs } from '@mui/material'
 import { CalendarIcon } from '@mui/x-date-pickers'
 import { CircularProgress } from '@mui/material'
+import { FEATURE_FLAGS } from '@/shared/config/featureFlags'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { LineageDataset } from '@/shared/types/lineage'
 import { MqInfo } from '@/shared/components/MqInfo/MqInfo'
 import { RootState } from '@/store/store'
-import { alpha } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 import { datasetFacetsQualityAssertions, datasetFacetsStatus } from '@/shared/utils/nodes'
 import { dialogToggle } from '@/store/slices/displaySlice'
 import { faDatabase } from '@fortawesome/free-solid-svg-icons'
@@ -28,7 +19,6 @@ import { truncateText } from '@/shared/utils/text'
 import { useDataset, useDeleteDataset } from '@/features/datasets/api'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useTheme } from '@emotion/react'
 import { useTranslation } from 'react-i18next'
 import Assertions from './Assertions'
 import CloseIcon from '@mui/icons-material/Close'
@@ -67,7 +57,7 @@ const DatasetDetailPage: React.FC<DatasetDetailPageProps> = ({ lineageDataset })
   const tabIndex = useSelector((state: RootState) => state.lineage.tabIndex)
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
   const [, setSearchParams] = useSearchParams()
   const [showTags, setShowTags] = useState(false)
 
@@ -136,41 +126,46 @@ const DatasetDetailPage: React.FC<DatasetDetailPageProps> = ({ lineageDataset })
             </Box>
           </Box>
           <Box display={'flex'} alignItems={'center'}>
-            <Box mr={1}>
-              <Button
-                variant='outlined'
-                size={'small'}
-                sx={{
-                  borderColor: theme.palette.error.main,
-                  color: theme.palette.error.main,
-                  '&:hover': {
-                    borderColor: alpha(theme.palette.error.main, 0.3),
-                    backgroundColor: alpha(theme.palette.error.main, 0.3),
-                  },
-                }}
-                onClick={() => {
-                  dispatch(dialogToggle(''))
-                }}
-              >
-                {t('datasets.dialog_delete')}
-              </Button>
-              <Dialog
-                dialogIsOpen={dialogIsOpen}
-                dialogToggle={(field) => dispatch(dialogToggle(field))}
-                title={t('jobs.dialog_confirmation_title')}
-                ignoreWarning={() => {
-                  deleteDatasetMutation.mutate({
-                    namespace: lineageDataset.namespace,
-                    datasetName: lineageDataset.name,
-                  }, {
-                    onSuccess: () => {
-                      navigate('/datasets')
-                      dispatch(dialogToggle(''))
-                    }
-                  })
-                }}
-              />
-            </Box>
+            {FEATURE_FLAGS.enableDelete && (
+              <Box mr={1}>
+                <Button
+                  variant='outlined'
+                  size={'small'}
+                  sx={{
+                    borderColor: theme.palette.error.main,
+                    color: theme.palette.error.main,
+                    '&:hover': {
+                      borderColor: alpha(theme.palette.error.main, 0.3),
+                      backgroundColor: alpha(theme.palette.error.main, 0.3),
+                    },
+                  }}
+                  onClick={() => {
+                    dispatch(dialogToggle(''))
+                  }}
+                >
+                  {t('datasets.dialog_delete')}
+                </Button>
+                <Dialog
+                  dialogIsOpen={dialogIsOpen}
+                  dialogToggle={(field) => dispatch(dialogToggle(field))}
+                  title={t('jobs.dialog_confirmation_title')}
+                  ignoreWarning={() => {
+                    deleteDatasetMutation.mutate(
+                      {
+                        namespace: lineageDataset.namespace,
+                        datasetName: lineageDataset.name,
+                      },
+                      {
+                        onSuccess: () => {
+                          navigate('/datasets')
+                          dispatch(dialogToggle(''))
+                        },
+                      }
+                    )
+                  }}
+                />
+              </Box>
+            )}
             <IconButton onClick={() => setSearchParams({})}>
               <CloseIcon fontSize={'small'} />
             </IconButton>
@@ -215,8 +210,9 @@ const DatasetDetailPage: React.FC<DatasetDetailPageProps> = ({ lineageDataset })
                   >
                     <Box>
                       <MqStatus
-                        label={`${assertions.filter((assertion) => assertion.success).length
-                          } Passing`.toUpperCase()}
+                        label={`${
+                          assertions.filter((assertion) => assertion.success).length
+                        } Passing`.toUpperCase()}
                         color={theme.palette.primary.main}
                       />
                     </Box>
@@ -231,8 +227,9 @@ const DatasetDetailPage: React.FC<DatasetDetailPageProps> = ({ lineageDataset })
                   >
                     <Box>
                       <MqStatus
-                        label={`${assertions.filter((assertion) => !assertion.success).length
-                          } Failing`.toUpperCase()}
+                        label={`${
+                          assertions.filter((assertion) => !assertion.success).length
+                        } Failing`.toUpperCase()}
                         color={theme.palette.error.main}
                       />
                     </Box>
@@ -265,7 +262,7 @@ const DatasetDetailPage: React.FC<DatasetDetailPageProps> = ({ lineageDataset })
             <Tab label={t('datasets.history_tab')} {...a11yProps(2)} disableRipple={true} />
           </Tabs>
         </Box>
-        {tabIndex === 0 && (
+        {tabIndex === 0 && FEATURE_FLAGS.showFieldTagsToggle && (
           <Box display={'flex'} alignItems={'center'}>
             <FormControlLabel
               sx={{

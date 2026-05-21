@@ -1,16 +1,21 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import React from 'react'
+import * as useJobsHook from '@/features/jobs/api'
 import { MemoryRouter } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
-import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, screen } from '@testing-library/react'
 import { renderWithProviders } from '@/test/utils'
 import JobDetailPage from '@/features/jobs/components/JobDetailPage'
+import React from 'react'
 import type { LineageJob } from '@/shared/types/lineage'
 import type { Run } from '@/shared/types/api'
-import * as useJobsHook from '@/features/jobs/api'
+
+// Exercise delete-related UI with the feature enabled (it's hidden by default).
+vi.mock('@/shared/config/featureFlags', () => ({
+  FEATURE_FLAGS: { enableDelete: true, showFieldTagsToggle: true },
+}))
 
 // Mocks
 const {
@@ -117,9 +122,7 @@ vi.mock('@/features/jobs/components/JobTags', () => ({
 
 vi.mock('@/features/jobs/components/RunInfo', () => ({
   __esModule: true,
-  default: ({ run }: { run: Run }) => (
-    <div data-testid='run-info'>{run.id}</div>
-  ),
+  default: ({ run }: { run: Run }) => <div data-testid='run-info'>{run.id}</div>,
 }))
 
 vi.mock('@/features/jobs/components/Runs', () => ({
@@ -173,15 +176,11 @@ vi.mock('react-i18next', () => ({
   }),
   initReactI18next: {
     type: '3rdParty',
-    init: vi.fn()
-  }
+    init: vi.fn(),
+  },
 }))
 
-const renderJobDetailPage = (
-  jobData: any = null,
-  isLoading = false,
-  initialState = {} as any
-) => {
+const renderJobDetailPage = (jobData: any = null, isLoading = false, initialState = {} as any) => {
   // Mock hooks
   vi.spyOn(useJobsHook, 'useJob').mockReturnValue({
     data: jobData,
@@ -189,7 +188,7 @@ const renderJobDetailPage = (
     isPending: isLoading,
     isError: false,
     error: null,
-    refetch: vi.fn()
+    refetch: vi.fn(),
   } as any)
 
   vi.spyOn(useJobsHook, 'useDeleteJob').mockReturnValue({
@@ -218,7 +217,7 @@ const renderJobDetailPage = (
         jobs: { deletedJobName: null },
         lineage: { tabIndex: 0 },
         ...initialState,
-      }
+      },
     }
   )
 }
@@ -311,7 +310,7 @@ describe('JobDetailPage', () => {
 
     // Setup render with tab index 1 to check history tab
     renderJobDetailPage(job, false, {
-      lineage: { tabIndex: 1 }
+      lineage: { tabIndex: 1 },
     })
     expect(screen.getByTestId('runs')).toHaveTextContent('analytics/HistoryJob')
 

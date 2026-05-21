@@ -7,8 +7,7 @@ import { Box, SxProps } from '@mui/system'
 import { Link as LinkRouter } from 'react-router-dom'
 import { THEME_EXTRA } from '@/shared/theme/theme'
 import { Typography } from '@mui/material'
-import { alpha, createTheme } from '@mui/material/styles'
-import { useTheme } from '@emotion/react'
+import { alpha, useTheme } from '@mui/material/styles'
 import Link from '@mui/material/Link'
 
 interface MqTextProps {
@@ -62,7 +61,7 @@ const MqText = ({
   onClick,
   sx,
 }: MqTextProps) => {
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   const classesObject = {
     root: {

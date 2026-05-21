@@ -12,10 +12,9 @@ import {
   TableRow,
 } from '@mui/material'
 import { Dataset, DatasetVersion } from '@/shared/types/api'
-import { alpha, createTheme } from '@mui/material/styles'
+import { alpha, useTheme } from '@mui/material/styles'
 import { formatUpdatedAt } from '@/shared/utils'
 import { useDatasetVersions } from '@/features/datasets/api'
-import { useTheme } from '@emotion/react'
 import { useTranslation } from 'react-i18next'
 import ArrowBackIosRounded from '@mui/icons-material/ArrowBackIosRounded'
 import DatasetInfo from './DatasetInfo'
@@ -66,7 +65,7 @@ const DatasetVersions = (props: DatasetVersionsProps) => {
   }
 
   const { t } = useTranslation()
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   if (isLoading) {
     return (

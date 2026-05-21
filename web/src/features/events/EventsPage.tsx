@@ -10,7 +10,6 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  createTheme,
 } from '@mui/material'
 import { Event } from '@/shared/types/api'
 import { HEADER_HEIGHT } from '@/shared/theme/theme'
@@ -25,7 +24,7 @@ import { saveAs } from 'file-saver'
 import { truncateText } from '@/shared/utils/text'
 import { useEvents } from '@/features/events/api'
 import { useSearchParams } from 'react-router-dom'
-import { useTheme } from '@emotion/react'
+import { useTheme } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress/CircularProgress'
@@ -38,7 +37,7 @@ import MqJsonView from '@/shared/components/MqJsonView/MqJsonView'
 import MqPaging from '@/shared/components/Paging/MqPaging'
 import MqStatus from '@/shared/components/MqStatus/MqStatus'
 import MqText from '@/shared/components/MqText/MqText'
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect } from 'react'
 import dayjs from '@/shared/utils/dayjs'
 interface EventsState {
   events: Event[]
@@ -117,7 +116,7 @@ const Events = () => {
   }
 
   const { t } = useTranslation()
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   return (
     <Container maxWidth={'lg'} disableGutters>

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import { Box, BoxProps } from '@mui/material'
 import { ZoomTransform, zoom as d3Zoom, zoomIdentity } from 'd3-zoom'
-import { useTheme } from '@emotion/react'
+import { useTheme } from '@mui/material/styles'
 
 import { Background } from './Background'
 import {
@@ -16,7 +16,6 @@ import {
 } from '../utils/zoom'
 import { MiniMap } from './MiniMap'
 import { PositionedNode } from '@/shared/types'
-import { createTheme } from '@mui/material'
 import { useCallbackRef } from '../utils/hooks'
 import { useD3Selection } from '../utils/useD3Selection'
 import type { MiniMapPlacement } from './MiniMap'
@@ -125,7 +124,7 @@ export const ZoomPanSvg = ({
   positionedNodes = [],
   ...otherProps
 }: Props) => {
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
   const fillColor = theme.palette.secondary.dark
 
   /* ---- MEASUREMENTS AND LIMITS ---- */

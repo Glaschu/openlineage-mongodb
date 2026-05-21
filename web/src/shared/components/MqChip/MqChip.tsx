@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { createTheme } from '@mui/material/styles'
-import { useTheme } from '@emotion/react'
+import { useTheme } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import MqSmallIcon from '../MqSmallIcon/MqSmallIcon'
 import MqText from '../MqText/MqText'
@@ -32,7 +31,7 @@ const MqChip = ({
   backgroundColor,
   selectable,
 }: MqChipProps) => {
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   return (
     <Box

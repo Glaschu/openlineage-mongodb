@@ -10,12 +10,11 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  createTheme,
 } from '@mui/material'
 import { Dataset } from '@/shared/types/api'
 import { HEADER_HEIGHT } from '@/shared/theme/theme'
-import { RootState } from '@/store/store'
 import { MqScreenLoad } from '@/shared/components/MqScreenLoad/MqScreenLoad'
+import { RootState } from '@/store/store'
 import {
   datasetFacetsQualityAssertions,
   datasetFacetsStatus,
@@ -27,7 +26,7 @@ import { formatUpdatedAt } from '@/shared/utils'
 import { truncateText } from '@/shared/utils/text'
 import { useDatasets } from '@/features/datasets/api'
 import { useSelector } from 'react-redux'
-import { useTheme } from '@emotion/react'
+import { useTheme } from '@mui/material/styles'
 import { useTranslation } from 'react-i18next'
 import Assertions from '@/features/datasets/components/Assertions'
 import Box from '@mui/material/Box'
@@ -60,7 +59,7 @@ const Datasets: React.FC = () => {
   const datasets = datasetsData?.datasets || []
   const totalCount = datasetsData?.totalCount || 0
 
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   React.useEffect(() => {
     // If selectedNamespace changes, we reset page but data fetching is handled by the hook key

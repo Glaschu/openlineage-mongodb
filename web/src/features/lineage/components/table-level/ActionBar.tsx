@@ -1,4 +1,5 @@
 import { Divider, FormControlLabel, Switch, TextField } from '@mui/material'
+import { FEATURE_FLAGS } from '@/shared/config/featureFlags'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import ArrowBackIosRounded from '@mui/icons-material/ArrowBackIosRounded'
 import Refresh from '@mui/icons-material/Refresh'
@@ -145,21 +146,23 @@ export const ActionBar = ({
             }
             label={<MqText font={'mono'}>Compact Nodes</MqText>}
           />
-          <FormControlLabel
-            control={
-              <Switch
-                size={'small'}
-                value={aggregateByParent}
-                defaultChecked={searchParams.get('aggregateByParent') === 'true'}
-                onChange={(_, checked) => {
-                  setAggregateByParent(checked)
-                  searchParams.set('aggregateByParent', checked.toString())
-                  setSearchParams(searchParams)
-                }}
-              />
-            }
-            label={<MqText font={'mono'}>Group by Parent</MqText>}
-          />
+          {FEATURE_FLAGS.showGroupByParentToggle && (
+            <FormControlLabel
+              control={
+                <Switch
+                  size={'small'}
+                  value={aggregateByParent}
+                  defaultChecked={searchParams.get('aggregateByParent') === 'true'}
+                  onChange={(_, checked) => {
+                    setAggregateByParent(checked)
+                    searchParams.set('aggregateByParent', checked.toString())
+                    setSearchParams(searchParams)
+                  }}
+                />
+              }
+              label={<MqText font={'mono'}>Group by Parent</MqText>}
+            />
+          )}
         </Box>
       </Box>
     </Box>

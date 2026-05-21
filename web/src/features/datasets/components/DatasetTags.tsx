@@ -7,8 +7,7 @@ import {
   Checkbox,
   TextField,
 } from '@mui/material'
-import { Box, createTheme } from '@mui/material'
-import { RootState } from '@/store/store'
+import { Box } from '@mui/material'
 import { Tag } from '@/shared/types/api'
 import {
   useAddDatasetFieldTag,
@@ -17,9 +16,8 @@ import {
   useDeleteDatasetTag,
 } from '@/features/datasets/api'
 import { useAddTags, useTags } from '@/shared/api'
-import { useSelector } from 'react-redux'
 import { useState } from 'react'
-import { useTheme } from '@emotion/react'
+import { useTheme } from '@mui/material/styles'
 import Button from '@mui/material/Button'
 import CheckBoxIcon from '@mui/icons-material/CheckBox'
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank'
@@ -59,7 +57,7 @@ const DatasetTags = (props: DatasetTagsProps) => {
   }
 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   const handleTagDescClose = () => {
     setOpenTagDesc(false)
@@ -78,7 +76,7 @@ const DatasetTags = (props: DatasetTagsProps) => {
   }
 
   const { data } = useTags()
-  const tagsArray = Array.isArray(data) ? data : (data?.tags || [])
+  const tagsArray = Array.isArray(data) ? data : data?.tags || []
   const tagData = [...tagsArray].sort((a: Tag, b: Tag) => a.name.localeCompare(b.name))
 
   const handleTagChange = (

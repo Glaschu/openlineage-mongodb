@@ -3,14 +3,13 @@
 
 import { AppBar, Toolbar } from '@mui/material'
 import { DRAWER_WIDTH } from '@/shared/theme/theme'
-import { createTheme } from '@mui/material/styles'
-import { useTheme } from '@emotion/react'
+import { useTheme } from '@mui/material/styles'
 import Box from '@mui/material/Box'
 import React, { ReactElement } from 'react'
 import Search from '@/features/search/SearchPage'
 
 const Header = (): ReactElement => {
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   return (
     <AppBar

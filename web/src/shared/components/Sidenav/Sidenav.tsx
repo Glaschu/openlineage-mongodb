@@ -8,7 +8,7 @@ import { Link, useLocation } from 'react-router-dom'
 import Box from '@mui/material/Box'
 
 import { DRAWER_WIDTH, HEADER_HEIGHT } from '@/shared/theme/theme'
-import { Divider, Drawer, createTheme } from '@mui/material'
+import { Divider, Drawer } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCogs, faDatabase, faLink } from '@fortawesome/free-solid-svg-icons'
 import MqIconButton from '@/shared/components/MqIconButton/MqIconButton'
@@ -17,7 +17,7 @@ import MqIconButton from '@/shared/components/MqIconButton/MqIconButton'
 import '@/i18n'
 import { FormControl, MenuItem, Select } from '@mui/material'
 import { MqInputNoIcon } from '@/shared/components/MqInputBase/MqInputBase'
-import { useTheme } from '@emotion/react'
+import { useTheme } from '@mui/material/styles'
 
 import Dashboard from '@mui/icons-material/Dashboard'
 import iconSearchArrow from '@/assets/img/iconSearchArrow.svg'
@@ -28,7 +28,7 @@ const Sidenav = () => {
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng)
   }
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   const location = useLocation()
 

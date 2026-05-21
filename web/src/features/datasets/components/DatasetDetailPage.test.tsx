@@ -1,14 +1,19 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import * as useDatasetsHook from '@/features/datasets/api'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, screen } from '@testing-library/react'
 import { renderWithProviders } from '@/test/utils'
 import DatasetDetailPage from '@/features/datasets/components/DatasetDetailPage'
 import type { Dataset } from '@/shared/types/api'
 import type { LineageDataset } from '@/shared/types/lineage'
-import * as useDatasetsHook from '@/features/datasets/api'
+
+// Exercise delete-related UI with the feature enabled (it's hidden by default).
+vi.mock('@/shared/config/featureFlags', () => ({
+  FEATURE_FLAGS: { enableDelete: true, showFieldTagsToggle: true },
+}))
 
 // Mocks
 const {
@@ -93,28 +98,29 @@ vi.mock('react-i18next', () => ({
   }),
 }))
 
-const createMockDataset = (overrides = {}): Dataset => ({
-  id: { namespace: 'test-namespace', name: 'test-dataset' },
-  type: 'DB_TABLE',
-  name: 'test-dataset',
-  physicalName: 'test-dataset',
-  createdAt: '2024-01-01T00:00:00Z',
-  updatedAt: '2024-01-15T10:30:00Z',
-  namespace: 'test-namespace',
-  sourceName: 'test-source',
-  fields: [
-    { name: 'id', type: 'INTEGER', tags: [], description: 'ID field' },
-    { name: 'name', type: 'VARCHAR', tags: [], description: 'Name field' },
-    { name: 'email', type: 'VARCHAR', tags: [], description: 'Email field' },
-  ],
-  tags: ['tag1', 'tag2'],
-  lastModifiedAt: '2024-01-15T10:30:00Z',
-  description: 'Test dataset description',
-  deleted: false,
-  facets: {},
-  columnLineage: [],
-  ...overrides,
-} as Dataset)
+const createMockDataset = (overrides = {}): Dataset =>
+  ({
+    id: { namespace: 'test-namespace', name: 'test-dataset' },
+    type: 'DB_TABLE',
+    name: 'test-dataset',
+    physicalName: 'test-dataset',
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-15T10:30:00Z',
+    namespace: 'test-namespace',
+    sourceName: 'test-source',
+    fields: [
+      { name: 'id', type: 'INTEGER', tags: [], description: 'ID field' },
+      { name: 'name', type: 'VARCHAR', tags: [], description: 'Name field' },
+      { name: 'email', type: 'VARCHAR', tags: [], description: 'Email field' },
+    ],
+    tags: ['tag1', 'tag2'],
+    lastModifiedAt: '2024-01-15T10:30:00Z',
+    description: 'Test dataset description',
+    deleted: false,
+    facets: {},
+    columnLineage: [],
+    ...overrides,
+  } as Dataset)
 
 const renderDatasetDetailPage = (
   dataset: Dataset | null = null,
@@ -254,8 +260,8 @@ describe('DatasetDetailPage', () => {
     const dataset = createMockDataset()
     const { unmount } = renderDatasetDetailPage(dataset)
     unmount()
-    // We haven't exposed dispatch mock easily here to check setTabIndex(0) call specifically 
-    // without refactoring test setup. 
+    // We haven't exposed dispatch mock easily here to check setTabIndex(0) call specifically
+    // without refactoring test setup.
     // Assuming the intent was to check cleanup.
   })
 

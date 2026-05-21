@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { type ReactElement, type SyntheticEvent } from 'react'
-import { createTheme } from '@mui/material/styles'
 import { darken } from '@mui/material'
-import { useTheme } from '@emotion/react'
+import { useTheme } from '@mui/material/styles'
 import Tooltip from '@mui/material/Tooltip'
 
 interface MqToolTipProps {
@@ -28,7 +27,7 @@ interface MqToolTipProps {
 }
 
 const MQTooltip = ({ title, onOpen, onClose, children, placement }: MqToolTipProps) => {
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
   return (
     <Tooltip
       onOpen={onOpen}

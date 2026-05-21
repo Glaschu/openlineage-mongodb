@@ -7,11 +7,11 @@ import {
   Checkbox,
   TextField,
 } from '@mui/material'
-import { Box, createTheme } from '@mui/material'
+import { Box } from '@mui/material'
 import { Tag } from '@/shared/types/api'
 import { useAddJobTag, useDeleteJobTag } from '@/features/jobs/api'
 import { useAddTags, useTags } from '@/shared/api'
-import { useTheme } from '@emotion/react'
+import { useTheme } from '@mui/material/styles'
 import Button from '@mui/material/Button'
 import CheckBoxIcon from '@mui/icons-material/CheckBox'
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank'
@@ -49,7 +49,7 @@ const JobTags = (props: JobTagsProps) => {
   }
 
   const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   const handleTagDescClose = () => {
     setOpenTagDesc(false)
@@ -68,7 +68,7 @@ const JobTags = (props: JobTagsProps) => {
   }
 
   const { data } = useTags()
-  const tagsArray = Array.isArray(data) ? data : (data?.tags || [])
+  const tagsArray = Array.isArray(data) ? data : data?.tags || []
   const tagData = [...tagsArray].sort((a: Tag, b: Tag) => a.name.localeCompare(b.name))
 
   const handleTagChange = (

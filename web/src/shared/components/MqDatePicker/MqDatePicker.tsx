@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { DateTimePicker } from '@mui/x-date-pickers'
-import { alpha, createTheme } from '@mui/material/styles'
-import { useTheme } from '@emotion/react'
+import { alpha, useTheme } from '@mui/material/styles'
 import dayjs from '@/shared/utils/dayjs'
 
 interface DatePickerProps {
@@ -19,7 +18,7 @@ const MqDatePicker = ({
   label = '',
   format = 'MM DD YYYY hh:mm a',
 }: DatePickerProps) => {
-  const theme = createTheme(useTheme())
+  const theme = useTheme()
 
   return (
     <DateTimePicker
