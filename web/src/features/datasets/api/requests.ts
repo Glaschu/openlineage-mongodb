@@ -10,7 +10,13 @@ export const getDatasets = async (namespace: string, limit = 20, offset = 0) => 
   const url = `${API_URL}/namespaces/${encodedNamespace}/datasets?limit=${limit}&offset=${offset}`
   return genericFetchWrapper(url, { method: 'GET' }, 'fetchDatasets').then((r: Datasets) => {
     return {
-      datasets: r.datasets.map((d) => ({ ...d, namespace: namespace })),
+      // Normalize nullable list fields at the boundary so consumers can rely on the types.
+      datasets: r.datasets.map((d) => ({
+        ...d,
+        namespace: namespace,
+        fields: d.fields ?? [],
+        tags: d.tags ?? [],
+      })),
       totalCount: r.totalCount,
     }
   })
@@ -27,7 +33,11 @@ export const getDatasetVersions = async (
   const url = `${API_URL}/namespaces/${encodedNamespace}/datasets/${encodedDataset}/versions?limit=${limit}&offset=${offset}`
   return genericFetchWrapper(url, { method: 'GET' }, 'fetchDatasetVersions').then(
     (r: DatasetVersions) => {
-      return { versions: r.versions, totalCount: r.totalCount }
+      return {
+        // Normalize nullable list fields at the boundary so consumers can rely on the types.
+        versions: r.versions.map((v) => ({ ...v, fields: v.fields ?? [], tags: v.tags ?? [] })),
+        totalCount: r.totalCount,
+      }
     }
   )
 }
@@ -36,7 +46,12 @@ export const getDataset = async (namespace: string, datasetName: string) => {
   const encodedNamespace = encodeURIComponent(namespace)
   const encodedDataset = encodeURIComponent(datasetName)
   const url = `${API_URL}/namespaces/${encodedNamespace}/datasets/${encodedDataset}`
-  return genericFetchWrapper(url, { method: 'GET' }, 'fetchDataset').then((d: Dataset) => d)
+  return genericFetchWrapper(url, { method: 'GET' }, 'fetchDataset').then((d: Dataset) => ({
+    // Normalize nullable list fields at the boundary so consumers can rely on the types.
+    ...d,
+    fields: d.fields ?? [],
+    tags: d.tags ?? [],
+  }))
 }
 
 export const deleteDataset = async (namespace: string, datasetName: string) => {

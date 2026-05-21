@@ -20,8 +20,11 @@ describe('Column Lineage Requests', () => {
 
   describe('getColumnLineage', () => {
     it('fetches column lineage for a dataset', async () => {
+      // graph is ColumnLineageNode[]; the request normalizes nullable edges per node.
       const mockLineage = {
-        graph: { nodes: [], edges: [] },
+        graph: [
+          { id: 'a', type: 'dataset', data: {}, inEdges: [], outEdges: [] },
+        ],
       }
 
         ; (global.fetch as any).mockResolvedValue({

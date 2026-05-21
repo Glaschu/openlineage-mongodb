@@ -2,9 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { API_URL } from '@/app/globals'
-import { Jobs, RunState } from '@/shared/types/api'
+import { Job, Jobs, RunState } from '@/shared/types/api'
 import { Nullable } from '@/shared/types/util/Nullable'
 import { genericFetchWrapper } from '@/shared/api/fetch'
+
+// Normalize nullable list fields at the boundary so consumers can rely on the types.
+const normalizeJob = (j: Job): Job => ({
+  ...j,
+  tags: j.tags ?? [],
+  inputs: j.inputs ?? [],
+  outputs: j.outputs ?? [],
+  latestRuns: j.latestRuns ?? [],
+})
 
 export const getJobs = async (
   namespace: Nullable<string>,
@@ -22,7 +31,7 @@ export const getJobs = async (
     url += `&lastRunStates=${lastRunStates}`
   }
   return genericFetchWrapper(url, { method: 'GET' }, 'fetchJobs').then((r: Jobs) => {
-    return { totalCount: r.totalCount, jobs: r.jobs }
+    return { totalCount: r.totalCount, jobs: r.jobs.map(normalizeJob) }
   })
 }
 
@@ -49,7 +58,7 @@ export const getJob = async (namespace: string, jobName: string) => {
   const encodedNamespace = encodeURIComponent(namespace)
   const encodedJob = encodeURIComponent(jobName)
   const url = `${API_URL}/namespaces/${encodedNamespace}/jobs/${encodedJob}`
-  return genericFetchWrapper(url, { method: 'GET' }, 'fetchJob')
+  return genericFetchWrapper(url, { method: 'GET' }, 'fetchJob').then((j: Job) => normalizeJob(j))
 }
 
 export const deleteJobTag = async (namespace: string, jobName: string, tag: string) => {
