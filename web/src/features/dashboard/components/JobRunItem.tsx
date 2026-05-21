@@ -52,11 +52,11 @@ const JobRunItem = ({ job }: Props) => {
               </MqText>
             </Box>
           </MQTooltip>
-          {job.tags.slice(0, 3).map((tag, index) => (
+          {(job.tags || []).slice(0, 3).map((tag, index) => (
             <Chip key={index} sx={{ mr: 1 }} size={'small'} label={tag} />
           ))}
-          {job.tags.length > 3 && (
-            <Chip sx={{ mr: 1 }} size={'small'} label={`+ ${job.tags.length - 3}`} />
+          {(job.tags || []).length > 3 && (
+            <Chip sx={{ mr: 1 }} size={'small'} label={`+ ${(job.tags || []).length - 3}`} />
           )}
         </Box>
       </Box>

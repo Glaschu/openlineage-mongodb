@@ -104,15 +104,16 @@ describe('ColumnLevelDrawer', () => {
     vi.restoreAllMocks()
   })
 
-  it('returns null when column lineage is unavailable', () => {
-    // If column lineage is null, component might return null.
+  it('renders without crashing and shows no facets when no dataset is available', () => {
+    // Regression: the drawer used to read a non-existent `columnLineage` redux slice
+    // and crashed. It now renders purely from the fetched dataset.
     renderDrawer(
       { columnLineage: null, dataset: null, isDatasetLoading: false },
       '/column-level/analytics/users'
     )
 
+    // With no dataset there are no column-lineage facets to render.
     expect(screen.queryByTestId('json-view')).toBeNull()
-    expect(screen.queryByRole('button')).toBeNull()
   })
 
   it('renders progress bar when dataset are loading', () => {

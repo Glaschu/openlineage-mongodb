@@ -16,7 +16,6 @@ import { faDatabase } from '@fortawesome/free-solid-svg-icons'
 import { theme } from '@/shared/theme/theme'
 import { useDataset } from '@/features/datasets/api'
 import { useSearchParams } from 'react-router-dom'
-import { useSelector } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import CloseIcon from '@mui/icons-material/Close'
 import IconButton from '@mui/material/IconButton'
@@ -32,11 +31,6 @@ const ColumnLevelDrawer = () => {
   const namespace = searchParams.get('namespace') || ''
 
   const { data: dataset, isLoading: isDatasetLoading } = useDataset(namespace, datasetName)
-  const columnLineage = useSelector((state: RootState) => state.columnLineage.columnLineage)
-
-  if (!columnLineage) {
-    return null
-  }
 
   return (
     <Box width={`${WIDTH}px`}>

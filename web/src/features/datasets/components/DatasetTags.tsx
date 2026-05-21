@@ -35,12 +35,14 @@ import Snackbar from '@mui/material/Snackbar'
 interface DatasetTagsProps {
   namespace: string
   datasetName: string
-  datasetTags: string[]
+  datasetTags?: string[]
   datasetField?: string
 }
 
 const DatasetTags = (props: DatasetTagsProps) => {
-  const { namespace, datasetName, datasetTags, datasetField } = props
+  // datasetTags can be undefined for fields/datasets with no tags — default to []
+  // so the Autocomplete stays controlled and `selectedTags.length` is safe.
+  const { namespace, datasetName, datasetTags = [], datasetField } = props
   const addDatasetTagMutation = useAddDatasetTag()
   const deleteDatasetTagMutation = useDeleteDatasetTag()
   const addDatasetFieldTagMutation = useAddDatasetFieldTag()

@@ -28,11 +28,13 @@ import Snackbar from '@mui/material/Snackbar'
 interface JobTagsProps {
   namespace: string
   jobName: string
-  jobTags: string[]
+  jobTags?: string[]
 }
 
 const JobTags = (props: JobTagsProps) => {
-  const { namespace, jobName, jobTags } = props
+  // jobTags can be undefined for jobs with no tags — default to [] so the
+  // Autocomplete stays controlled and `selectedTags.length` is safe.
+  const { namespace, jobName, jobTags = [] } = props
   const addJobTagMutation = useAddJobTag()
   const deleteJobTagMutation = useDeleteJobTag()
   const addTagsMutation = useAddTags()
