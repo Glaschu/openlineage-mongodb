@@ -1,10 +1,11 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { AppBar, Toolbar } from '@mui/material'
+import { AppBar, Chip, Toolbar } from '@mui/material'
 import { DRAWER_WIDTH } from '@/shared/theme/theme'
 import { useTheme } from '@mui/material/styles'
 import Box from '@mui/material/Box'
+import OmniSearch from '@/features/search/components/omni-search/OmniSearch'
 import React, { ReactElement } from 'react'
 import Search from '@/features/search/SearchPage'
 
@@ -33,6 +34,13 @@ const Header = (): ReactElement => {
         >
           <Box display={'flex'} alignItems={'center'}>
             <Search />
+            <Chip
+              size={'small'}
+              variant={'outlined'}
+              label={'⌘K'}
+              sx={{ ml: 2, cursor: 'default' }}
+            />
+            <OmniSearch />
           </Box>
         </Box>
       </Toolbar>

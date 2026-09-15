@@ -1,11 +1,11 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { MemoryRouter, Route, Routes, useLocation, type Location } from 'react-router-dom'
-import { ThemeProvider, createTheme } from '@mui/material/styles'
-import { fireEvent, render, screen } from '@testing-library/react'
 import { ActionBar } from '@/features/lineage/components/column-level/ActionBar'
+import { type Location, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 
 vi.mock('@/shared/components/MqTooltip/MQTooltip', () => ({
@@ -27,7 +27,7 @@ const renderActionBar = (
   overrides: { depth?: number; setDepth?: (depth: number) => void } = {}
 ) => {
   const fetchColumnLineage = vi.fn()
-  const setDepth = vi.fn(overrides.setDepth ?? (() => { }))
+  const setDepth = vi.fn(overrides.setDepth ?? (() => undefined))
   const locationRef: { current: Location | null } = { current: null }
   const theme = createTheme()
 
@@ -40,7 +40,11 @@ const renderActionBar = (
             element={
               <>
                 <LocationSpy onChange={(location) => (locationRef.current = location)} />
-                <ActionBar refresh={fetchColumnLineage} depth={overrides.depth ?? 2} setDepth={setDepth} />
+                <ActionBar
+                  refresh={fetchColumnLineage}
+                  depth={overrides.depth ?? 2}
+                  setDepth={setDepth}
+                />
               </>
             }
           />
@@ -53,7 +57,11 @@ const renderActionBar = (
             element={
               <>
                 <LocationSpy onChange={(location) => (locationRef.current = location)} />
-                <ActionBar refresh={fetchColumnLineage} depth={overrides.depth ?? 2} setDepth={setDepth} />
+                <ActionBar
+                  refresh={fetchColumnLineage}
+                  depth={overrides.depth ?? 2}
+                  setDepth={setDepth}
+                />
               </>
             }
           />

@@ -140,6 +140,40 @@ describe('JobRunItem Component', () => {
     expect(screen.getAllByText('N/A').length).toBeGreaterThan(0)
   })
 
+  it('should render a job with no run history at all', () => {
+    // Regression: reduce() over an empty latestRuns array crashed the dashboard.
+    const jobWithoutRuns = {
+      ...mockJob,
+      latestRun: undefined,
+      latestRuns: [],
+    } as any
+    render(
+      <MemoryRouter>
+        <JobRunItem job={jobWithoutRuns} />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByText('test-job')).toBeTruthy()
+    expect(screen.getByText('LAST 10 RUNS')).toBeTruthy()
+  })
+
+  it('should render runs with null duration without NaN bar heights', () => {
+    const jobWithNullDuration = {
+      ...mockJob,
+      latestRuns: [
+        { ...mockJob.latestRuns[0], durationMs: null },
+        mockJob.latestRuns[1],
+      ],
+    } as any
+    render(
+      <MemoryRouter>
+        <JobRunItem job={jobWithNullDuration} />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByText('test-job')).toBeTruthy()
+  })
+
   it('should navigate to lineage page when clicked', () => {
     render(
       <MemoryRouter>

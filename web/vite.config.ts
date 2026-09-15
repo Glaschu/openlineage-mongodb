@@ -49,7 +49,7 @@ export default defineConfig({
     },
   },
   define: {
-    __API_URL__: JSON.stringify('/api/v1'),
+    __API_URL__: JSON.stringify('/api/v2'),
     __API_BETA_URL__: JSON.stringify('/api/v2beta'),
     __FEEDBACK_FORM_URL__: JSON.stringify('https://forms.gle/f3tTSrZ8wPj3sHTA7'),
     __REACT_APP_ADVANCED_SEARCH__: false,

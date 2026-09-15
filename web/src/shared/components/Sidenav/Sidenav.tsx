@@ -10,7 +10,13 @@ import Box from '@mui/material/Box'
 import { DRAWER_WIDTH, HEADER_HEIGHT } from '@/shared/theme/theme'
 import { Divider, Drawer } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCogs, faDatabase, faLink } from '@fortawesome/free-solid-svg-icons'
+import {
+  faCogs,
+  faDatabase,
+  faFolderTree,
+  faLink,
+  faShieldHalved,
+} from '@fortawesome/free-solid-svg-icons'
 import MqIconButton from '@/shared/components/MqIconButton/MqIconButton'
 
 // for i18n
@@ -98,6 +104,22 @@ const Sidenav = () => {
             active={location.pathname === '/datasets'}
           >
             <FontAwesomeIcon icon={faDatabase} fontSize={20} />
+          </MqIconButton>
+          <MqIconButton
+            to={'/directory'}
+            id={'directoryDrawerButton'}
+            title={'Directory'}
+            active={location.pathname === '/directory'}
+          >
+            <FontAwesomeIcon icon={faFolderTree} fontSize={20} />
+          </MqIconButton>
+          <MqIconButton
+            to={'/governance'}
+            id={'governanceDrawerButton'}
+            title={'Coverage'}
+            active={location.pathname === '/governance'}
+          >
+            <FontAwesomeIcon icon={faShieldHalved} fontSize={20} />
           </MqIconButton>
           <MqIconButton
             id={'eventsButton'}

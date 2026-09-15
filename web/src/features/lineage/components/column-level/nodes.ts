@@ -6,6 +6,9 @@ export interface ColumnLineageColumnNodeData {
   column: string
   namespace: string
   dataset: string
+  // selection-derived rendering state computed in layout.ts
+  selected?: boolean
+  dimmed?: boolean
 }
 
 export interface ColumnLineageDatasetNodeData {

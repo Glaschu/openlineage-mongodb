@@ -155,9 +155,12 @@ def generate_events(num_parent_jobs=5, children_per_parent=3, datasets_per_job=2
         
     return events
 
-def post_events(events, target_urls):
+def post_events(events, target_urls, user=None):
     print(f"Posting {len(events)} events to {', '.join(target_urls)} one by one...")
     headers = {'Content-Type': 'application/json'}
+    if user:
+        # The server claims job-namespace ownership for the x-user identity.
+        headers['x-user'] = user
     
     success_counts = {url: 0 for url in target_urls}
     
@@ -185,9 +188,15 @@ if __name__ == "__main__":
     parser.add_argument("--marquez", type=str, help="URL to POST events to Marquez directly (e.g. http://localhost:5000/api/v1/lineage)")
     parser.add_argument("--docdb", type=str, help="URL to POST events to DocumentDB directly (e.g. http://localhost:8080/api/v2/lineage)")
     parser.add_argument("--output", type=str, default="generated_events.json", help="Output JSON file path")
-    
+    parser.add_argument("--user", type=str, help="x-user header value; the server records this as the owning team of the job namespaces")
+    parser.add_argument("--domain", type=str, help="Prefix all namespaces with a domain (e.g. retail-banking) to simulate per-team estates")
+
     args = parser.parse_args()
-    
+
+    if args.domain:
+        for key in NAMESPACES:
+            NAMESPACES[key] = f"{args.domain}.{NAMESPACES[key]}"
+
     print(f"Generating OpenLineage events: {args.parents} parents, {args.children} children per parent...")
     events = generate_events(num_parent_jobs=args.parents, children_per_parent=args.children)
     print(f"Generated {len(events)} total events.")
@@ -203,4 +212,4 @@ if __name__ == "__main__":
         target_urls.append(args.docdb)
         
     if target_urls:
-        post_events(events, target_urls)
+        post_events(events, target_urls, user=args.user)

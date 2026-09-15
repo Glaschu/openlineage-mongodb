@@ -22,7 +22,10 @@ const JobRunItem = ({ job }: Props) => {
   const navigate = useNavigate()
   const reversedRuns = [...(job.latestRuns || [])].reverse()
   const longestRun = useMemo(
-    () => job.latestRuns?.reduce((acc, run) => (acc.durationMs > run.durationMs ? acc : run)),
+    () =>
+      job.latestRuns && job.latestRuns.length > 0
+        ? job.latestRuns.reduce((acc, run) => (acc.durationMs > run.durationMs ? acc : run))
+        : undefined,
     [job.latestRuns]
   )
   return (
@@ -99,7 +102,11 @@ const JobRunItem = ({ job }: Props) => {
                     mr={0.5}
                     minHeight={2}
                     width={5}
-                    height={(run.durationMs / longestRun.durationMs) * 40}
+                    height={
+                      longestRun && longestRun.durationMs > 0
+                        ? ((run.durationMs ?? 0) / longestRun.durationMs) * 40
+                        : 2
+                    }
                     sx={{
                       borderTopLeftRadius: theme.shape.borderRadius,
                       borderTopRightRadius: theme.shape.borderRadius,

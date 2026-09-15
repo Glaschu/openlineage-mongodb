@@ -1,15 +1,15 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { MemoryRouter, Route, Routes, useLocation, type Location } from 'react-router-dom'
+import { type Location, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createStore } from 'redux'
 import { fireEvent, render } from '@testing-library/react'
-import React from 'react'
 import ColumnLineageColumnNode, {
   encodeQueryString,
 } from '@/features/lineage/components/column-level/ColumnLineageColumnNode'
+import React from 'react'
 import type { ColumnLineageColumnNodeData } from '@/features/lineage/components/column-level/nodes'
 import type { PositionedNode } from '@/features/lineage/components/graph'
 
@@ -72,19 +72,49 @@ describe('ColumnLineageColumnNode', () => {
     expect(encodeQueryString('ns', 'dataset', 'column')).toBe('datasetField:ns:dataset:column')
   })
 
-  it('updates search params for hover and click interactions', () => {
+  it('selects the column on click without touching params on hover', () => {
     const { container, locationRef } = renderNode()
     const rect = container.querySelector('rect')!
     const text = container.querySelector('text')!
 
     fireEvent.mouseEnter(rect)
-    expect(locationRef.current?.search).toContain('column=datasetField%3Aanalytics%3Ausers%3Avery_long_column_name_exceeding_limits')
-
+    expect(locationRef.current?.search ?? '').not.toContain('column=')
     fireEvent.mouseLeave(rect)
 
     fireEvent.click(text)
     expect(locationRef.current?.search).toContain('dataset=users')
     expect(locationRef.current?.search).toContain('namespace=analytics')
+    expect(locationRef.current?.search).toContain(
+      'column=datasetField%3Aanalytics%3Ausers%3Avery_long_column_name_exceeding_limits'
+    )
+    expect(locationRef.current?.search).toContain(
+      'columnName=very_long_column_name_exceeding_limits'
+    )
+  })
+
+  it('dims the node when dimmed and highlights when selected', () => {
+    const dimmedNode = { ...buildNode(), data: { ...buildNode().data, dimmed: true } }
+    const { container } = renderNode()
+    expect(container.querySelector('g')?.getAttribute('opacity')).toBe('1')
+
+    const store = createStore(() => ({ columnLineage: { columnLineage: { graph: [] } } }))
+    const dimmed = render(
+      <Provider store={store}>
+        <MemoryRouter initialEntries={['/column-level/analytics/users']}>
+          <Routes>
+            <Route
+              path='/column-level/:namespace/:name'
+              element={
+                <svg>
+                  <ColumnLineageColumnNode node={dimmedNode} />
+                </svg>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </Provider>
+    )
+    expect(dimmed.container.querySelector('g')?.getAttribute('opacity')).toBe('0.3')
   })
 
   it('returns layout options unchanged', () => {

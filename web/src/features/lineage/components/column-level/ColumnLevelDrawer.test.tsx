@@ -1,15 +1,15 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { MemoryRouter, Route, Routes, useLocation, type Location } from 'react-router-dom'
+import * as useDatasetHook from '@/features/datasets/api'
+import { type Location, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, screen } from '@testing-library/react'
+import { renderWithProviders } from '@/test/utils'
 import ColumnLevelDrawer from '@/features/lineage/components/column-level/ColumnLevelDrawer'
 import React from 'react'
 import type { ColumnLineageGraph, Dataset } from '@/shared/types/api'
-import { renderWithProviders } from '@/test/utils'
-import * as useDatasetHook from '@/features/datasets/api'
 
 // Mocks
 const { fetchDatasetMock, jsonViewMock } = vi.hoisted(() => ({
@@ -34,7 +34,7 @@ vi.mock('@/shared/components/MqText/MqText', () => ({
   default: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
 }))
 
-// We still mock actionCreators to avoid import errors or side effects, 
+// We still mock actionCreators to avoid import errors or side effects,
 // but we expect fetchDataset NOT to be dispatched if hook is used.
 vi.mock('../../../store/actionCreators', async () => {
   return {
@@ -56,7 +56,7 @@ const renderDrawer = (
     dataset: Dataset | null
     isDatasetLoading: boolean
   },
-  initialEntry: string = '/column-level/analytics/users?dataset=users&namespace=analytics'
+  initialEntry = '/column-level/analytics/users?dataset=users&namespace=analytics'
 ) => {
   const theme = createTheme()
   const locationRef: { current: Location | null } = { current: null }
@@ -68,7 +68,7 @@ const renderDrawer = (
     isPending: state.isDatasetLoading,
     isError: false,
     error: null,
-    refetch: mockRefetch
+    refetch: mockRefetch,
   } as any)
 
   const ui = renderWithProviders(
@@ -89,8 +89,8 @@ const renderDrawer = (
     </ThemeProvider>,
     {
       initialState: {
-        columnLineage: { columnLineage: state.columnLineage }
-      }
+        columnLineage: { columnLineage: state.columnLineage },
+      },
     }
   )
 
@@ -124,14 +124,19 @@ describe('ColumnLevelDrawer', () => {
     expect(screen.getByRole('progressbar')).toBeInTheDocument()
   })
 
-  it('renders schema details and facets when dataset information is loaded', () => {
+  it('renders schema details and the raw facet accordion when dataset information is loaded', () => {
     const columnLineage = { graph: [] } as unknown as ColumnLineageGraph
     const dataset = {
       name: 'users',
-      columnLineage: { lineage: 'data' },
-      fields: [
-        { name: 'email', type: 'string', description: 'user email', tags: [] },
+      columnLineage: [
+        {
+          name: 'email',
+          inputFields: [{ namespace: 'analytics', name: 'raw_users', field: 'email_raw' }],
+          transformationType: 'IDENTITY',
+          transformationDescription: 'copied',
+        },
       ],
+      fields: [{ name: 'email', type: 'string', description: 'user email', tags: [] }],
     } as unknown as Dataset
 
     renderDrawer({ columnLineage, dataset, isDatasetLoading: false })
@@ -140,6 +145,48 @@ describe('ColumnLevelDrawer', () => {
     expect(screen.getByText('email')).toBeInTheDocument()
     expect(screen.getByText('user email')).toBeInTheDocument()
     expect(jsonViewMock).toHaveBeenCalledWith({ data: dataset.columnLineage })
+  })
+
+  it('shows derivation cards with transformation chips for the selected column', () => {
+    const columnLineage = { graph: [] } as unknown as ColumnLineageGraph
+    const dataset = {
+      name: 'users',
+      columnLineage: [
+        {
+          name: 'email',
+          inputFields: [{ namespace: 'analytics', name: 'raw_users', field: 'email_raw' }],
+          transformationType: 'IDENTITY',
+          transformationDescription: 'copied',
+        },
+      ],
+      fields: [{ name: 'email', type: 'string', description: 'user email', tags: [] }],
+    } as unknown as Dataset
+
+    renderDrawer(
+      { columnLineage, dataset, isDatasetLoading: false },
+      '/column-level/analytics/users?dataset=users&namespace=analytics&column=datasetField%3Aanalytics%3Ausers%3Aemail&columnName=email'
+    )
+
+    expect(screen.getByText('DERIVED FROM')).toBeInTheDocument()
+    expect(screen.getByText('raw_users.email_raw')).toBeInTheDocument()
+    expect(screen.getByText('IDENTITY')).toBeInTheDocument()
+    expect(screen.getByText('copied')).toBeInTheDocument()
+    expect(screen.getByText('FEEDS INTO')).toBeInTheDocument()
+  })
+
+  it('selects a column when a schema row is clicked', () => {
+    const columnLineage = { graph: [] } as unknown as ColumnLineageGraph
+    const dataset = {
+      name: 'users',
+      columnLineage: [],
+      fields: [{ name: 'email', type: 'string', description: 'user email', tags: [] }],
+    } as unknown as Dataset
+
+    const { locationRef } = renderDrawer({ columnLineage, dataset, isDatasetLoading: false })
+
+    fireEvent.click(screen.getByText('email'))
+    expect(locationRef.current?.search).toContain('columnName=email')
+    expect(locationRef.current?.search).toContain('column=datasetField%3Aanalytics%3Ausers%3Aemail')
   })
 
   it('clears the search params when the close button is clicked', () => {

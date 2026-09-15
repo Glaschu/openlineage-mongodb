@@ -1,25 +1,32 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { MemoryRouter, Route, Routes, useLocation, type Location } from 'react-router-dom'
-import { ThemeProvider, createTheme } from '@mui/material/styles'
-import { render, screen } from '@testing-library/react'
-import ColumnLevel from '@/features/lineage/components/column-level/ColumnLevel'
-import React from 'react'
+import * as useColumnLineageHook from '@/features/lineage/api'
+import { type Location, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@/test/utils'
-import * as useColumnLineageHook from '@/features/lineage/api'
+import { screen } from '@testing-library/react'
+import ColumnLevel from '@/features/lineage/components/column-level/ColumnLevel'
+import React from 'react'
 
 // Mock dependencies
-const { createElkNodesMock, graphRenderMock, zoomControlsCapture, zoomPanControls } = vi.hoisted(() => ({
-  createElkNodesMock: vi.fn(() => ({
-    nodes: [{ id: 'node-1' }],
-    edges: [{ id: 'edge-1', sourceNodeId: 'node-1', targetNodeId: 'node-1' }],
-  })),
-  graphRenderMock: vi.fn(),
-  zoomControlsCapture: { current: null as null | Record<string, (x?: unknown) => void> },
-  zoomPanControls: { current: null as null | { scaleZoom: ReturnType<typeof vi.fn>; fitContent: ReturnType<typeof vi.fn>; centerOnPositionedNode: ReturnType<typeof vi.fn> } },
-}))
+const { createElkNodesMock, graphRenderMock, zoomControlsCapture, zoomPanControls } = vi.hoisted(
+  () => ({
+    createElkNodesMock: vi.fn(() => ({
+      nodes: [{ id: 'node-1' }],
+      edges: [{ id: 'edge-1', sourceNodeId: 'node-1', targetNodeId: 'node-1' }],
+    })),
+    graphRenderMock: vi.fn(),
+    zoomControlsCapture: { current: null as null | Record<string, (x?: unknown) => void> },
+    zoomPanControls: {
+      current: null as null | {
+        scaleZoom: ReturnType<typeof vi.fn>
+        fitContent: ReturnType<typeof vi.fn>
+        centerOnPositionedNode: ReturnType<typeof vi.fn>
+      },
+    },
+  })
+)
 
 vi.mock('@/features/lineage/components/column-level/layout', () => ({
   createElkNodes: (...args: any[]) => createElkNodesMock(...args),
@@ -39,7 +46,7 @@ vi.mock('@/features/lineage/components/graph', () => ({
     }
     return <div data-testid='graph' />
   },
-  ZoomPanControls: class { },
+  ZoomPanControls: class {},
 }))
 
 vi.mock('@/features/lineage/components/column-level/ZoomControls', () => ({
@@ -112,10 +119,7 @@ describe('ColumnLevel', () => {
 
   it('renders the graph when data is present', () => {
     const mockData = { graph: [] }
-    renderColumnLevel(
-      mockData,
-      '/column-level/analytics/users?depth=4'
-    )
+    renderColumnLevel(mockData, '/column-level/analytics/users?depth=4')
 
     expect(createElkNodesMock).toHaveBeenCalled()
     expect(screen.getByTestId('graph')).toBeInTheDocument()

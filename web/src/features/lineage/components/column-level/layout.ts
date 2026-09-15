@@ -1,6 +1,7 @@
 import { ColumnLevelNodeData, ColumnLevelNodeKinds } from './nodes'
 import { ColumnLineageGraph, ColumnLineageNode } from '@/shared/types/api'
 import { Edge, Node as ElkNode } from '@/features/lineage/components/graph'
+import { LineageDirection, getDirectedNodeIds } from './columnLineageUtils'
 import { Nullable } from '@/shared/types/util/Nullable'
 import { theme } from '@/shared/theme/theme'
 
@@ -14,52 +15,38 @@ export const parseColumnLineageNode = (node: string) => {
 }
 
 /**
- * Recursively trace the `inEdges` and `outEdges` of the current node to find all connected column nodes
- * @param columnLineageGraph
- * @param currentColumn
+ * Trace the lineage paths through the current node: its ancestry (upstream) and/or
+ * its impact (downstream), depending on the requested direction.
  */
 export const findConnectedNodes = (
   columnLineageGraph: ColumnLineageNode[],
-  currentColumn: Nullable<string>
+  currentColumn: Nullable<string>,
+  direction: LineageDirection = 'both'
 ): ColumnLineageNode[] => {
   if (!currentColumn) return []
-  const currentNode = columnLineageGraph.find((node) => node.id === currentColumn)
-  if (!currentNode) return []
-  const connectedNodes: ColumnLineageNode[] = []
-  const visitedNodes: string[] = []
-  const queue: ColumnLineageNode[] = [currentNode]
-
-  while (queue.length) {
-    const currentNode = queue.shift()
-    if (!currentNode) continue
-    if (visitedNodes.includes(currentNode.id)) continue
-    visitedNodes.push(currentNode.id)
-    connectedNodes.push(currentNode)
-    // todo fix this broken in api edge.destination should be edge.origin
-    queue.push(
-      ...currentNode.inEdges
-        .map((edge) => columnLineageGraph.find((n) => n.id === edge.destination))
-        .filter((item): item is ColumnLineageNode => !!item)
-    )
-    queue.push(
-      ...currentNode.outEdges
-        .map((edge) => columnLineageGraph.find((n) => n.id === edge.destination))
-        .filter((item): item is ColumnLineageNode => !!item)
-    )
-  }
-  return connectedNodes
+  const ids = getDirectedNodeIds(columnLineageGraph, currentColumn, direction)
+  return columnLineageGraph.filter((node) => ids.has(node.id))
 }
 
 export const createElkNodes = (
   columnLineageGraph: ColumnLineageGraph,
-  currentColumn: Nullable<string>
+  currentColumn: Nullable<string>,
+  direction: LineageDirection = 'both',
+  isolate = false
 ) => {
   const nodes: ElkNode<ColumnLevelNodeKinds, ColumnLevelNodeData>[] = []
   const edges: Edge[] = []
 
-  const graph = columnLineageGraph.graph.filter((node) => !!node.data)
+  let graph = columnLineageGraph.graph.filter((node) => !!node.data)
 
-  const connectedNodes = findConnectedNodes(graph, currentColumn)
+  const connectedIds = getDirectedNodeIds(graph, currentColumn, direction)
+
+  // Isolate mode: only the lineage paths through the selected column stay on the canvas.
+  if (isolate && currentColumn && connectedIds.size > 0) {
+    graph = graph.filter((node) => connectedIds.has(node.id))
+  }
+
+  const hasSelection = !!currentColumn && connectedIds.size > 0
 
   for (const node of graph) {
     const namespace = node.data.namespace
@@ -67,18 +54,32 @@ export const createElkNodes = (
     const column = node.data.field
 
     edges.push(
-      ...node.outEdges.map((edge) => {
-        return {
-          id: `${edge.origin}:${edge.destination}`,
-          sourceNodeId: edge.origin,
-          targetNodeId: edge.destination,
-          color:
-            connectedNodes.includes(node) || connectedNodes.find((n) => n.id === edge.destination)
-              ? theme.palette.primary.main
-              : theme.palette.grey[400],
-        }
-      })
+      ...node.outEdges
+        .filter((edge) => !isolate || !hasSelection || connectedIds.has(edge.destination))
+        .map((edge) => {
+          const onPath = connectedIds.has(node.id) && connectedIds.has(edge.destination)
+          return {
+            id: `${edge.origin}:${edge.destination}`,
+            sourceNodeId: edge.origin,
+            targetNodeId: edge.destination,
+            color: onPath ? theme.palette.primary.main : theme.palette.grey[400],
+          }
+        })
     )
+
+    const childNode = {
+      id: node.id,
+      height: 24,
+      width: 200,
+      kind: 'column' as const,
+      data: {
+        column,
+        namespace,
+        dataset,
+        selected: node.id === currentColumn,
+        dimmed: hasSelection && !connectedIds.has(node.id),
+      },
+    }
 
     const datasetNode = nodes.find((n) => n.id === `datasetField:${namespace}:${dataset}`)
     if (!datasetNode) {
@@ -90,32 +91,10 @@ export const createElkNodes = (
           namespace,
           dataset,
         },
-        children: [
-          {
-            id: node.id,
-            height: 24,
-            width: 200,
-            kind: 'column',
-            data: {
-              column,
-              namespace,
-              dataset,
-            },
-          },
-        ],
+        children: [childNode],
       })
     } else {
-      datasetNode.children?.push({
-        id: node.id,
-        width: 200,
-        height: 24,
-        kind: 'column',
-        data: {
-          column,
-          namespace,
-          dataset,
-        },
-      })
+      datasetNode.children?.push(childNode)
     }
   }
   return { nodes, edges }

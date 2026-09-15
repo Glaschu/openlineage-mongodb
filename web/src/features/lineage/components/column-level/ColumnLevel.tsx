@@ -1,13 +1,14 @@
 import { ActionBar } from './ActionBar'
-import { ColumnLevelNodeData, ColumnLevelNodeKinds, columnLevelNodeRenderer } from './nodes'
 import { CircularProgress, Drawer } from '@mui/material'
+import { ColumnLevelNodeData, ColumnLevelNodeKinds, columnLevelNodeRenderer } from './nodes'
 import { Graph, ZoomPanControls } from '@/features/lineage/components/graph'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
-import { RootState } from '@/store/store'
 import { ZoomControls } from './ZoomControls'
 import { createElkNodes } from './layout'
+import { downloadColumnLineageCsv, isLineageDirection } from './columnLineageUtils'
 import { useCallbackRef } from '@/shared/hooks/hooks'
 import { useColumnLineage } from '@/features/lineage/api'
+import { useDataset } from '@/features/datasets/api'
 import { useParams, useSearchParams } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import ColumnLevelDrawer from './ColumnLevelDrawer'
@@ -31,14 +32,14 @@ const ColumnLevel: React.FC = () => {
     refetch,
   } = useColumnLineage('DATASET', namespace || '', name || '', depth)
 
-  // const column = searchParams.get('column')
-  // useEffect(() => {
-  //   if (column) {
-  //     graphControls.current?.centerOnPositionedNode(
-  //       `datasetField:${namespace}:${parseColumnLineageNode(column).dataset}`
-  //     )
-  //   }
-  // }, [column])
+  // The center dataset's columnLineage facet carries the transformation metadata
+  // used to annotate the CSV export and the drawer derivation cards.
+  const { data: centerDataset } = useDataset(namespace || '', name || '')
+
+  const column = searchParams.get('column')
+  const directionParam = searchParams.get('direction')
+  const direction = isLineageDirection(directionParam) ? directionParam : 'both'
+  const isolate = searchParams.get('isolate') === 'true'
 
   const setGraphControls = useCallbackRef((zoomControls) => {
     graphControls.current = zoomControls
@@ -46,16 +47,21 @@ const ColumnLevel: React.FC = () => {
 
   // Provide fallback empty objects if columnLineage is not loaded yet
   const { nodes, edges } = columnLineage
-    ? createElkNodes(columnLineage, searchParams.get('column'))
+    ? createElkNodes(columnLineage, column, direction, isolate)
     : { nodes: [], edges: [] }
 
   useEffect(() => {
     if (nodes.length > 0) {
-      setTimeout(() => {
-        graphControls.current?.fitContent()
+      const timer = setTimeout(() => {
+        if (column) {
+          graphControls.current?.centerOnPositionedNode(column, 1)
+        } else {
+          graphControls.current?.fitContent()
+        }
       }, 300)
+      return () => clearTimeout(timer)
     }
-  }, [nodes.length])
+  }, [nodes.length, column, direction, isolate])
 
   if (!columnLineage) {
     return <div />
@@ -69,9 +75,23 @@ const ColumnLevel: React.FC = () => {
     graphControls.current?.fitContent()
   }
 
+  const handleExportCsv = () => {
+    downloadColumnLineageCsv(
+      columnLineage.graph,
+      namespace || 'unknown',
+      name || 'unknown',
+      centerDataset
+    )
+  }
+
   return (
     <>
-      <ActionBar refresh={refetch} depth={depth} setDepth={setDepth} />
+      <ActionBar
+        refresh={refetch}
+        depth={depth}
+        setDepth={setDepth}
+        onExportCsv={handleExportCsv}
+      />
       <Box height={`calc(100vh - ${HEADER_HEIGHT}px - 64px)`}>
         {isFetching && (
           <Box
@@ -107,7 +127,7 @@ const ColumnLevel: React.FC = () => {
           }}
         >
           <Box>
-            <ColumnLevelDrawer />
+            <ColumnLevelDrawer columnLineage={columnLineage} />
           </Box>
         </Drawer>
         <ZoomControls handleScaleZoom={handleScaleZoom} handleResetZoom={handleResetZoom} />

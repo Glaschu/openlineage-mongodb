@@ -9,7 +9,9 @@ import React, { ReactElement, Suspense, lazy } from 'react'
 const ColumnLevel = lazy(() => import('@/features/lineage/components/column-level/ColumnLevel'))
 const Dashboard = lazy(() => import('@/features/dashboard/DashboardPage'))
 const Datasets = lazy(() => import('@/features/datasets/DatasetsPage'))
+const Directory = lazy(() => import('@/features/directory/DirectoryPage'))
 const Events = lazy(() => import('@/features/events/EventsPage'))
+const Governance = lazy(() => import('@/features/governance/GovernancePage'))
 const Jobs = lazy(() => import('@/features/jobs/JobsPage'))
 const TableLevel = lazy(() => import('@/features/lineage/components/table-level/TableLevel'))
 const AlationMappings = lazy(() => import('@/features/alation/AlationMappingsPage'))
@@ -20,6 +22,8 @@ export const AppRouter = (): ReactElement => (
       <Route path={'/'} element={<Dashboard />} />
       <Route path={'/jobs'} element={<Jobs />} />
       <Route path={'/datasets'} element={<Datasets />} />
+      <Route path={'/directory'} element={<Directory />} />
+      <Route path={'/governance'} element={<Governance />} />
       <Route path={'/events'} element={<Events />} />
       <Route path={'/datasets/column-level/:namespace/:name'} element={<ColumnLevel />} />
       <Route path={'/lineage/:nodeType/:namespace/:name'} element={<TableLevel />} />

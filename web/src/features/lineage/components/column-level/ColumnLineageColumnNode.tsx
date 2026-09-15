@@ -1,11 +1,9 @@
 import { ColumnLineageColumnNodeData } from './nodes'
-import { ColumnLineageGraph } from '@/shared/types/api'
-import { RootState } from '@/store/store'
 import { PositionedNode } from '@/features/lineage/components/graph'
 import { grey } from '@mui/material/colors'
+import { theme } from '@/shared/theme/theme'
 import { truncateText } from '@/shared/utils/text'
 import { useSearchParams } from 'react-router-dom'
-import { useSelector } from 'react-redux'
 import Box from '@mui/system/Box'
 import React from 'react'
 
@@ -20,74 +18,58 @@ export const encodeQueryString = (namespace: string, dataset: string, column: st
 const ColumnLineageColumnNode = ({ node }: ColumnLineageColumnNodeProps) => {
   const [searchParams, setSearchParams] = useSearchParams()
   const [shine, setShine] = React.useState(false)
+
+  const { selected, dimmed } = node.data
+
+  const handleSelect = () => {
+    setSearchParams({
+      ...Object.fromEntries(searchParams.entries()),
+      dataset: node.data.dataset,
+      namespace: node.data.namespace,
+      column: encodeQueryString(node.data.namespace, node.data.dataset, node.data.column),
+      columnName: node.data.column,
+    })
+  }
+
   return (
-    <>
+    <g opacity={dimmed && !shine ? 0.3 : 1}>
       <Box
-        onMouseEnter={() => {
-          setShine(true)
-          setSearchParams({
-            ...Object.fromEntries(searchParams.entries()),
-            column: encodeQueryString(node.data.namespace, node.data.dataset, node.data.column),
-            columnName: node.data.column,
-          })
-        }}
-        onMouseLeave={() => {
-          setShine(false)
-        }}
-        onClick={() => {
-          setSearchParams({
-            ...Object.fromEntries(searchParams.entries()),
-            dataset: node.data.dataset,
-            namespace: node.data.namespace,
-            column: encodeQueryString(node.data.namespace, node.data.dataset, node.data.column),
-            columnName: node.data.column,
-          })
-        }}
+        onMouseEnter={() => setShine(true)}
+        onMouseLeave={() => setShine(false)}
+        onClick={handleSelect}
         component={'rect'}
         sx={{
           x: 0,
           y: 0,
           width: node.width,
           height: node.height,
-          stroke: grey['100'],
+          stroke: selected ? theme.palette.primary.main : grey['100'],
+          strokeWidth: selected ? 2 : 1,
           rx: 4,
           fill: grey['900'],
           cursor: 'pointer',
-          filter: shine ? 'drop-shadow( 0 0 4px white)' : 'none',
+          filter: shine
+            ? 'drop-shadow( 0 0 4px white)'
+            : selected
+            ? `drop-shadow( 0 0 4px ${theme.palette.primary.main})`
+            : 'none',
           transition: 'filter 0.3',
         }}
       />
       <text
-        onMouseEnter={() => {
-          setShine(true)
-          setSearchParams({
-            ...Object.fromEntries(searchParams.entries()),
-            column: encodeQueryString(node.data.namespace, node.data.dataset, node.data.column),
-            columnName: node.data.column,
-          })
-        }}
-        onMouseLeave={() => {
-          setShine(false)
-        }}
-        onClick={() => {
-          setSearchParams({
-            ...Object.fromEntries(searchParams.entries()),
-            dataset: node.data.dataset,
-            namespace: node.data.namespace,
-            column: encodeQueryString(node.data.namespace, node.data.dataset, node.data.column),
-            columnName: node.data.column,
-          })
-        }}
+        onMouseEnter={() => setShine(true)}
+        onMouseLeave={() => setShine(false)}
+        onClick={handleSelect}
         x={8}
         y={16}
         textAnchor='start'
         fontSize={12}
         cursor={'pointer'}
-        stroke={grey[400]}
+        stroke={selected ? theme.palette.primary.main : grey[400]}
       >
         {truncateText(node.data.column, 25)}
       </text>
-    </>
+    </g>
   )
 }
 

@@ -1,9 +1,9 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { fireEvent, render, screen } from '@testing-library/react'
 import { ZoomControls } from '@/features/lineage/components/column-level/ZoomControls'
 import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 
 vi.mock('@/shared/components/MqTooltip/MQTooltip', () => ({
@@ -17,9 +17,7 @@ describe('ZoomControls', () => {
     const handleScaleZoom = vi.fn()
     const handleResetZoom = vi.fn()
 
-    render(
-      <ZoomControls handleScaleZoom={handleScaleZoom} handleResetZoom={handleResetZoom} />
-    )
+    render(<ZoomControls handleScaleZoom={handleScaleZoom} handleResetZoom={handleResetZoom} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }))
     expect(handleScaleZoom).toHaveBeenCalledWith('in')

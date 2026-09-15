@@ -1,11 +1,11 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { MemoryRouter, Route, Routes, useLocation, type Location } from 'react-router-dom'
+import { ColumnLineageDatasetNode } from '@/features/lineage/components/column-level/ColumnLineageDatasetNode'
+import { type Location, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render } from '@testing-library/react'
 import React from 'react'
-import { ColumnLineageDatasetNode } from '@/features/lineage/components/column-level/ColumnLineageDatasetNode'
 import type { ColumnLineageDatasetNodeData } from '@/features/lineage/components/column-level/nodes'
 import type { PositionedNode } from '@/features/lineage/components/graph'
 

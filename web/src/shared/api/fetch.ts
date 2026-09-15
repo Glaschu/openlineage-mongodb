@@ -3,7 +3,7 @@
 
 import { APIError, HttpMethod } from '@/shared/types'
 
-export const API_URL = '/api/v1'
+export const API_URL = '/api/v2'
 
 export const genericErrorMessageConstructor = (functionName: string, error: APIError): string => {
   const { code, message, details } = error

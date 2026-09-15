@@ -1,14 +1,14 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, expect, it } from 'vitest'
 import {
   createElkNodes,
   findConnectedNodes,
   parseColumnLineageNode,
 } from '@/features/lineage/components/column-level/layout'
-import type { ColumnLineageGraph, ColumnLineageNode } from '@/shared/types/api'
+import { describe, expect, it } from 'vitest'
 import { theme } from '@/shared/theme/theme'
+import type { ColumnLineageGraph, ColumnLineageNode } from '@/shared/types/api'
 
 describe('column-level/layout helpers', () => {
   it('parses column lineage node identifiers', () => {
@@ -51,7 +51,12 @@ describe('column-level/layout helpers', () => {
   })
 
   it('creates ELK nodes and colors edges according to connectivity', () => {
-    const buildNode = (id: string, namespace: string, dataset: string, field: string): ColumnLineageNode => ({
+    const buildNode = (
+      id: string,
+      namespace: string,
+      dataset: string,
+      field: string
+    ): ColumnLineageNode => ({
       id,
       type: 'COLUMN',
       data: {

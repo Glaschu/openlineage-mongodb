@@ -2,13 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { ThemeProvider, createTheme } from '@mui/material/styles'
-import Header from '@/shared/components/Header/Header'
-import React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import Header from '@/shared/components/Header/Header'
+import React from 'react'
 
 vi.mock('@/features/search/SearchPage', () => ({
   default: () => <div data-testid='search-component'>Search Component</div>,
+}))
+
+vi.mock('@/features/search/components/omni-search/OmniSearch', () => ({
+  __esModule: true,
+  default: () => <div data-testid='omni-search' />,
 }))
 
 const renderHeader = () => {

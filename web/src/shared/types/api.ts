@@ -83,20 +83,21 @@ export interface Dataset {
   description: string
   facets: object
   deleted: boolean
-  columnLineage: InputFields[]
+  columnLineage: ColumnLineageEntry[]
 }
 
-interface InputField {
+export interface ColumnLineageInputField {
   namespace: string
-  dataset: string
+  // dataset name of the upstream field
+  name: string
   field: string
-  transformationDescription: string | null
-  transformationType: string | null
+  transformationDescription?: string | null
+  transformationType?: string | null
 }
 
-interface InputFields {
+export interface ColumnLineageEntry {
   name: string
-  inputFields: InputField[]
+  inputFields: ColumnLineageInputField[]
   transformationDescription: string | null
   transformationType: string | null
 }
