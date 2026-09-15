@@ -1,11 +1,11 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { ActionBar } from '@/features/lineage/components/table-level/ActionBar'
+import { ActionBar, GraphSearchOption } from '@/features/lineage/components/table-level/ActionBar'
 import { type Location, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import React from 'react'
 
 vi.mock('@/shared/components/MqTooltip/MQTooltip', () => ({
@@ -33,7 +33,10 @@ const renderActionBar = (
     setIsCompact?: (value: boolean) => void
     setIsFull?: (value: boolean) => void
     isCompact?: boolean
+    isCompactAutomatic?: boolean
     isFull?: boolean
+    searchOptions?: GraphSearchOption[]
+    onSelectNode?: (nodeId: string | null) => void
   } = {}
 ) => {
   const theme = createTheme()
@@ -41,6 +44,8 @@ const renderActionBar = (
   const setDepth = vi.fn(overrides.setDepth ?? (() => {}))
   const setIsCompact = vi.fn(overrides.setIsCompact ?? (() => {}))
   const setIsFull = vi.fn(overrides.setIsFull ?? (() => {}))
+  const setAggregateByParent = vi.fn()
+  const onSelectNode = vi.fn(overrides.onSelectNode ?? (() => {}))
   const locationRef: { current: Location | null } = { current: null }
 
   const ui = render(
@@ -61,6 +66,11 @@ const renderActionBar = (
                   setIsCompact={setIsCompact}
                   isFull={overrides.isFull ?? false}
                   setIsFull={setIsFull}
+                  isCompactAutomatic={overrides.isCompactAutomatic ?? false}
+                  aggregateByParent={false}
+                  setAggregateByParent={setAggregateByParent}
+                  searchOptions={overrides.searchOptions}
+                  onSelectNode={onSelectNode}
                 />
               </>
             }
@@ -70,10 +80,41 @@ const renderActionBar = (
     </ThemeProvider>
   )
 
-  return { fetchLineage, setDepth, setIsCompact, setIsFull, locationRef, ...ui }
+  return { fetchLineage, setDepth, setIsCompact, setIsFull, onSelectNode, locationRef, ...ui }
 }
 
 describe('ActionBar', () => {
+  it('offers every laid-out node, grouped and namespaced, and reports the choice', () => {
+    const searchOptions: GraphSearchOption[] = [
+      { id: 'dataset:analytics:orders', name: 'orders', namespace: 'analytics', kind: 'Datasets' },
+      { id: 'dataset:billing:orders', name: 'orders', namespace: 'billing', kind: 'Datasets' },
+      { id: 'job:etl:nightly', name: 'nightly', namespace: 'etl', kind: 'Jobs' },
+    ]
+    const { onSelectNode } = renderActionBar({}, { searchOptions })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open' }))
+
+    const options = screen.getAllByRole('option')
+    expect(options).toHaveLength(3)
+    // Same-named datasets in different namespaces have to be distinguishable.
+    expect(options[0]).toHaveTextContent('orders')
+    expect(options[0]).toHaveTextContent('analytics')
+    expect(options[1]).toHaveTextContent('billing')
+    // Scoped to the dropdown: the bar's own heading also reads "Jobs".
+    const listbox = within(screen.getByRole('listbox'))
+    expect(listbox.getByText('Jobs')).toBeInTheDocument()
+    expect(listbox.getByText('Datasets')).toBeInTheDocument()
+
+    fireEvent.click(options[1])
+    expect(onSelectNode).toHaveBeenCalledWith('dataset:billing:orders')
+  })
+
+  it('labels the compact switch as automatic when the graph forced it', () => {
+    renderActionBar({}, { isCompact: true, isCompactAutomatic: true })
+
+    expect(screen.getByRole('checkbox', { name: 'Compact Nodes (auto)' })).toBeChecked()
+  })
+
   it('calls fetchLineage with the current parameters when refresh is clicked', () => {
     const { fetchLineage } = renderActionBar({})
 

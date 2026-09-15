@@ -1,10 +1,15 @@
-import { ActionBar } from './ActionBar'
+import { ActionBar, GraphSearchOption } from './ActionBar'
 import { Box } from '@mui/system'
 import { CircularProgress, Drawer } from '@mui/material'
 import { DEFAULT_MAX_SCALE, Graph, ZoomPanControls } from '@/features/lineage/components/graph'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import { JobOrDataset } from '@/shared/types/lineage'
-import { TableLevelNodeData, tableLevelNodeRenderer } from './nodes'
+import {
+  TableLevelNodeData,
+  TableLineageDatasetNodeData,
+  TableLineageJobNodeData,
+  tableLevelNodeRenderer,
+} from './nodes'
 import { ZoomControls } from '../column-level/ZoomControls'
 import { createElkNodes, findDownstreamNodes, findUpstreamNodes } from './layout'
 import { useCallbackRef } from '@/shared/hooks/hooks'
@@ -52,6 +57,9 @@ const ColumnLevel = () => {
   // in either direction and dims the rest, which is the only way to read a
   // single lineage path out of a graph with hundreds of nodes.
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
+  // A node chosen from the find-a-node box stays focused until it is cleared,
+  // so the path survives the pointer leaving the graph.
+  const [pinnedNodeId, setPinnedNodeId] = useState<string | null>(null)
 
   const collapsedNodes = searchParams.get('collapsedNodes')
 
@@ -99,11 +107,46 @@ const ColumnLevel = () => {
     aggregateByParent,
   ])
 
-  const highlight = useMemo(() => {
-    if (!hoveredNodeId || !lineage) return null
+  const focusedNodeId = hoveredNodeId ?? pinnedNodeId
 
-    const downstream = findDownstreamNodes(lineage, hoveredNodeId, aggregateByParent)
-    const upstream = findUpstreamNodes(lineage, hoveredNodeId, aggregateByParent)
+  const searchOptions = useMemo(() => {
+    const options: GraphSearchOption[] = []
+
+    const visit = (list: typeof nodes) => {
+      for (const node of list) {
+        if (node.kind === 'JOB') {
+          const { job } = node.data as TableLineageJobNodeData
+          options.push({ id: node.id, name: job.name, namespace: job.namespace, kind: 'Jobs' })
+        } else if (node.kind === 'DATASET') {
+          const { dataset } = node.data as TableLineageDatasetNodeData
+          options.push({
+            id: node.id,
+            name: dataset.name,
+            namespace: dataset.namespace,
+            kind: 'Datasets',
+          })
+        }
+        if (node.children) visit(node.children)
+      }
+    }
+    visit(nodes)
+
+    // Autocomplete's groupBy expects options already grouped.
+    return options.sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name))
+  }, [nodes])
+
+  const handleSelectNode = useCallbackRef((nodeId: string | null) => {
+    setPinnedNodeId(nodeId)
+    if (nodeId) {
+      graphControls.current?.centerOnPositionedNode(nodeId, DEFAULT_MAX_SCALE)
+    }
+  })
+
+  const highlight = useMemo(() => {
+    if (!focusedNodeId || !lineage) return null
+
+    const downstream = findDownstreamNodes(lineage, focusedNodeId, aggregateByParent)
+    const upstream = findUpstreamNodes(lineage, focusedNodeId, aggregateByParent)
     const nodeIds = new Set([
       ...downstream.nodes.map((node) => node.id),
       ...upstream.nodes.map((node) => node.id),
@@ -117,7 +160,7 @@ const ColumnLevel = () => {
       nodeIds,
       edgeIds: new Set([...downstream.edges, ...upstream.edges]),
     }
-  }, [hoveredNodeId, lineage, aggregateByParent])
+  }, [focusedNodeId, lineage, aggregateByParent])
 
   useEffect(() => {
     if (nodes.length > 0) {
@@ -160,6 +203,8 @@ const ColumnLevel = () => {
         setIsFull={setIsFull}
         aggregateByParent={aggregateByParent}
         setAggregateByParent={setAggregateByParent}
+        searchOptions={searchOptions}
+        onSelectNode={handleSelectNode}
       />
       <Box height={`calc(100vh - ${HEADER_HEIGHT}px - ${HEADER_HEIGHT}px - 1px)`}>
         {isFetching && (

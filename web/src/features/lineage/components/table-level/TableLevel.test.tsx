@@ -4,8 +4,8 @@
 import * as useLineageHook from '@/features/lineage/api'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, screen } from '@testing-library/react'
 import { renderWithProviders } from '@/test/utils'
-import { screen } from '@testing-library/react'
 import React from 'react'
 import TableLevel from '@/features/lineage/components/table-level/TableLevel'
 import type { LineageGraph } from '@/shared/types/api'
@@ -267,5 +267,47 @@ describe('TableLevel automatic compacting', () => {
 
     expect(compactArgs()).not.toContain(true)
     expect(screen.getByRole('checkbox', { name: 'Compact Nodes' })).not.toBeChecked()
+  })
+})
+
+describe('TableLevel node search', () => {
+  const graph = () =>
+    ({ graph: [{ id: 'DATASET:analytics:daily-table' }] } as unknown as LineageGraph)
+
+  beforeEach(() => {
+    createElkNodesMock.mockClear()
+    zoomControls.length = 0
+    createElkNodesMock.mockReturnValue({
+      nodes: [
+        {
+          id: 'dataset:analytics:orders',
+          kind: 'DATASET',
+          height: 24,
+          data: { dataset: { name: 'orders', namespace: 'analytics' } },
+        },
+        {
+          id: 'job:etl:nightly',
+          kind: 'JOB',
+          height: 24,
+          data: { job: { name: 'nightly', namespace: 'etl' } },
+        },
+      ],
+      edges: [],
+    } as never)
+  })
+
+  it('centres the graph on a node picked from the search box', () => {
+    renderTableLevel(graph())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open' }))
+    const options = screen.getAllByRole('option')
+    expect(options.map((option) => option.textContent)).toEqual([
+      expect.stringContaining('orders'),
+      expect.stringContaining('nightly'),
+    ])
+
+    fireEvent.click(options[1])
+
+    expect(zoomControls[0].centerOnPositionedNode).toHaveBeenCalledWith('job:etl:nightly', 2)
   })
 })

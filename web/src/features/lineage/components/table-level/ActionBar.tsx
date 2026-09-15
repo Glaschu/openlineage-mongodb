@@ -1,4 +1,4 @@
-import { Divider, FormControlLabel, Switch, TextField } from '@mui/material'
+import { Autocomplete, Divider, FormControlLabel, Switch, TextField } from '@mui/material'
 import { FEATURE_FLAGS } from '@/shared/config/featureFlags'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import ArrowBackIosRounded from '@mui/icons-material/ArrowBackIosRounded'
@@ -11,6 +11,13 @@ import IconButton from '@mui/material/IconButton'
 import MQTooltip from '@/shared/components/MqTooltip/MQTooltip'
 import MqText from '@/shared/components/MqText/MqText'
 import React from 'react'
+
+export interface GraphSearchOption {
+  id: string
+  name: string
+  namespace: string
+  kind: string
+}
 
 interface ActionBarProps {
   nodeType: 'DATASET' | 'JOB'
@@ -25,6 +32,9 @@ interface ActionBarProps {
   setIsFull: (isFull: boolean) => void
   aggregateByParent: boolean
   setAggregateByParent: (aggregateByParent: boolean) => void
+  /** Every node currently laid out, for the find-a-node box. */
+  searchOptions?: GraphSearchOption[]
+  onSelectNode?: (nodeId: string | null) => void
 }
 
 export const ActionBar = ({
@@ -39,6 +49,8 @@ export const ActionBar = ({
   setIsFull,
   aggregateByParent,
   setAggregateByParent,
+  searchOptions = [],
+  onSelectNode,
 }: ActionBarProps) => {
   const { namespace, name } = useParams()
   const navigate = useNavigate()
@@ -89,6 +101,29 @@ export const ActionBar = ({
         </Box>
       </Box>
       <Box display={'flex'} alignItems={'center'}>
+        <Autocomplete
+          id='lineage-node-search'
+          size='small'
+          sx={{ width: 260, mr: 2 }}
+          options={searchOptions}
+          getOptionLabel={(option) => option.name}
+          groupBy={(option) => option.kind}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
+          onChange={(_event, option) => onSelectNode?.(option ? option.id : null)}
+          renderOption={(props, option) => (
+            <li {...props} key={option.id}>
+              <Box>
+                <MqText font={'mono'}>{option.name}</MqText>
+                <MqText subdued font={'mono'}>
+                  {option.namespace}
+                </MqText>
+              </Box>
+            </li>
+          )}
+          renderInput={(params) => (
+            <TextField {...params} label='Find node' variant='outlined' size='small' />
+          )}
+        />
         <MQTooltip title={'Refresh'}>
           <IconButton
             sx={{ mr: 2 }}
