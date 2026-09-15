@@ -1,11 +1,11 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { MemoryRouter, Route, Routes, useLocation, type Location } from 'react-router-dom'
-import { ThemeProvider, createTheme } from '@mui/material/styles'
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
 import { ActionBar } from '@/features/lineage/components/table-level/ActionBar'
+import { type Location, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { ThemeProvider, createTheme } from '@mui/material/styles'
+import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 
 vi.mock('@/shared/components/MqTooltip/MQTooltip', () => ({
@@ -38,9 +38,9 @@ const renderActionBar = (
 ) => {
   const theme = createTheme()
   const fetchLineage = vi.fn()
-  const setDepth = vi.fn(overrides.setDepth ?? (() => { }))
-  const setIsCompact = vi.fn(overrides.setIsCompact ?? (() => { }))
-  const setIsFull = vi.fn(overrides.setIsFull ?? (() => { }))
+  const setDepth = vi.fn(overrides.setDepth ?? (() => {}))
+  const setIsCompact = vi.fn(overrides.setIsCompact ?? (() => {}))
+  const setIsFull = vi.fn(overrides.setIsFull ?? (() => {}))
   const locationRef: { current: Location | null } = { current: null }
 
   const ui = render(
@@ -92,7 +92,9 @@ describe('ActionBar', () => {
   })
 
   it('toggles the switches and writes the values to the URL', () => {
-    const { setIsFull, setIsCompact, locationRef } = renderActionBar({ initialEntry: '/table/JOB/finance/daily-job' })
+    const { setIsFull, setIsCompact, locationRef } = renderActionBar({
+      initialEntry: '/table/JOB/finance/daily-job',
+    })
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Full Graph' }))
     expect(setIsFull).toHaveBeenCalledWith(true)

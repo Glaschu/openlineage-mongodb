@@ -1,15 +1,14 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import * as useLineageHook from '@/features/lineage/api'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { renderWithProviders } from '@/test/utils'
 import { screen } from '@testing-library/react'
 import React from 'react'
 import TableLevel from '@/features/lineage/components/table-level/TableLevel'
 import type { LineageGraph } from '@/shared/types/api'
-import { renderWithProviders } from '@/test/utils'
-import * as useLineageHook from '@/features/lineage/api'
 
 const { createElkNodesMock, graphRenderMock, zoomControls } = vi.hoisted(() => ({
   createElkNodesMock: vi.fn(() => ({
@@ -43,7 +42,7 @@ vi.mock('@/features/lineage/components/graph', () => ({
     }
     return <div data-testid='graph' />
   },
-  ZoomPanControls: class { },
+  ZoomPanControls: class {},
 }))
 
 vi.mock('@/features/lineage/components/table-level/layout', () => ({
@@ -65,20 +64,21 @@ vi.mock('@/features/lineage/components/table-level/TableLevelDrawer', () => ({
 
 vi.mock('@visx/responsive/lib/components/ParentSize', () => ({
   __esModule: true,
-  default: ({ children }: { children: (size: { width: number; height: number }) => React.ReactNode }) => (
-    <div data-testid='parent-size'>{children({ width: 800, height: 600 })}</div>
-  ),
+  default: ({
+    children,
+  }: {
+    children: (size: { width: number; height: number }) => React.ReactNode
+  }) => <div data-testid='parent-size'>{children({ width: 800, height: 600 })}</div>,
 }))
 
 vi.mock('../../../store/actionCreators', async () => {
   // We mock actionCreators but fetchLineage is no longer used for fetching.
   return {
-    fetchLineage: vi.fn()
+    fetchLineage: vi.fn(),
   }
 })
 
 const renderTableLevel = (lineage: LineageGraph | null, initialEntry?: string) => {
-  const theme = createTheme()
   const mockRefetch = vi.fn()
 
   vi.spyOn(useLineageHook, 'useLineage').mockReturnValue({
@@ -97,18 +97,20 @@ const renderTableLevel = (lineage: LineageGraph | null, initialEntry?: string) =
   return {
     ...renderWithProviders(
       <MemoryRouter
-        initialEntries={[initialEntry ?? '/table-level/DATASET/analytics/daily-table?depth=2&isCompact=true']}
+        initialEntries={[
+          initialEntry ?? '/table-level/DATASET/analytics/daily-table?depth=2&isCompact=true',
+        ]}
       >
         <Routes>
           <Route path='/table-level/:nodeType/:namespace/:name' element={<TableLevel />} />
         </Routes>
       </MemoryRouter>,
       {
-        // Redux state if needed for other things? 
+        // Redux state if needed for other things?
         // TableLevel uses local state for view options.
       }
     ),
-    mockRefetch
+    mockRefetch,
   }
 }
 

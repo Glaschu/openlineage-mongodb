@@ -1,12 +1,9 @@
 import { Dataset } from '@/shared/types/api'
 import { LineageDataset } from '@/shared/types/lineage'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { PositionedNode } from '@/features/lineage/components/graph'
-import { Provider } from 'react-redux'
 import { TableLineageDatasetNodeData } from '@/features/lineage/components/table-level/nodes'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { legacy_createStore as createStore } from '@reduxjs/toolkit'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import React from 'react'
 import TableLineageDatasetNode from '@/features/lineage/components/table-level/TableLineageDatasetNode'
 
@@ -93,8 +90,8 @@ vi.mock('@/features/datasets/api', () => ({
   useDataset: vi.fn(),
 }))
 
-import { useDataset } from '@/features/datasets/api'
 import { renderWithProviders } from '@/test/utils'
+import { useDataset } from '@/features/datasets/api'
 
 const renderNode = (node: any, storeState: any = {}) => {
   return renderWithProviders(
@@ -182,7 +179,7 @@ describe('TableLineageDatasetNode', () => {
     // The component likely uses useDataset to fetch extra details, OR uses the data from the node props.
     // Based on original code `createMockDataset` was passed to node.data.dataset.
     // The original test mocked Redux state with `createMockStore(null)` so useDataset probably fetched nothing or wasn't used?
-    // Wait, the component uses `useDataset`! 
+    // Wait, the component uses `useDataset`!
     // If the node data overrides the hook data or vice-versa needs to be checked.
     // The original test `renders with dataset description` set `dataset` in `node.data`.
     // Let's assume the component uses the prop data if available or falls back to hook?

@@ -1,7 +1,6 @@
-import { Icon, faDatabase } from '@/shared/components/icons'
 import { Dataset, Field } from '@/shared/types/api'
 import { Divider } from '@mui/material'
-import { RootState } from '@/store/store'
+import { Icon, faDatabase } from '@/shared/components/icons'
 import { LineageDataset } from '@/shared/types/lineage'
 import { PositionedNode } from '@/features/lineage/components/graph'
 import { THEME_EXTRA, theme } from '@/shared/theme/theme'

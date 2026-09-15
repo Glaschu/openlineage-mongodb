@@ -1,6 +1,5 @@
-import { Icon, faCog } from '@/shared/components/icons'
 import { Divider } from '@mui/material'
-import { LineageGraph } from '@/shared/types/api'
+import { Icon, faCog } from '@/shared/components/icons'
 import { LineageJob } from '@/shared/types/lineage'
 import { PositionedNode } from '@/features/lineage/components/graph'
 import { TableLineageJobNodeData } from './nodes'

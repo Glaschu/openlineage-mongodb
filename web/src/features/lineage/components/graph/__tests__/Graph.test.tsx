@@ -3,6 +3,7 @@ import React from 'react'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 
+import { DIMMED_OPACITY, GraphHighlightContext } from '../highlight'
 import { Graph } from '../Graph'
 import { MiniMapPlacement } from '../ZoomPanSvg/MiniMap'
 import type { Edge, NodeRenderer, PositionedEdge, PositionedNode } from '../types'
@@ -224,6 +225,39 @@ beforeEach(() => {
 })
 
 describe('Graph', () => {
+  it('reports the node under the pointer and clears it on leave', () => {
+    const onNodeHover = vi.fn()
+    renderGraph({ onNodeHover })
+
+    latestReactFlowProps.onNodeMouseEnter({} as React.MouseEvent, { id: 'node-1' })
+    expect(onNodeHover).toHaveBeenCalledWith('node-1')
+
+    latestReactFlowProps.onNodeMouseLeave()
+    expect(onNodeHover).toHaveBeenLastCalledWith(null)
+  })
+
+  it('renders nodes outside the focused subgraph at reduced opacity', () => {
+    const highlight = { nodeIds: new Set(['container-1']), edgeIds: new Set<string>() }
+    renderGraph({ highlight })
+
+    const NodeComponent = latestReactFlowProps.nodeTypes.graphNode
+    const nodeData = latestReactFlowProps.nodes[0].data
+
+    const focused = render(
+      <GraphHighlightContext.Provider value={highlight}>
+        <NodeComponent id='container-1' data={nodeData} />
+      </GraphHighlightContext.Provider>
+    )
+    expect(focused.container.querySelector('svg')).toHaveStyle({ opacity: '1' })
+
+    const dimmed = render(
+      <GraphHighlightContext.Provider value={highlight}>
+        <NodeComponent id='some-other-node' data={nodeData} />
+      </GraphHighlightContext.Provider>
+    )
+    expect(dimmed.container.querySelector('svg')).toHaveStyle({ opacity: String(DIMMED_OPACITY) })
+  })
+
   it('renders layout, adjusts edges, and wires zoom controls', async () => {
     let capturedControls: any
     renderGraph({

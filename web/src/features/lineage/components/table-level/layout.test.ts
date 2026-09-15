@@ -3,10 +3,14 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { createElkNodes, findDownstreamNodes, findUpstreamNodes } from '@/features/lineage/components/table-level/layout'
-import type { LineageGraph } from '@/shared/types/api'
-import type { LineageDataset, LineageJob, LineageNode } from '@/shared/types/lineage'
+import {
+  createElkNodes,
+  findDownstreamNodes,
+  findUpstreamNodes,
+} from '@/features/lineage/components/table-level/layout'
 import { theme } from '@/shared/theme/theme'
+import type { LineageDataset, LineageJob, LineageNode } from '@/shared/types/lineage'
+import type { LineageGraph } from '@/shared/types/api'
 
 const makeDatasetNode = (
   id: string,
@@ -132,10 +136,7 @@ describe('table-level layout helpers', () => {
     ])
 
     const upstream = findUpstreamNodes(graph, datasetCurrent.id, false)
-    expect(upstream.nodes.map((node) => node.id)).toEqual([
-      datasetCurrent.id,
-      jobUpstream.id,
-    ])
+    expect(upstream.nodes.map((node) => node.id)).toEqual([datasetCurrent.id, jobUpstream.id])
   })
 
   it('createElkNodes filters nodes, highlights context, and sizes datasets', () => {
@@ -144,12 +145,7 @@ describe('table-level layout helpers', () => {
     const { nodes, edges } = createElkNodes(graph, datasetCurrent.id, false, false, null, false)
 
     const nodeIds = nodes.map((node) => node.id)
-    expect(nodeIds).toEqual([
-      datasetCurrent.id,
-      jobUpstream.id,
-      jobDownstream.id,
-      datasetChild.id,
-    ])
+    expect(nodeIds).toEqual([datasetCurrent.id, jobUpstream.id, jobDownstream.id, datasetChild.id])
 
     const datasetNode = nodes.find((node) => node.id === datasetCurrent.id)
     expect(datasetNode?.height).toBe(34 + 2 * 10)
@@ -194,9 +190,49 @@ describe('table-level layout helpers', () => {
     const unrelatedDataset = nodes.find((node) => node.id === datasetUnrelated.id)
     expect(unrelatedDataset?.height).toBe(34 + 1 * 10)
 
-    const outboundEdge = edges.find(
-      (edge) => edge.id === `${jobIsolated.id}:${datasetIsolated.id}`
-    )
+    const outboundEdge = edges.find((edge) => edge.id === `${jobIsolated.id}:${datasetIsolated.id}`)
     expect(outboundEdge?.color).toBe(theme.palette.info.main)
+  })
+})
+
+describe('table-level layout at scale', () => {
+  // A long alternating dataset -> job -> dataset chain, the shape real lineage
+  // takes. Traversal that scans the graph per edge (or keeps `visited` in an
+  // array) is quadratic here and takes many seconds; indexed traversal is
+  // milliseconds.
+  const buildChain = (length: number): LineageGraph => {
+    const nodes: LineageNode[] = []
+    for (let i = 0; i < length; i++) {
+      nodes.push(i % 2 === 0 ? makeDatasetNode(`node-${i}`, 3) : makeJobNode(`node-${i}`))
+    }
+    for (let i = 0; i < length - 1; i++) {
+      const edge = { origin: `node-${i}`, destination: `node-${i + 1}` }
+      nodes[i].outEdges.push(edge)
+      nodes[i + 1].inEdges.push(edge)
+    }
+    return { graph: nodes }
+  }
+
+  it('walks a 4000-node chain quickly and keeps every node', () => {
+    const graph = buildChain(4000)
+
+    const started = performance.now()
+    const { nodes, edges } = createElkNodes(graph, 'node-0', false, false, null, false)
+    const elapsed = performance.now() - started
+
+    expect(nodes).toHaveLength(4000)
+    expect(edges).toHaveLength(3999)
+    expect(elapsed).toBeLessThan(2000)
+  })
+
+  it('finds upstream and downstream from the middle of a long chain', () => {
+    const graph = buildChain(2000)
+
+    const downstream = findDownstreamNodes(graph, 'node-1000', false)
+    const upstream = findUpstreamNodes(graph, 'node-1000', false)
+
+    // The focused node itself is included in both traversals.
+    expect(downstream.nodes).toHaveLength(1000)
+    expect(upstream.nodes).toHaveLength(1001)
   })
 })

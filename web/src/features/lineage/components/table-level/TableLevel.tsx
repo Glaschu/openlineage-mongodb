@@ -6,7 +6,7 @@ import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import { JobOrDataset } from '@/shared/types/lineage'
 import { TableLevelNodeData, tableLevelNodeRenderer } from './nodes'
 import { ZoomControls } from '../column-level/ZoomControls'
-import { createElkNodes } from './layout'
+import { createElkNodes, findDownstreamNodes, findUpstreamNodes } from './layout'
 import { useCallbackRef } from '@/shared/hooks/hooks'
 import { useLineage } from '@/features/lineage/api'
 import { useParams, useSearchParams } from 'react-router-dom'
@@ -30,6 +30,11 @@ const ColumnLevel = () => {
   )
 
   const graphControls = useRef<ZoomPanControls>()
+
+  // The node the pointer is over. Hovering focuses everything reachable from it
+  // in either direction and dims the rest, which is the only way to read a
+  // single lineage path out of a graph with hundreds of nodes.
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
 
   const collapsedNodes = searchParams.get('collapsedNodes')
 
@@ -57,6 +62,26 @@ const ColumnLevel = () => {
         : { nodes: [], edges: [] },
     [lineage, nodeType, namespace, name, isCompact, isFull, collapsedNodes, aggregateByParent]
   )
+
+  const highlight = useMemo(() => {
+    if (!hoveredNodeId || !lineage) return null
+
+    const downstream = findDownstreamNodes(lineage, hoveredNodeId, aggregateByParent)
+    const upstream = findUpstreamNodes(lineage, hoveredNodeId, aggregateByParent)
+    const nodeIds = new Set([
+      ...downstream.nodes.map((node) => node.id),
+      ...upstream.nodes.map((node) => node.id),
+    ])
+
+    // Group containers are not part of the lineage graph, so hovering one
+    // resolves to nothing; leave the graph undimmed rather than blanking it.
+    if (!nodeIds.size) return null
+
+    return {
+      nodeIds,
+      edgeIds: new Set([...downstream.edges, ...upstream.edges]),
+    }
+  }, [hoveredNodeId, lineage, aggregateByParent])
 
   useEffect(() => {
     if (nodes.length > 0) {
@@ -154,6 +179,8 @@ const ColumnLevel = () => {
               direction='right'
               nodeRenderers={tableLevelNodeRenderer}
               setZoomPanControls={setGraphControls}
+              highlight={highlight}
+              onNodeHover={setHoveredNodeId}
             />
           )}
         </ParentSize>

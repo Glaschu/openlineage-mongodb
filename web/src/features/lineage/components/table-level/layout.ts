@@ -11,13 +11,25 @@ interface TraversalResult {
   edges: string[]
 }
 
+/**
+ * Index nodes by id. Traversal used to scan the whole graph for every edge it
+ * followed, which is quadratic once a lineage graph gets past a few hundred
+ * nodes.
+ */
+const indexById = (lineageGraph: LineageGraph): Map<string, LineageNode> => {
+  const byId = new Map<string, LineageNode>()
+  for (const node of lineageGraph.graph) byId.set(node.id, node)
+  return byId
+}
+
 const getInitialQueue = (
   lineageGraph: LineageGraph,
   currentGraphNode: Nullable<string>,
-  aggregateByParent: boolean
+  aggregateByParent: boolean,
+  byId: Map<string, LineageNode> = indexById(lineageGraph)
 ): LineageNode[] => {
   if (!currentGraphNode) return []
-  const currentNode = lineageGraph.graph.find((node) => node.id === currentGraphNode)
+  const currentNode = byId.get(currentGraphNode)
   if (!currentNode) return []
   const queue: LineageNode[] = [currentNode]
 
@@ -41,25 +53,29 @@ const getInitialQueue = (
  * @param currentGraphNode
  * @param aggregateByParent
  */
-export const findDownstreamNodes = (
+const traverse = (
   lineageGraph: LineageGraph,
   currentGraphNode: Nullable<string>,
-  aggregateByParent: boolean
+  aggregateByParent: boolean,
+  direction: 'downstream' | 'upstream',
+  byId: Map<string, LineageNode> = indexById(lineageGraph)
 ): TraversalResult => {
-  const queue = getInitialQueue(lineageGraph, currentGraphNode, aggregateByParent)
+  const queue = getInitialQueue(lineageGraph, currentGraphNode, aggregateByParent, byId)
   const connectedNodes: LineageNode[] = []
-  const visitedNodes: string[] = []
+  const visitedNodes = new Set<string>()
   const traversedEdges: string[] = []
 
   while (queue.length) {
     const currentNode = queue.shift()
     if (!currentNode) continue
-    if (visitedNodes.includes(currentNode.id)) continue
-    visitedNodes.push(currentNode.id)
+    if (visitedNodes.has(currentNode.id)) continue
+    visitedNodes.add(currentNode.id)
     connectedNodes.push(currentNode)
-    for (const edge of currentNode.outEdges) {
+
+    const edges = direction === 'downstream' ? currentNode.outEdges : currentNode.inEdges
+    for (const edge of edges) {
       traversedEdges.push(`${edge.origin}:${edge.destination}`)
-      const nextNode = lineageGraph.graph.find((n) => n.id === edge.destination)
+      const nextNode = byId.get(direction === 'downstream' ? edge.destination : edge.origin)
       if (nextNode) {
         queue.push(nextNode)
       }
@@ -69,37 +85,22 @@ export const findDownstreamNodes = (
 }
 
 /**
- * Recursively trace the `inEdges` and `outEdges` of the current node to find all connected upstream column nodes
- * @param lineageGraph
- * @param currentGraphNode
- * @param aggregateByParent
+ * Trace `outEdges` from the current node to every connected downstream node.
+ */
+export const findDownstreamNodes = (
+  lineageGraph: LineageGraph,
+  currentGraphNode: Nullable<string>,
+  aggregateByParent: boolean
+): TraversalResult => traverse(lineageGraph, currentGraphNode, aggregateByParent, 'downstream')
+
+/**
+ * Trace `inEdges` from the current node to every connected upstream node.
  */
 export const findUpstreamNodes = (
   lineageGraph: LineageGraph,
   currentGraphNode: Nullable<string>,
   aggregateByParent: boolean
-): TraversalResult => {
-  const queue = getInitialQueue(lineageGraph, currentGraphNode, aggregateByParent)
-  const connectedNodes: LineageNode[] = []
-  const visitedNodes: string[] = []
-  const traversedEdges: string[] = []
-
-  while (queue.length) {
-    const currentNode = queue.shift()
-    if (!currentNode) continue
-    if (visitedNodes.includes(currentNode.id)) continue
-    visitedNodes.push(currentNode.id)
-    connectedNodes.push(currentNode)
-    for (const edge of currentNode.inEdges) {
-      traversedEdges.push(`${edge.origin}:${edge.destination}`)
-      const nextNode = lineageGraph.graph.find((n) => n.id === edge.origin)
-      if (nextNode) {
-        queue.push(nextNode)
-      }
-    }
-  }
-  return { nodes: connectedNodes, edges: traversedEdges }
-}
+): TraversalResult => traverse(lineageGraph, currentGraphNode, aggregateByParent, 'upstream')
 
 export const createElkNodes = (
   lineageGraph: LineageGraph,
@@ -109,21 +110,22 @@ export const createElkNodes = (
   collapsedNodes: Nullable<string>,
   aggregateByParent: boolean
 ) => {
-  const downstream = findDownstreamNodes(lineageGraph, currentGraphNode, aggregateByParent)
-  const upstream = findUpstreamNodes(lineageGraph, currentGraphNode, aggregateByParent)
+  const byId = indexById(lineageGraph)
+  const downstream = traverse(lineageGraph, currentGraphNode, aggregateByParent, 'downstream', byId)
+  const upstream = traverse(lineageGraph, currentGraphNode, aggregateByParent, 'upstream', byId)
 
   const downstreamNodeIds = new Set(downstream.nodes.map((n) => n.id))
   const upstreamNodeIds = new Set(upstream.nodes.map((n) => n.id))
   const downstreamEdgeIds = new Set(downstream.edges)
   const upstreamEdgeIds = new Set(upstream.edges)
 
-  const initialNodes = getInitialQueue(lineageGraph, currentGraphNode, aggregateByParent)
+  const initialNodes = getInitialQueue(lineageGraph, currentGraphNode, aggregateByParent, byId)
   const initialNodeIds = new Set(initialNodes.map((n) => n.id))
 
   const nodes: ElkNode<JobOrDataset | 'GROUP', TableLevelNodeData>[] = []
   const edges: Edge[] = []
 
-  const collapsedNodesAsArray = collapsedNodes?.split(',')
+  const collapsedNodeIds = new Set(collapsedNodes?.split(',') ?? [])
 
   const filteredGraph = lineageGraph.graph.filter((node) => {
     if (isFull) return true
@@ -132,12 +134,14 @@ export const createElkNodes = (
     )
   })
 
+  const renderedNodeIds = new Set(filteredGraph.map((node) => node.id))
+
   const groupNodesMap = new Map<string, ElkNode<JobOrDataset | 'GROUP', TableLevelNodeData>>()
 
   for (const node of filteredGraph) {
     edges.push(
       ...node.outEdges
-        .filter((edge) => filteredGraph.find((n) => n.id === edge.destination))
+        .filter((edge) => renderedNodeIds.has(edge.destination))
         .map((edge) => {
           const edgeId = `${edge.origin}:${edge.destination}`
           const isDownstream = downstreamEdgeIds.has(edgeId)
@@ -214,8 +218,7 @@ export const createElkNodes = (
         id: node.id,
         kind: node.type as JobOrDataset,
         width: 112,
-        height:
-          isCompact || collapsedNodesAsArray?.includes(node.id) ? 24 : 34 + data.fields.length * 10,
+        height: isCompact || collapsedNodeIds.has(node.id) ? 24 : 34 + data.fields.length * 10,
         data: {
           dataset: data,
         },

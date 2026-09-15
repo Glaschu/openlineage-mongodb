@@ -1,9 +1,9 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import React from 'react'
 
 vi.mock('@/features/datasets/components/DatasetDetailPage', () => ({
@@ -19,7 +19,10 @@ vi.mock('@/features/jobs/components/JobDetailPage', () => ({
 
 import TableLevelDrawer from './TableLevelDrawer'
 
-const renderAt = (url: string, graph: { graph: { id: string; type: string; data: { name: string } }[] }) =>
+const renderAt = (
+  url: string,
+  graph: { graph: { id: string; type: string; data: { name: string } }[] }
+) =>
   render(
     <MemoryRouter initialEntries={[url]}>
       <Routes>

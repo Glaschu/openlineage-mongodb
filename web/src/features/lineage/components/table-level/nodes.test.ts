@@ -1,7 +1,7 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { tableLevelNodeRenderer } from '@/features/lineage/components/table-level/nodes'
 import TableLineageDatasetNode from '@/features/lineage/components/table-level/TableLineageDatasetNode'
 import TableLineageJobNode from '@/features/lineage/components/table-level/TableLineageJobNode'
