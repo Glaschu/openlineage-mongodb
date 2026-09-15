@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Box, Button, Divider, FormControlLabel, Grid, Switch, Tab, Tabs } from '@mui/material'
-import { CalendarIcon } from '@mui/x-date-pickers'
+import { CalendarIcon } from '@mui/x-date-pickers/icons'
 import { CircularProgress } from '@mui/material'
 import { FEATURE_FLAGS } from '@/shared/config/featureFlags'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'

@@ -8,7 +8,7 @@ import React, { ChangeEvent, useEffect } from 'react'
 
 import '@/i18n'
 import { Box, Button, CircularProgress, Divider, Grid, Tab, Tabs } from '@mui/material'
-import { CalendarIcon } from '@mui/x-date-pickers'
+import { CalendarIcon } from '@mui/x-date-pickers/icons'
 import {
   DirectionsRun,
   EscalatorWarning,

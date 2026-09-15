@@ -51,10 +51,11 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
+        // Only split out what genuinely loads on every route. Grouping
+        // route-specific libraries (reactflow, MUI X charts/pickers) into
+        // shared vendor chunks forced them onto pages that never use them.
         manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'mui-vendor': ['@mui/material', '@mui/icons-material', '@mui/x-date-pickers', '@mui/x-charts'],
-          'vis-vendor': ['d3-selection', 'd3-zoom', 'reactflow'],
+          'react-vendor': ['react', 'react-dom', 'react-router', 'react-router-dom'],
         },
       },
     },

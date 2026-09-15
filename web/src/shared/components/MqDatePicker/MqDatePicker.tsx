@@ -1,7 +1,7 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { DateTimePicker } from '@mui/x-date-pickers'
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
 import { alpha, useTheme } from '@mui/material/styles'
 import dayjs from '@/shared/utils/dayjs'
 
