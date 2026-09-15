@@ -10,7 +10,7 @@ import React from 'react'
 import TableLineageJobNode from '@/features/lineage/components/table-level/TableLineageJobNode'
 
 // Mock i18next
-vi.mock('react-i18next', () => ({
+vi.mock('@/i18n', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
     i18n: { changeLanguage: vi.fn() },

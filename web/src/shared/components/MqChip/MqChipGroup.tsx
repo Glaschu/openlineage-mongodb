@@ -1,9 +1,9 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import { IconDefinition } from '@/shared/components/icons'
 import { useState } from 'react'
 
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { Undefinable } from '@/shared/types/util/Nullable'
 import { useTheme } from '@mui/material/styles'
 import Box from '@mui/material/Box'

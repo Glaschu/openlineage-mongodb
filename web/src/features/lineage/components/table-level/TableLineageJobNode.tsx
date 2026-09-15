@@ -1,10 +1,9 @@
+import { Icon, faCog } from '@/shared/components/icons'
 import { Divider } from '@mui/material'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { LineageGraph } from '@/shared/types/api'
 import { LineageJob } from '@/shared/types/lineage'
 import { PositionedNode } from '@/features/lineage/components/graph'
 import { TableLineageJobNodeData } from './nodes'
-import { faCog } from '@fortawesome/free-solid-svg-icons/faCog'
 import { formatUpdatedAt } from '@/shared/utils'
 import { runStateColor } from '@/shared/utils/nodes'
 import { theme } from '@/shared/theme/theme'
@@ -119,7 +118,7 @@ const TableLineageJobNode = ({ node }: TableLineageJobNodeProps) => {
             : theme.palette.secondary.main,
         }}
       />
-      <FontAwesomeIcon
+      <Icon
         aria-hidden={'true'}
         title={'Job'}
         icon={faCog}

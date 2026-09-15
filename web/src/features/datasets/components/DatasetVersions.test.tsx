@@ -29,7 +29,7 @@ vi.mock('@/features/datasets/components/DatasetTags', () => ({
 }))
 
 // Mock i18next
-vi.mock('react-i18next', () => ({
+vi.mock('@/i18n', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
   }),

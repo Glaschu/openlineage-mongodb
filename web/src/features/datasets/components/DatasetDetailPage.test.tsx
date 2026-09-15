@@ -92,7 +92,7 @@ vi.mock('@/shared/components/Dialog', () => ({
     ) : null,
 }))
 
-vi.mock('react-i18next', () => ({
+vi.mock('@/i18n', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
   }),

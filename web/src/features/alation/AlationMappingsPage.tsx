@@ -32,7 +32,7 @@ import { useNamespaces } from '@/features/namespaces/api'
 import { Namespace } from '@/shared/types/api'
 
 import { formatDatePicker } from '@/shared/utils/time'
-import { useTranslation } from 'react-i18next'
+import { useTranslation } from '@/i18n'
 
 type StatusFilter = '' | 'SUGGESTED' | 'ACCEPTED' | 'REJECTED'
 

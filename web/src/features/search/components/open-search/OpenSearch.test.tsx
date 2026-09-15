@@ -1,6 +1,7 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import { Icon } from '@/shared/components/icons'
 import React from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { act } from 'react'
@@ -105,13 +106,6 @@ vi.mock('@mui/system/Box', () => ({
     <div data-box='true' onClick={onClick}>
       {children}
     </div>
-  ),
-}))
-
-vi.mock('@fortawesome/react-fontawesome', () => ({
-  __esModule: true,
-  FontAwesomeIcon: ({ icon }: { icon: unknown }) => (
-    <span data-testid='fontawesome-icon'>{String(icon)}</span>
   ),
 }))
 

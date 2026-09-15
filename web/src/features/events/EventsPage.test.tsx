@@ -116,7 +116,7 @@ vi.mock('file-saver', () => ({
   saveAs: (...args: Parameters<typeof saveAsMock>) => saveAsMock(...args),
 }))
 
-vi.mock('react-i18next', () => ({
+vi.mock('@/i18n', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
   }),

@@ -1,14 +1,12 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import { Icon, faCog, faDatabase } from '@/shared/components/icons'
 import { Box, darken } from '@mui/material'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { JobOrDataset } from '@/shared/types/lineage'
 import { Link as RouterLink } from 'react-router-dom'
 import { SearchResult } from '@/shared/types/api'
 import { encodeNode } from '@/shared/utils/nodes'
-import { faCog } from '@fortawesome/free-solid-svg-icons/faCog'
-import { faDatabase } from '@fortawesome/free-solid-svg-icons'
 import { theme } from '@/shared/theme/theme'
 import MqText from '@/shared/components/MqText/MqText'
 import dayjs from '@/shared/utils/dayjs'
@@ -20,8 +18,8 @@ interface SearchListItemProps {
 }
 
 const searchResultIcon: { [key in JobOrDataset]: JSX.Element } = {
-  JOB: <FontAwesomeIcon icon={faCog} color={theme.palette.primary.main} />,
-  DATASET: <FontAwesomeIcon icon={faDatabase} color={theme.palette.info.main} />,
+  JOB: <Icon icon={faCog} color={theme.palette.primary.main} />,
+  DATASET: <Icon icon={faDatabase} color={theme.palette.info.main} />,
 }
 
 const SearchListItem = ({ searchResult, search, onClick }: SearchListItemProps) => {

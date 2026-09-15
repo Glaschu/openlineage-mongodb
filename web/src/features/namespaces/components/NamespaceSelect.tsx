@@ -9,7 +9,7 @@ import { theme } from '@/shared/theme/theme'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNamespaces } from '@/features/namespaces/api'
 import { useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useTranslation } from '@/i18n'
 import MqText from '@/shared/components/MqText/MqText'
 
 const NamespaceSelect = () => {

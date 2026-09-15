@@ -54,7 +54,7 @@ vi.mock('@/shared/utils/text', () => ({
   truncateText: (...args: Parameters<typeof truncateTextMock>) => truncateTextMock(...args),
 }))
 
-vi.mock('react-i18next', () => ({
+vi.mock('@/i18n', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
   }),

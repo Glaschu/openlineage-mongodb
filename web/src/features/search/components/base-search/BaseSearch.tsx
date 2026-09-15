@@ -1,14 +1,14 @@
 // Copyright 2018-2024 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import { faCog, faDatabase, faSort } from '@/shared/components/icons'
 import { GroupedSearch } from '@/shared/types/api'
-import { faCog, faDatabase, faSort } from '@fortawesome/free-solid-svg-icons'
 import { parseSearchGroup } from '@/shared/utils/nodes'
 import { setSelectedNode } from '@/features/lineage/slice'
 import { theme } from '@/shared/theme/theme'
 import { useDispatch } from 'react-redux'
 import { useSearch } from '@/features/search/api'
-import { useTranslation } from 'react-i18next'
+import { useTranslation } from '@/i18n'
 import Box from '@mui/system/Box'
 import MqChipGroup from '@/shared/components/MqChip/MqChipGroup'
 import MqText from '@/shared/components/MqText/MqText'

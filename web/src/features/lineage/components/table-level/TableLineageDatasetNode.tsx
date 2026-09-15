@@ -1,13 +1,12 @@
+import { Icon, faDatabase } from '@/shared/components/icons'
 import { Dataset, Field } from '@/shared/types/api'
 import { Divider } from '@mui/material'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { RootState } from '@/store/store'
 import { LineageDataset } from '@/shared/types/lineage'
 import { PositionedNode } from '@/features/lineage/components/graph'
 import { THEME_EXTRA, theme } from '@/shared/theme/theme'
 import { TableLineageDatasetNodeData } from './nodes'
 import { datasetFacetsQualityAssertions, datasetFacetsStatus } from '@/shared/utils/nodes'
-import { faDatabase } from '@fortawesome/free-solid-svg-icons/faDatabase'
 import { formatUpdatedAt } from '@/shared/utils'
 import { truncateText, truncateTextFront } from '@/shared/utils/text'
 import { useDataset } from '@/features/datasets/api'
@@ -136,7 +135,7 @@ const TableLineageDatasetNode = ({ node }: TableLineageDatasetNodeProps) => {
         sx={{ rx: 4, fill: theme.palette.info.main }}
       />
 
-      <FontAwesomeIcon
+      <Icon
         aria-hidden={'true'}
         title={'Job'}
         icon={faDatabase}

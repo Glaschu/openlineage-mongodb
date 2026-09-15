@@ -1,6 +1,7 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import { Icon } from '@/shared/components/icons'
 import { MemoryRouter } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -20,10 +21,6 @@ vi.mock('react-inlinesvg', () => ({
   default: ({ src }: { src: string }) => <span data-testid='inline-svg'>{src}</span>,
 }))
 
-vi.mock('@fortawesome/react-fontawesome', () => ({
-  FontAwesomeIcon: () => <span data-testid='font-awesome-icon' />,
-}))
-
 vi.mock('../../../img/iconSearchArrow.svg', () => ({
   __esModule: true,
   default: 'icon.svg',
@@ -34,7 +31,7 @@ vi.mock('../../../components/sidenav/marquez-icon-white-solid.svg', () => ({
   default: 'logo.svg',
 }))
 
-vi.mock('react-i18next', () => ({
+vi.mock('@/i18n', () => ({
   useTranslation: () => ({
     t: (key: string) =>
       ({

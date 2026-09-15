@@ -17,7 +17,7 @@ const { fetchDatasetMock, jsonViewMock } = vi.hoisted(() => ({
   jsonViewMock: vi.fn((props: { data: unknown }) => props),
 }))
 
-vi.mock('react-i18next', () => ({
+vi.mock('@/i18n', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
 

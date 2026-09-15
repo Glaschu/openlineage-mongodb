@@ -3,7 +3,7 @@
 
 import { Box } from '@mui/material'
 import { theme } from '@/shared/theme/theme'
-import { useTranslation } from 'react-i18next'
+import { useTranslation } from '@/i18n'
 import ChevronLeftRounded from '@mui/icons-material/ChevronLeftRounded'
 import ChevronRightRounded from '@mui/icons-material/ChevronRightRounded'
 import IconButton from '@mui/material/IconButton'

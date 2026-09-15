@@ -4,7 +4,7 @@ import { Box, Chip, Table, TableBody, TableCell, TableHead, TableRow } from '@mu
 import { Dataset, Field } from '@/shared/types/api'
 import { Link } from 'react-router-dom'
 import { encodeQueryString } from '@/features/lineage/components/column-level/ColumnLineageColumnNode'
-import { useTranslation } from 'react-i18next'
+import { useTranslation } from '@/i18n'
 import DatasetTags from './DatasetTags'
 import IconButton from '@mui/material/IconButton'
 import MQTooltip from '@/shared/components/MqTooltip/MQTooltip'

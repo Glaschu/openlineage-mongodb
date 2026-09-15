@@ -1,8 +1,7 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { IconDefinition } from '@fortawesome/free-solid-svg-icons'
+import { Icon, IconDefinition } from '@/shared/components/icons'
 import Box from '@mui/material/Box'
 
 interface MqSmallIconProps {
@@ -23,13 +22,12 @@ const MqSmallIcon = ({ icon, backgroundColor, foregroundColor, shape }: MqSmallI
       justifyContent={'center'}
       alignItems={'center'}
     >
-      <FontAwesomeIcon
+      <Icon
         style={{
           width: '10px !important',
           height: 9,
           fontSize: 9,
         }}
-        fixedWidth
         icon={icon}
         color={foregroundColor}
       />

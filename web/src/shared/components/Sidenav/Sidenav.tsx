@@ -1,7 +1,8 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { useTranslation } from 'react-i18next'
+import { Icon, faCogs, faDatabase, faFolderTree, faLink, faShieldHalved } from '@/shared/components/icons'
+import { useTranslation } from '@/i18n'
 import SVG from 'react-inlinesvg'
 
 import { Link, useLocation } from 'react-router-dom'
@@ -9,14 +10,6 @@ import Box from '@mui/material/Box'
 
 import { DRAWER_WIDTH, HEADER_HEIGHT } from '@/shared/theme/theme'
 import { Divider, Drawer } from '@mui/material'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faCogs,
-  faDatabase,
-  faFolderTree,
-  faLink,
-  faShieldHalved,
-} from '@fortawesome/free-solid-svg-icons'
 import MqIconButton from '@/shared/components/MqIconButton/MqIconButton'
 
 // for i18n
@@ -95,7 +88,7 @@ const Sidenav = () => {
             title={t('sidenav.jobs')}
             active={location.pathname === '/jobs'}
           >
-            <FontAwesomeIcon icon={faCogs} fontSize={20} />
+            <Icon icon={faCogs} fontSize={20} />
           </MqIconButton>
           <MqIconButton
             to={'/datasets'}
@@ -103,7 +96,7 @@ const Sidenav = () => {
             title={t('sidenav.datasets')}
             active={location.pathname === '/datasets'}
           >
-            <FontAwesomeIcon icon={faDatabase} fontSize={20} />
+            <Icon icon={faDatabase} fontSize={20} />
           </MqIconButton>
           <MqIconButton
             to={'/directory'}
@@ -111,7 +104,7 @@ const Sidenav = () => {
             title={'Directory'}
             active={location.pathname === '/directory'}
           >
-            <FontAwesomeIcon icon={faFolderTree} fontSize={20} />
+            <Icon icon={faFolderTree} fontSize={20} />
           </MqIconButton>
           <MqIconButton
             to={'/governance'}
@@ -119,7 +112,7 @@ const Sidenav = () => {
             title={'Coverage'}
             active={location.pathname === '/governance'}
           >
-            <FontAwesomeIcon icon={faShieldHalved} fontSize={20} />
+            <Icon icon={faShieldHalved} fontSize={20} />
           </MqIconButton>
           <MqIconButton
             id={'eventsButton'}
@@ -135,7 +128,7 @@ const Sidenav = () => {
             title={'Alation Mappings'}
             active={location.pathname === '/alation-mappings'}
           >
-            <FontAwesomeIcon icon={faLink} fontSize={20} />
+            <Icon icon={faLink} fontSize={20} />
           </MqIconButton>
         </Box>
         <FormControl

@@ -1,25 +1,24 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import { Icon, faDatabase } from '@/shared/components/icons'
 import { Box, Button, Divider, FormControlLabel, Grid, Switch, Tab, Tabs } from '@mui/material'
 import { CalendarIcon } from '@mui/x-date-pickers/icons'
 import { CircularProgress } from '@mui/material'
 import { FEATURE_FLAGS } from '@/shared/config/featureFlags'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { LineageDataset } from '@/shared/types/lineage'
 import { MqInfo } from '@/shared/components/MqInfo/MqInfo'
 import { RootState } from '@/store/store'
 import { alpha, useTheme } from '@mui/material/styles'
 import { datasetFacetsQualityAssertions, datasetFacetsStatus } from '@/shared/utils/nodes'
 import { dialogToggle } from '@/store/slices/displaySlice'
-import { faDatabase } from '@fortawesome/free-solid-svg-icons'
 import { formatUpdatedAt } from '@/shared/utils'
 import { setTabIndex } from '@/features/lineage/slice'
 import { truncateText } from '@/shared/utils/text'
 import { useDataset, useDeleteDataset } from '@/features/datasets/api'
 import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
+import { useTranslation } from '@/i18n'
 import Assertions from './Assertions'
 import CloseIcon from '@mui/icons-material/Close'
 import DatasetInfo from './DatasetInfo'
@@ -109,7 +108,7 @@ const DatasetDetailPage: React.FC<DatasetDetailPageProps> = ({ lineageDataset })
                   display={'flex'}
                   bgcolor={theme.palette.info.main}
                 >
-                  <FontAwesomeIcon
+                  <Icon
                     aria-hidden={'true'}
                     title={'Dataset'}
                     icon={faDatabase}

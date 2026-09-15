@@ -11,7 +11,7 @@ import React from 'react'
 import TableLineageDatasetNode from '@/features/lineage/components/table-level/TableLineageDatasetNode'
 
 // Mock i18next
-vi.mock('react-i18next', () => ({
+vi.mock('@/i18n', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
     i18n: { changeLanguage: vi.fn() },

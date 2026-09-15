@@ -1,9 +1,10 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import { Icon, faCog } from '@/shared/components/icons'
 import { FEATURE_FLAGS } from '@/shared/config/featureFlags'
 import { useDeleteJob, useJob } from '@/features/jobs/api'
-import { useTranslation } from 'react-i18next'
+import { useTranslation } from '@/i18n'
 import React, { ChangeEvent, useEffect } from 'react'
 
 import '@/i18n'
@@ -17,14 +18,12 @@ import {
   Start,
   Title,
 } from '@mui/icons-material'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { LineageJob } from '@/shared/types/lineage'
 import { MqInfo } from '@/shared/components/MqInfo/MqInfo'
 import { RootState } from '@/store/store'
 import { Run } from '@/shared/types/api'
 import { alpha, useTheme } from '@mui/material/styles'
 import { dialogToggle } from '@/store/slices/displaySlice'
-import { faCog } from '@fortawesome/free-solid-svg-icons/faCog'
 import { formatUpdatedAt } from '@/shared/utils'
 import { runStateColor } from '@/shared/utils/nodes'
 import { setTabIndex } from '@/features/lineage/slice'
@@ -111,7 +110,7 @@ const JobDetailPage: React.FC<JobDetailPageProps> = ({ lineageJob }) => {
                 display={'flex'}
                 bgcolor={theme.palette.primary.main}
               >
-                <FontAwesomeIcon
+                <Icon
                   aria-hidden={'true'}
                   title={'Job'}
                   icon={faCog}

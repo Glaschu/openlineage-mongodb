@@ -33,7 +33,7 @@ vi.mock('@/shared/components/MqChip/MqChipGroup', () => ({
 }))
 
 // Mock translation
-vi.mock('react-i18next', () => ({
+vi.mock('@/i18n', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
   }),

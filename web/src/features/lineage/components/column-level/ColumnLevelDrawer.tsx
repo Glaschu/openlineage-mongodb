@@ -1,3 +1,4 @@
+import { Icon, faArrowRightLong, faDatabase } from '@/shared/components/icons'
 import {
   Accordion,
   AccordionDetails,
@@ -12,14 +13,12 @@ import {
 } from '@mui/material'
 import { Box } from '@mui/system'
 import { ColumnLineageGraph } from '@/shared/types/api'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Fragment } from 'react'
-import { faArrowRightLong, faDatabase } from '@fortawesome/free-solid-svg-icons'
 import { parseColumnLineageNode } from './layout'
 import { theme } from '@/shared/theme/theme'
 import { useDataset } from '@/features/datasets/api'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
+import { useTranslation } from '@/i18n'
 import CloseIcon from '@mui/icons-material/Close'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import IconButton from '@mui/material/IconButton'
@@ -169,7 +168,7 @@ const ColumnLevelDrawer = ({ columnLineage }: ColumnLevelDrawerProps) => {
                 display={'flex'}
                 bgcolor={theme.palette.info.main}
               >
-                <FontAwesomeIcon
+                <Icon
                   aria-hidden={'true'}
                   title={'Dataset'}
                   icon={faDatabase}
@@ -214,7 +213,7 @@ const ColumnLevelDrawer = ({ columnLineage }: ColumnLevelDrawerProps) => {
                 />
               </Box>
               <Box mb={1} display={'flex'} alignItems={'center'}>
-                <FontAwesomeIcon
+                <Icon
                   icon={faArrowRightLong}
                   color={theme.palette.primary.main}
                   style={{ transform: 'rotate(180deg)', marginRight: 8 }}
@@ -231,7 +230,7 @@ const ColumnLevelDrawer = ({ columnLineage }: ColumnLevelDrawerProps) => {
                 </Box>
               )}
               <Box mb={1} mt={2} display={'flex'} alignItems={'center'}>
-                <FontAwesomeIcon
+                <Icon
                   icon={faArrowRightLong}
                   color={theme.palette.primary.main}
                   style={{ marginRight: 8 }}

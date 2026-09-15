@@ -1,7 +1,6 @@
+import { Icon, faDatabase } from '@/shared/components/icons'
 import { ColumnLineageDatasetNodeData } from './nodes'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { PositionedNode } from '@/features/lineage/components/graph'
-import { faDatabase } from '@fortawesome/free-solid-svg-icons'
 import { theme } from '@/shared/theme/theme'
 import { truncateText } from '@/shared/utils/text'
 import { useParams, useSearchParams } from 'react-router-dom'
@@ -61,7 +60,7 @@ export const ColumnLineageDatasetNode = ({ node }: ColumnLineageDatasetNodeProps
       >
         {`${truncateText(node.data.dataset, 25)}`}
       </text>
-      <FontAwesomeIcon
+      <Icon
         x={node.width - 24}
         y={12}
         width={16}

@@ -3,7 +3,7 @@
 
 import { Box } from '@mui/material'
 import { theme } from '@/shared/theme/theme'
-import { useTranslation } from 'react-i18next'
+import { useTranslation } from '@/i18n'
 import MqText from '@/shared/components/MqText/MqText'
 import Typewriter from './Typewriter'
 

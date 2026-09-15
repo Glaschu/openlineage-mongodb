@@ -1,8 +1,8 @@
 // Copyright 2018-2024 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import { faDatabase } from '@/shared/components/icons'
 import { describe, expect, it, vi } from 'vitest'
-import { faDatabase } from '@fortawesome/free-solid-svg-icons'
 import { fireEvent, render, screen } from '@testing-library/react'
 import MqChip from '@/shared/components/MqChip/MqChip'
 

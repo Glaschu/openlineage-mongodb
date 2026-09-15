@@ -1,12 +1,10 @@
 // Copyright 2018-2024 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import { Icon, faCog, faDatabase } from '@/shared/components/icons'
 import { Chip, Divider } from '@mui/material'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Nullable } from '@/shared/types/util/Nullable'
 import { encodeNode, eventTypeColor } from '@/shared/utils/nodes'
-import { faCog } from '@fortawesome/free-solid-svg-icons/faCog'
-import { faDatabase } from '@fortawesome/free-solid-svg-icons'
 import { theme } from '@/shared/theme/theme'
 import { truncateText } from '@/shared/utils/text'
 import { useNavigate } from 'react-router-dom'
@@ -161,7 +159,7 @@ const OpenSearch: React.FC<Props> = ({ search, onIsLoading }) => {
             <Box display={'flex'}>
               <Box display={'flex'}>
                 <Box display={'flex'} alignItems={'center'} height={42}>
-                  <FontAwesomeIcon icon={faCog} color={theme.palette.primary.main} />
+                  <Icon icon={faCog} color={theme.palette.primary.main} />
                 </Box>
                 <Box ml={2} width={280} minWidth={280}>
                   <MQTooltip title={hit.name}>
@@ -289,7 +287,7 @@ const OpenSearch: React.FC<Props> = ({ search, onIsLoading }) => {
             <Box display={'flex'}>
               <Box display={'flex'}>
                 <Box display={'flex'} alignItems={'center'} height={42}>
-                  <FontAwesomeIcon icon={faDatabase} color={theme.palette.info.main} />
+                  <Icon icon={faDatabase} color={theme.palette.info.main} />
                 </Box>
                 <Box ml={2} width={280} minWidth={280}>
                   <MQTooltip title={hit.name}>

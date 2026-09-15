@@ -30,3 +30,15 @@ code {
   font-family: 'Karla';
   src: local('Karla');
 }
+
+/* Icon sizing, previously supplied by the stylesheet @fortawesome/fontawesome-svg-core
+   injected into <head> at runtime. Reproduced verbatim so icons keep the size
+   and baseline alignment they had: the glyph is one em tall, its width follows
+   the viewBox aspect ratio, and callers' inline styles still win. */
+.mq-icon {
+  display: inline-block;
+  height: 1em;
+  overflow: visible;
+  vertical-align: -0.125em;
+  box-sizing: content-box;
+}

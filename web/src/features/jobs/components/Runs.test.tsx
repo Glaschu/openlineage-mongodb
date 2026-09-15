@@ -76,7 +76,7 @@ vi.mock('@/features/jobs/components/RunInfo', () => ({
   default: ({ run }: { run: any }) => <div data-testid='run-info'>Run Info for {run.id}</div>,
 }))
 
-vi.mock('react-i18next', () => ({
+vi.mock('@/i18n', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
   }),

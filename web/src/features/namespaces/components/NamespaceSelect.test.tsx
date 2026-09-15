@@ -16,7 +16,7 @@ const { selectNamespaceMock } = vi.hoisted(() => ({
   selectNamespaceMock: vi.fn((value: string) => ({ type: 'SELECT_NAMESPACE', payload: value })),
 }))
 
-vi.mock('react-i18next', () => ({
+vi.mock('@/i18n', () => ({
   useTranslation: () => ({
     t: (key: string) => (key === 'namespace_select.prompt' ? 'Namespace' : key),
   }),

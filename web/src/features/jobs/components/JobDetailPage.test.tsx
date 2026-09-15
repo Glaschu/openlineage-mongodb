@@ -1,6 +1,7 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import { Icon } from '@/shared/components/icons'
 import * as useJobsHook from '@/features/jobs/api'
 import { MemoryRouter } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
@@ -79,14 +80,6 @@ vi.mock('@mui/x-date-pickers', () => ({
   CalendarIcon: ({ children }: { children?: React.ReactNode }) => (
     <span data-testid='calendar-icon'>{children}</span>
   ),
-}))
-
-vi.mock('@fortawesome/react-fontawesome', () => ({
-  FontAwesomeIcon: ({ title }: { title?: string }) => <span data-testid='fa-icon'>{title}</span>,
-}))
-
-vi.mock('@fortawesome/free-solid-svg-icons/faCog', () => ({
-  faCog: 'fa-cog-icon',
 }))
 
 vi.mock('@/shared/components/Dialog', () => ({
@@ -170,7 +163,7 @@ vi.mock('@/shared/components/MqEmpty/MqEmpty', () => ({
   ),
 }))
 
-vi.mock('react-i18next', () => ({
+vi.mock('@/i18n', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
   }),

@@ -26,8 +26,8 @@ afterEach(() => {
   cleanup()
 })
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
+// Keep t() returning the key so assertions match on keys, not copy.
+vi.mock('@/i18n', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
     i18n: {
