@@ -70,9 +70,8 @@ vi.mock('reactflow', () => {
 })
 
 let measuredSize: [number, number] = [640, 480]
-vi.mock('@react-hook/size', () => ({
-  __esModule: true,
-  default: () => measuredSize,
+vi.mock('@/shared/hooks/useElementSize', () => ({
+  useElementSize: () => ({ width: measuredSize[0], height: measuredSize[1] }),
 }))
 
 interface LayoutResult {

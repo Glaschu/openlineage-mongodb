@@ -18,9 +18,9 @@ import { MqScreenLoad } from '@/shared/components/MqScreenLoad/MqScreenLoad'
 import { eventTypeColor } from '@/shared/utils/nodes'
 import Refresh from '@mui/icons-material/Refresh'
 
+import { downloadBlob } from '@/shared/utils/download'
 import { fileSize, formatUpdatedAt } from '@/shared/utils'
 import { formatDateAPIQuery, formatDatePicker } from '@/shared/utils/time'
-import { saveAs } from 'file-saver'
 import { truncateText } from '@/shared/utils/text'
 import { useEvents } from '@/features/events/api'
 import { useSearchParams } from 'react-router-dom'
@@ -108,7 +108,7 @@ const Events = () => {
   const handleDownloadPayload = (data: Event) => {
     const title = `${data.job.name}-${data.eventType}-${data.run.runId}`
     const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
-    saveAs(blob, `${title}.json`)
+    downloadBlob(blob, `${title}.json`)
   }
 
   const refresh = () => {

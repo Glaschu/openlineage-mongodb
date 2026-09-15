@@ -7,8 +7,7 @@ import { render, screen } from '@testing-library/react'
 import React from 'react'
 import StackedLineageEvents from '@/features/dashboard/components/StackedLineageEvents'
 
-// Mock @visx/responsive ParentSize
-vi.mock('@visx/responsive/lib/components/ParentSize', () => ({
+vi.mock('@/shared/components/MqParentSize/MqParentSize', () => ({
   default: ({
     children,
   }: {

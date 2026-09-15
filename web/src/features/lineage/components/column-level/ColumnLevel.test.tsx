@@ -60,7 +60,7 @@ vi.mock('@/features/lineage/components/column-level/ColumnLevelDrawer', () => ({
   default: () => <div data-testid='column-level-drawer' />,
 }))
 
-vi.mock('@visx/responsive/lib/components/ParentSize', () => ({
+vi.mock('@/shared/components/MqParentSize/MqParentSize', () => ({
   default: ({ children }: any) => <div>{children({ width: 800, height: 600 })}</div>,
 }))
 

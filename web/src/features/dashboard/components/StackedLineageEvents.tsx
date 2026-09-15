@@ -7,8 +7,8 @@ import { LineageMetric } from '@/features/dashboard/api'
 import { pluralize } from '@/shared/utils/text'
 import { theme } from '@/shared/theme/theme'
 import Box from '@mui/system/Box'
+import MqParentSize from '@/shared/components/MqParentSize/MqParentSize'
 import MqText from '@/shared/components/MqText/MqText'
-import ParentSize from '@visx/responsive/lib/components/ParentSize'
 import React from 'react'
 
 interface Props {
@@ -71,7 +71,7 @@ const StackedLineageEvents = ({ lineageMetrics }: Props) => {
           </MqText>
         }
       ></Chip>
-      <ParentSize>
+      <MqParentSize>
         {(parent) => (
           <LineChart
             sx={{
@@ -132,7 +132,7 @@ const StackedLineageEvents = ({ lineageMetrics }: Props) => {
             }}
           />
         )}
-      </ParentSize>
+      </MqParentSize>
     </Box>
   )
 }

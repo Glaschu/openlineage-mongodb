@@ -12,7 +12,7 @@ import { useDataset } from '@/features/datasets/api'
 import { useParams, useSearchParams } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import ColumnLevelDrawer from './ColumnLevelDrawer'
-import ParentSize from '@visx/responsive/lib/components/ParentSize'
+import MqParentSize from '@/shared/components/MqParentSize/MqParentSize'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 const zoomInFactor = 1.5
@@ -153,7 +153,7 @@ const ColumnLevel: React.FC = () => {
           </Box>
         </Drawer>
         <ZoomControls handleScaleZoom={handleScaleZoom} handleResetZoom={handleResetZoom} />
-        <ParentSize>
+        <MqParentSize>
           {(parent) => (
             <Graph<ColumnLevelNodeKinds, ColumnLevelNodeData>
               id='column-level-graph'
@@ -167,7 +167,7 @@ const ColumnLevel: React.FC = () => {
               setZoomPanControls={setGraphControls}
             />
           )}
-        </ParentSize>
+        </MqParentSize>
       </Box>
     </>
   )

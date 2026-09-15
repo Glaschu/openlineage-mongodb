@@ -15,7 +15,7 @@ import { createElkNodes, findDownstreamNodes, findUpstreamNodes } from './layout
 import { useCallbackRef } from '@/shared/hooks/hooks'
 import { useLineage } from '@/features/lineage/api'
 import { useParams, useSearchParams } from 'react-router-dom'
-import ParentSize from '@visx/responsive/lib/components/ParentSize'
+import MqParentSize from '@/shared/components/MqParentSize/MqParentSize'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import TableLevelDrawer from './TableLevelDrawer'
 
@@ -249,7 +249,7 @@ const ColumnLevel = () => {
           handleScaleZoom={handleScaleZoom}
           handleResetZoom={handleResetZoom}
         />
-        <ParentSize>
+        <MqParentSize>
           {(parent) => (
             <Graph<JobOrDataset | 'GROUP', TableLevelNodeData>
               id='column-level-graph'
@@ -265,7 +265,7 @@ const ColumnLevel = () => {
               onNodeHover={setHoveredNodeId}
             />
           )}
-        </ParentSize>
+        </MqParentSize>
       </Box>
     </>
   )

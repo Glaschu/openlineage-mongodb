@@ -3,8 +3,8 @@
 
 import { Box, Button } from '@mui/material'
 import { LineageDataset } from '@/shared/types/lineage'
+import { downloadBlob } from '@/shared/utils/download'
 import { fileSize } from '@/shared/utils'
-import { saveAs } from 'file-saver'
 import { useDataset } from '@/features/datasets/api'
 import { useParams } from 'react-router-dom'
 import { useTranslation } from '@/i18n'
@@ -25,7 +25,7 @@ const DatasetColumnLineage = (props: DatasetColumnLineageProps) => {
   const handleDownloadPayload = (data: object) => {
     const title = `${lineageDataset.name}-${lineageDataset.namespace}-columnLineage`
     const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
-    saveAs(blob, `${title}.json`)
+    downloadBlob(blob, `${title}.json`)
   }
 
   const columnLineage = dataset?.columnLineage

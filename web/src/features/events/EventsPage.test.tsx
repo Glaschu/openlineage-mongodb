@@ -19,7 +19,7 @@ const {
   truncateTextMock,
   eventTypeColorMock,
   fileSizeMock,
-  saveAsMock,
+  downloadBlobMock,
   searchParamsState,
   setSearchParamsMock,
   searchParamsProxy,
@@ -41,7 +41,7 @@ const {
       return { kiloBytes: 10, megaBytes: 10 / 1024 }
     }
   })
-  const saveAsMock = vi.fn()
+  const downloadBlobMock = vi.fn()
 
   const searchParamsState = {
     params: new URLSearchParams(),
@@ -70,7 +70,7 @@ const {
     truncateTextMock,
     eventTypeColorMock,
     fileSizeMock,
-    saveAsMock,
+    downloadBlobMock,
     searchParamsState,
     setSearchParamsMock,
     searchParamsProxy,
@@ -112,8 +112,8 @@ vi.mock('@/shared/utils/nodes', () => ({
   eventTypeColor: (...args: Parameters<typeof eventTypeColorMock>) => eventTypeColorMock(...args),
 }))
 
-vi.mock('file-saver', () => ({
-  saveAs: (...args: Parameters<typeof saveAsMock>) => saveAsMock(...args),
+vi.mock('@/shared/utils/download', () => ({
+  downloadBlob: (...args: Parameters<typeof downloadBlobMock>) => downloadBlobMock(...args),
 }))
 
 vi.mock('@/i18n', () => ({

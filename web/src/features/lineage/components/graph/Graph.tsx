@@ -1,7 +1,6 @@
 import 'reactflow/dist/style.css'
 
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
-import useSize from '@react-hook/size'
 
 import { useTheme } from '@mui/material/styles'
 import { zoomIdentity } from 'd3-zoom'
@@ -37,6 +36,7 @@ import {
 } from './highlight'
 import { Edge as EdgeComponent } from './Edge'
 import { MiniMap, MiniMapPlacement } from './ZoomPanSvg/MiniMap'
+import { useElementSize } from '@/shared/hooks/useElementSize'
 import { useLayout } from './layout/useLayout'
 import type { Direction, Edge, Node, NodeRenderer, PositionedEdge, PositionedNode } from './types'
 
@@ -612,7 +612,7 @@ const GraphCanvas = <K, D>({
 
 export const Graph = <K, D>({ width: propWidth, height: propHeight, ...props }: Props<K, D>) => {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [measuredWidth, measuredHeight] = useSize(containerRef)
+  const { width: measuredWidth, height: measuredHeight } = useElementSize(containerRef)
 
   const width = propWidth ?? measuredWidth
   const height = propHeight ?? measuredHeight

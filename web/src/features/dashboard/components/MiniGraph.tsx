@@ -6,7 +6,7 @@ import { LineChart } from '@mui/x-charts'
 import { Skeleton } from '@mui/material'
 import { formatTime } from './StackedLineageEvents'
 import { theme } from '@/shared/theme/theme'
-import ParentSize from '@visx/responsive/lib/components/ParentSize'
+import MqParentSize from '@/shared/components/MqParentSize/MqParentSize'
 
 interface Props {
   intervalMetrics?: IntervalMetric[]
@@ -36,7 +36,7 @@ const MiniGraph = ({ intervalMetrics, isLoading, color, label }: Props) => {
   })
 
   return (
-    <ParentSize
+    <MqParentSize
       style={{ display: 'flex', borderBottom: `1px solid ${theme.palette.secondary.main}` }}
     >
       {(parent) => (
@@ -63,7 +63,7 @@ const MiniGraph = ({ intervalMetrics, isLoading, color, label }: Props) => {
           margin={{ left: 6, right: 6, top: 6, bottom: 6 }}
         />
       )}
-    </ParentSize>
+    </MqParentSize>
   )
 }
 

@@ -53,10 +53,9 @@ vi.mock('@/shared/utils', () => ({
   fileSize: (...args: any[]) => fileSizeMock(...args),
 }))
 
-// Mock file-saver
-const saveAsMock = vi.fn()
-vi.mock('file-saver', () => ({
-  saveAs: (...args: any[]) => saveAsMock(...args),
+const downloadBlobMock = vi.fn()
+vi.mock('@/shared/utils/download', () => ({
+  downloadBlob: (...args: any[]) => downloadBlobMock(...args),
 }))
 
 const lineageDataset: LineageDataset = {
@@ -92,7 +91,7 @@ const makeDataset = (overrides: Partial<Dataset> = {}): Dataset => ({
 
 describe('DatasetColumnLineage', () => {
   beforeEach(() => {
-    saveAsMock.mockClear()
+    downloadBlobMock.mockClear()
     fileSizeMock.mockClear()
   })
 
@@ -149,9 +148,9 @@ describe('DatasetColumnLineage', () => {
 
     const downloadButton = screen.getByRole('button', { name: 'Download payload' })
     fireEvent.click(downloadButton)
-    expect(saveAsMock).toHaveBeenCalledTimes(1)
+    expect(downloadBlobMock).toHaveBeenCalledTimes(1)
 
-    const [blob, fileName] = saveAsMock.mock.calls[0]
+    const [blob, fileName] = downloadBlobMock.mock.calls[0]
     expect(blob).toBeInstanceOf(Blob)
     expect(fileName).toBe('orders-analytics-columnLineage.json')
   })

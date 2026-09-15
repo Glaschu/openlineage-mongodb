@@ -76,7 +76,7 @@ vi.mock('@/features/lineage/components/table-level/TableLevelDrawer', () => ({
   default: () => <div data-testid='table-level-drawer' />,
 }))
 
-vi.mock('@visx/responsive/lib/components/ParentSize', () => ({
+vi.mock('@/shared/components/MqParentSize/MqParentSize', () => ({
   __esModule: true,
   default: ({
     children,

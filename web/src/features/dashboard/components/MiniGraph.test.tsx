@@ -7,8 +7,7 @@ import { render, screen } from '@testing-library/react'
 import MiniGraph from '@/features/dashboard/components/MiniGraph'
 import React from 'react'
 
-// Mock @visx/responsive ParentSize
-vi.mock('@visx/responsive/lib/components/ParentSize', () => ({
+vi.mock('@/shared/components/MqParentSize/MqParentSize', () => ({
   default: ({
     children,
   }: {
