@@ -1,14 +1,14 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { Box, Chip, Paper } from '@mui/material'
-import { useTheme } from '@mui/material/styles'
+import { Box, Chip } from '@mui/material'
 import React from 'react'
 
 import { ColumnTransformation, transformationKey } from './columnLineageUtils'
 import { HoveredEdge } from '@/features/lineage/components/graph'
 import { parseColumnLineageNode } from './layout'
 import MqText from '@/shared/components/MqText/MqText'
+import PointerCard from '@/shared/components/PointerCard/PointerCard'
 
 interface Props {
   edge: HoveredEdge
@@ -16,8 +16,6 @@ interface Props {
   /** The dataset whose columnLineage facet was loaded, if any. */
   centerDataset?: { namespace: string; name: string } | null
 }
-
-const OFFSET = 14
 
 /**
  * Names the two columns an edge connects, and how the value was derived when
@@ -29,8 +27,6 @@ const OFFSET = 14
  * transformation is not loaded rather than implying there is none.
  */
 export const EdgeProvenance = ({ edge, transformations, centerDataset }: Props) => {
-  const theme = useTheme()
-
   const source = parseColumnLineageNode(edge.sourceNodeId)
   const target = parseColumnLineageNode(edge.targetNodeId)
   const transformation = transformations.get(transformationKey(source, target))
@@ -41,20 +37,11 @@ export const EdgeProvenance = ({ edge, transformations, centerDataset }: Props) 
     target.dataset === centerDataset.name
 
   return (
-    <Paper
+    <PointerCard
       data-testid='edge-provenance'
-      elevation={8}
-      sx={{
-        position: 'fixed',
-        left: edge.clientX + OFFSET,
-        top: edge.clientY + OFFSET,
-        zIndex: theme.zIndex.tooltip,
-        p: 1.5,
-        maxWidth: 380,
-        pointerEvents: 'none',
-        backgroundColor: theme.palette.background.paper,
-        border: `1px solid ${theme.palette.divider}`,
-      }}
+      clientX={edge.clientX}
+      clientY={edge.clientY}
+      maxWidth={380}
     >
       <MqText subdued font={'mono'}>
         {source.namespace}
@@ -84,7 +71,7 @@ export const EdgeProvenance = ({ edge, transformations, centerDataset }: Props) 
           <MqText subdued>{transformation.description}</MqText>
         </Box>
       )}
-    </Paper>
+    </PointerCard>
   )
 }
 

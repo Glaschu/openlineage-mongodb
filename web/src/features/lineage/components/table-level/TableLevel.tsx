@@ -1,7 +1,12 @@
 import { ActionBar, GraphSearchOption } from './ActionBar'
 import { Box } from '@mui/system'
 import { CircularProgress, Drawer } from '@mui/material'
-import { DEFAULT_MAX_SCALE, Graph, ZoomPanControls } from '@/features/lineage/components/graph'
+import {
+  DEFAULT_MAX_SCALE,
+  Graph,
+  HoveredEdge,
+  ZoomPanControls,
+} from '@/features/lineage/components/graph'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import { JobOrDataset } from '@/shared/types/lineage'
 import {
@@ -15,6 +20,7 @@ import { createElkNodes, findDownstreamNodes, findUpstreamNodes } from './layout
 import { useCallbackRef } from '@/shared/hooks/hooks'
 import { useLineage } from '@/features/lineage/api'
 import { useParams, useSearchParams } from 'react-router-dom'
+import EdgeProvenance from './EdgeProvenance'
 import MqParentSize from '@/shared/components/MqParentSize/MqParentSize'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import TableLevelDrawer from './TableLevelDrawer'
@@ -60,6 +66,7 @@ const ColumnLevel = () => {
   // A node chosen from the find-a-node box stays focused until it is cleared,
   // so the path survives the pointer leaving the graph.
   const [pinnedNodeId, setPinnedNodeId] = useState<string | null>(null)
+  const [hoveredEdge, setHoveredEdge] = useState<HoveredEdge | null>(null)
 
   const collapsedNodes = searchParams.get('collapsedNodes')
 
@@ -108,6 +115,11 @@ const ColumnLevel = () => {
   ])
 
   const focusedNodeId = hoveredNodeId ?? pinnedNodeId
+
+  const nodesById = useMemo(
+    () => new Map((lineage?.graph ?? []).map((node) => [node.id, node])),
+    [lineage]
+  )
 
   const searchOptions = useMemo(() => {
     const options: GraphSearchOption[] = []
@@ -263,10 +275,12 @@ const ColumnLevel = () => {
               setZoomPanControls={setGraphControls}
               highlight={highlight}
               onNodeHover={setHoveredNodeId}
+              onEdgeHover={setHoveredEdge}
             />
           )}
         </MqParentSize>
       </Box>
+      {hoveredEdge && <EdgeProvenance edge={hoveredEdge} nodesById={nodesById} />}
     </>
   )
 }
