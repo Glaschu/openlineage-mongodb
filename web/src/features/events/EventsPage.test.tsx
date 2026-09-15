@@ -1,15 +1,15 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import React from 'react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, screen, within } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import React from 'react'
 
+import * as useEventsHook from '@/features/events/api'
+import { renderWithProviders } from '@/test/utils'
 import Events from '@/features/events/EventsPage'
 import type { Event } from '@/shared/types/api'
-import { renderWithProviders } from '@/test/utils'
-import * as useEventsHook from '@/features/events/api'
 
 const {
   resetEventsMock,
@@ -147,10 +147,20 @@ vi.mock('@/shared/components/MqCopy/MqCopy', () => ({
 
 vi.mock('@/shared/components/MqDatePicker/MqDatePicker', () => ({
   __esModule: true,
-  default: ({ label, value, onChange }: { label: string; value: string; onChange: (arg: any) => void }) => {
+  default: ({
+    label,
+    value,
+    onChange,
+  }: {
+    label: string
+    value: string
+    onChange: (arg: any) => void
+  }) => {
     datePickerHandlers[label] = onChange
     return (
-      <div data-testid={`date-picker-${label}`}>date-picker-{label}-{value}</div>
+      <div data-testid={`date-picker-${label}`}>
+        date-picker-{label}-{value}
+      </div>
     )
   },
 }))
@@ -237,7 +247,7 @@ const renderEventsRoute = (
         <Events />
       </MemoryRouter>
     ),
-    mockRefetch
+    mockRefetch,
   }
 }
 
@@ -255,7 +265,7 @@ describe('Events route', () => {
     const { unmount, mockRefetch } = renderEventsRoute({
       result: [],
       totalCount: 0,
-      isLoading: false, // Not loading initially to show empty state if no results? 
+      isLoading: false, // Not loading initially to show empty state if no results?
       // Actually if isLoading is false and result is empty, it shows empty state.
     })
 

@@ -5,13 +5,13 @@ import {
   Button,
   Chip,
   Container,
+  FormControlLabel,
+  Switch,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  FormControlLabel,
-  Switch,
 } from '@mui/material'
 import { HEADER_HEIGHT } from '@/shared/theme/theme'
 import { Job } from '@/shared/types/api'
@@ -106,7 +106,9 @@ const Jobs = () => {
               <Switch
                 size='small'
                 checked={state.hasLineage}
-                onChange={(e) => setState((prev) => ({ ...prev, hasLineage: e.target.checked, page: 0 }))}
+                onChange={(e) =>
+                  setState((prev) => ({ ...prev, hasLineage: e.target.checked, page: 0 }))
+                }
               />
             }
             label={<MqText font='mono'>Has Lineage</MqText>}

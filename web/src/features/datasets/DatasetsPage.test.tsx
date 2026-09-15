@@ -1,40 +1,37 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import React from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, screen, within } from '@testing-library/react'
+import React from 'react'
 
+import * as useDatasetsHook from '@/features/datasets/api'
+import { renderWithProviders } from '@/test/utils'
 import Datasets from '@/features/datasets/DatasetsPage'
 import type { Dataset } from '@/shared/types/api'
-import { renderWithProviders } from '@/test/utils'
-import * as useDatasetsHook from '@/features/datasets/api'
 
 // Define mocks
-const {
-  resetDatasetsMock,
-  encodeNodeMock,
-  formatUpdatedAtMock,
-  truncateTextMock,
-} = vi.hoisted(() => {
-  const resetDatasetsMock = vi.fn(() => ({ type: 'RESET_DATASETS' }))
+const { resetDatasetsMock, encodeNodeMock, formatUpdatedAtMock, truncateTextMock } = vi.hoisted(
+  () => {
+    const resetDatasetsMock = vi.fn(() => ({ type: 'RESET_DATASETS' }))
 
-  const encodeNodeMock = vi.fn((type: string, namespace: string, name: string) =>
-    `${type}:${namespace}:${name}`
-  )
+    const encodeNodeMock = vi.fn(
+      (type: string, namespace: string, name: string) => `${type}:${namespace}:${name}`
+    )
 
-  const formatUpdatedAtMock = vi.fn((value: string) => `formatted(${value})`)
+    const formatUpdatedAtMock = vi.fn((value: string) => `formatted(${value})`)
 
-  const truncateTextMock = vi.fn((value: string) => value)
+    const truncateTextMock = vi.fn((value: string) => value)
 
-  return {
-    resetDatasetsMock,
-    encodeNodeMock,
-    formatUpdatedAtMock,
-    truncateTextMock,
+    return {
+      resetDatasetsMock,
+      encodeNodeMock,
+      formatUpdatedAtMock,
+      truncateTextMock,
+    }
   }
-})
+)
 
 vi.mock('../../../store/actionCreators', () => ({
   resetDatasets: () => resetDatasetsMock(),
@@ -47,7 +44,8 @@ vi.mock('@/shared/utils/nodes', () => ({
 }))
 
 vi.mock('@/shared/utils', () => ({
-  formatUpdatedAt: (...args: Parameters<typeof formatUpdatedAtMock>) => formatUpdatedAtMock(...args),
+  formatUpdatedAt: (...args: Parameters<typeof formatUpdatedAtMock>) =>
+    formatUpdatedAtMock(...args),
 }))
 
 vi.mock('@/shared/utils/text', () => ({
@@ -61,13 +59,7 @@ vi.mock('@/i18n', () => ({
 }))
 
 vi.mock('@/shared/components/MqScreenLoad/MqScreenLoad', () => ({
-  MqScreenLoad: ({
-    loading,
-    children,
-  }: {
-    loading: boolean
-    children: React.ReactElement
-  }) => (
+  MqScreenLoad: ({ loading, children }: { loading: boolean; children: React.ReactElement }) => (
     <div data-testid='screen-load' data-loading={loading}>
       {children}
     </div>
@@ -180,19 +172,17 @@ const makeDataset = (overrides: Partial<Dataset>): Dataset => ({
   ...overrides,
 })
 
-const renderDatasetsRoute = (
-  {
-    result = [],
-    totalCount = 0,
-    isLoading = false,
-    selectedNamespace = 'analytics'
-  }: {
-    result?: Dataset[]
-    totalCount?: number
-    isLoading?: boolean
-    selectedNamespace?: string | null
-  } = {}
-) => {
+const renderDatasetsRoute = ({
+  result = [],
+  totalCount = 0,
+  isLoading = false,
+  selectedNamespace = 'analytics',
+}: {
+  result?: Dataset[]
+  totalCount?: number
+  isLoading?: boolean
+  selectedNamespace?: string | null
+} = {}) => {
   const mockRefetch = vi.fn()
 
   vi.spyOn(useDatasetsHook, 'useDatasets').mockReturnValue({
@@ -217,7 +207,7 @@ const renderDatasetsRoute = (
       </MemoryRouter>,
       { initialState }
     ),
-    mockRefetch
+    mockRefetch,
   }
 }
 
@@ -228,7 +218,7 @@ describe('Datasets route', () => {
     formatUpdatedAtMock.mockClear()
     truncateTextMock.mockClear()
     vi.restoreAllMocks() // Restore spy
-      ; (window as unknown as { scrollTo: () => void }).scrollTo = vi.fn()
+    ;(window as unknown as { scrollTo: () => void }).scrollTo = vi.fn()
   })
 
   it('renders empty state, refreshes, and cleans up', () => {
@@ -260,7 +250,7 @@ describe('Datasets route', () => {
     const datasets = [
       makeDataset({ name: 'orders', namespace: 'analytics' }),
       makeDataset({ name: 'customers', namespace: 'sales' }),
-      makeDataset({ name: 'campaigns', namespace: 'marketing' })
+      makeDataset({ name: 'campaigns', namespace: 'marketing' }),
     ]
 
     renderDatasetsRoute({
@@ -287,7 +277,7 @@ describe('Datasets route', () => {
 
   it('skips dataset fetches when no namespace is selected', () => {
     renderDatasetsRoute({
-      selectedNamespace: null
+      selectedNamespace: null,
     })
 
     // useDatasets hook is called, but enabled might be false, or arguments passed are null.

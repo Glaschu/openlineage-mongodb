@@ -1,13 +1,13 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import * as useJobsHook from '@/features/jobs/api'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, screen } from '@testing-library/react'
 import { renderWithProviders } from '@/test/utils'
-import Runs from '@/features/jobs/components/Runs'
 import React from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import * as useJobsHook from '@/features/jobs/api'
+import Runs from '@/features/jobs/components/Runs'
 
 // Mocks
 vi.mock('@/shared/components/MqTooltip/MQTooltip', () => ({

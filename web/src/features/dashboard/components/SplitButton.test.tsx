@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { ThemeProvider, createTheme } from '@mui/material/styles'
-import SplitButton from '@/features/dashboard/components/SplitButton'
+import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import SplitButton from '@/features/dashboard/components/SplitButton'
 
 const renderSplitButton = (props: React.ComponentProps<typeof SplitButton>) => {
   const theme = createTheme()

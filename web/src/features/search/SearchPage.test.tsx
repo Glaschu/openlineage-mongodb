@@ -4,26 +4,30 @@
 import { MemoryRouter } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { legacy_createStore as createStore } from '@reduxjs/toolkit'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React from 'react'
 import Search from '@/features/search/SearchPage'
 
 // Mock the child components
 vi.mock('@/features/search/components/base-search/BaseSearch', () => ({
-  default: ({ search, onIsLoading }: { search: string, onIsLoading: (l: boolean) => void }) => (
+  default: ({ search, onIsLoading }: { search: string; onIsLoading: (l: boolean) => void }) => (
     <div data-testid='base-search'>
       BaseSearch: {search}
-      <button data-testid='trigger-loading' onClick={() => onIsLoading(true)}>Trigger Loading</button>
+      <button data-testid='trigger-loading' onClick={() => onIsLoading(true)}>
+        Trigger Loading
+      </button>
     </div>
   ),
 }))
 
 vi.mock('@/features/search/components/open-search/OpenSearch', () => ({
-  default: ({ search, onIsLoading }: { search: string, onIsLoading: (l: boolean) => void }) => (
+  default: ({ search, onIsLoading }: { search: string; onIsLoading: (l: boolean) => void }) => (
     <div data-testid='open-search'>
       OpenSearch: {search}
-      <button data-testid='trigger-loading-open' onClick={() => onIsLoading(true)}>Trigger Loading Open</button>
+      <button data-testid='trigger-loading-open' onClick={() => onIsLoading(true)}>
+        Trigger Loading Open
+      </button>
     </div>
   ),
 }))

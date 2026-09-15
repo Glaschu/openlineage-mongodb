@@ -1,10 +1,10 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { useRef } from 'react'
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { useD3Selection } from '@/features/lineage/components/graph/utils/useD3Selection'
+import { useRef } from 'react'
 
 describe('useD3Selection', () => {
   it('should return undefined initially when ref is not set', () => {
@@ -18,7 +18,7 @@ describe('useD3Selection', () => {
 
   it('should create selection when ref.current is set', () => {
     const mockElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-    
+
     const { result } = renderHook(() => {
       const ref = useRef<SVGSVGElement>(mockElement)
       return useD3Selection(ref)
@@ -30,7 +30,7 @@ describe('useD3Selection', () => {
 
   it('should work with HTML elements', () => {
     const mockElement = document.createElement('div')
-    
+
     const { result } = renderHook(() => {
       const ref = useRef<HTMLDivElement>(mockElement)
       return useD3Selection(ref)
@@ -43,7 +43,7 @@ describe('useD3Selection', () => {
   it('should update selection when ref changes', () => {
     const mockElement1 = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
     const mockElement2 = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-    
+
     const { result, rerender } = renderHook(
       ({ element }) => {
         const ref = useRef<SVGElement>(element)

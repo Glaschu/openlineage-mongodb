@@ -1,8 +1,8 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, it, expect } from 'vitest'
 import { capitalize, fileSize, formatUpdatedAt } from '@/shared/utils'
+import { describe, expect, it } from 'vitest'
 
 describe('helpers/index', () => {
   describe('capitalize', () => {

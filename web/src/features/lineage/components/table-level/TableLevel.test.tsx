@@ -17,12 +17,14 @@ const {
   graphRenderMock,
   zoomControls,
 } = vi.hoisted(() => ({
-  createElkNodesMock: vi.fn(() => ({
-    nodes: [{ id: 'node-1' }],
-    edges: [{ id: 'edge-1', source: 'node-1', target: 'node-1' }],
+  // Typed with a rest parameter so assertions can read the arguments the
+  // component passed (notably the compact flag).
+  createElkNodesMock: vi.fn((..._args: unknown[]) => ({
+    nodes: [{ id: 'node-1' }] as unknown[],
+    edges: [{ id: 'edge-1', source: 'node-1', target: 'node-1' }] as unknown[],
   })),
-  findDownstreamNodesMock: vi.fn(() => ({ nodes: [], edges: [] })),
-  findUpstreamNodesMock: vi.fn(() => ({ nodes: [], edges: [] })),
+  findDownstreamNodesMock: vi.fn((..._args: unknown[]) => ({ nodes: [], edges: [] })),
+  findUpstreamNodesMock: vi.fn((..._args: unknown[]) => ({ nodes: [], edges: [] })),
   graphRenderMock: vi.fn(),
   zoomControls: [] as Array<{
     scaleZoom: ReturnType<typeof vi.fn>
@@ -59,7 +61,9 @@ vi.mock('@/features/lineage/components/table-level/layout', () => ({
   findUpstreamNodes: (...args: unknown[]) => findUpstreamNodesMock(...args),
 }))
 
-const zoomControlsMock = vi.hoisted(() => ({ props: null as null | Record<string, () => void> }))
+const zoomControlsMock = vi.hoisted(() => ({
+  props: null as null | Record<string, (arg?: unknown) => void>,
+}))
 vi.mock('@/features/lineage/components/column-level/ZoomControls', () => ({
   ZoomControls: (props: Record<string, () => void>) => {
     zoomControlsMock.props = props

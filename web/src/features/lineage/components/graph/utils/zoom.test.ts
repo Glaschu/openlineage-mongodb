@@ -1,12 +1,7 @@
 import * as zoomUtils from '@/features/lineage/components/graph/utils/zoom'
 
-const {
-  constrainZoomToExtent,
-  createZoomTransform,
-  maxExtent,
-  padExtent,
-  scaleToContainer,
-} = zoomUtils
+const { constrainZoomToExtent, createZoomTransform, maxExtent, padExtent, scaleToContainer } =
+  zoomUtils
 
 /*
  * These random values are used to define the origin, so it's

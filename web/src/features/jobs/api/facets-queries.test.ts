@@ -1,9 +1,9 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderQueryHook } from '@/test/query-helpers'
+import { waitFor } from '@testing-library/react'
 
 vi.mock('@/features/jobs/api/facets-requests', () => ({
   getRunFacets: vi.fn(),

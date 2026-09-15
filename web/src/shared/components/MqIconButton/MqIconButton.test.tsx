@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { BrowserRouter } from 'react-router-dom'
-import Home from '@mui/icons-material/Home'
 import { type ReactElement } from 'react'
 import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import Home from '@mui/icons-material/Home'
 import MqIconButton from '@/shared/components/MqIconButton/MqIconButton'
 
 describe('MqIconButton Component', () => {
@@ -63,7 +63,7 @@ describe('MqIconButton Component', () => {
 
   it('should render with different icon', () => {
     const customIcon = <div data-testid='custom-icon'>Custom</div>
-    const { container } = renderWithRouter(<MqIconButton {...defaultProps} children={customIcon} />)
+    renderWithRouter(<MqIconButton {...defaultProps} children={customIcon} />)
     expect(screen.getByTestId('custom-icon')).toBeInTheDocument()
   })
 

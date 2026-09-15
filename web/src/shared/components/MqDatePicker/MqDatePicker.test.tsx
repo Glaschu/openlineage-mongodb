@@ -33,7 +33,7 @@ describe('MqDatePicker Component', () => {
   })
 
   it('should render with custom label', () => {
-    const { container } = renderWithProvider(<MqDatePicker {...defaultProps} label='Select Date' />)
+    renderWithProvider(<MqDatePicker {...defaultProps} label='Select Date' />)
     expect(screen.getAllByText('Select Date').length).toBeGreaterThan(0)
   })
 

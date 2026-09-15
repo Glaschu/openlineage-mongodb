@@ -3,7 +3,7 @@
 
 import { Run } from '@/shared/types/api'
 import { describe, expect, it } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import RunStatus from '@/features/jobs/components/RunStatus'
 
 const mockRun: Run = {

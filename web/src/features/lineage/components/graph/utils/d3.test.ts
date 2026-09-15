@@ -2,13 +2,8 @@ import * as d3Utils from '@/features/lineage/components/graph/utils/zoom'
 
 console.log('d3Utils:', Object.keys(d3Utils))
 
-const {
-  constrainZoomToExtent,
-  createZoomTransform,
-  maxExtent,
-  padExtent,
-  scaleToContainer,
-} = d3Utils
+const { constrainZoomToExtent, createZoomTransform, maxExtent, padExtent, scaleToContainer } =
+  d3Utils
 
 /*
  * These random values are used to define the origin, so it's

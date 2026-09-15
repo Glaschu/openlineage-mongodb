@@ -1,7 +1,6 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, expect, it } from 'vitest'
 import {
   datasetFacetsQualityAssertions,
   datasetFacetsStatus,
@@ -16,6 +15,7 @@ import {
   parseSearchGroup,
   runStateColor,
 } from '@/shared/utils/nodes'
+import { describe, expect, it } from 'vitest'
 import { theme } from '@/shared/theme/theme'
 import type { DataQualityFacets, Run, RunState } from '@/shared/types/api'
 import type { LineageDataset, LineageJob, MqNode } from '@/shared/types/lineage'
@@ -52,8 +52,8 @@ describe('helpers/nodes type guards', () => {
   })
 
   it('identifies lineage job and dataset payloads', () => {
-  const lineageJob = { type: 'BATCH', name: 'job' } as unknown as LineageJob
-  const lineageDataset = { type: 'DB_TABLE', name: 'dataset' } as unknown as LineageDataset
+    const lineageJob = { type: 'BATCH', name: 'job' } as unknown as LineageJob
+    const lineageDataset = { type: 'DB_TABLE', name: 'dataset' } as unknown as LineageDataset
 
     expect(isLineageJob(lineageJob)?.name).toBe('job')
     expect(isLineageJob(lineageDataset)).toBeUndefined()
@@ -65,9 +65,7 @@ describe('helpers/nodes type guards', () => {
 
 describe('helpers/nodes encoding utilities', () => {
   it('encodes nodes for routing', () => {
-    expect(encodeNode('JOB', 'analytics/ns', 'job name')).toBe(
-      'job/analytics%2Fns/job%20name'
-    )
+    expect(encodeNode('JOB', 'analytics/ns', 'job name')).toBe('job/analytics%2Fns/job%20name')
   })
 
   it('generates stable node identifiers', () => {

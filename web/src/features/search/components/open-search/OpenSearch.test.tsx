@@ -1,13 +1,12 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { Icon } from '@/shared/components/icons'
-import React from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { act } from 'react'
-import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { legacy_createStore as createStore } from '@reduxjs/toolkit'
+import { fireEvent, screen } from '@testing-library/react'
+import React from 'react'
 
 import OpenSearch from '@/features/search/components/open-search/OpenSearch'
 
@@ -162,8 +161,8 @@ vi.mock('@/features/search/components/open-search/spark-logo.svg', () => ({
   default: 'spark.svg',
 }))
 
-import { renderWithProviders } from '@/test/utils'
 import * as useSearchHook from '@/features/search/api'
+import { renderWithProviders } from '@/test/utils'
 
 const flushPendingDebounces = async () => {
   const callbacks = pendingDebounces.splice(0)
@@ -280,7 +279,9 @@ describe('OpenSearch Component', () => {
     expect(screen.getByTestId('status')).toHaveAttribute('data-color', 'mock-color')
 
     fireEvent.click(screen.getByText(truncated))
-    expect(mockNavigate).toHaveBeenCalledWith('/lineage/JOB:analytics:ExtremelyLongJobNameForTestingCoverage')
+    expect(mockNavigate).toHaveBeenCalledWith(
+      '/lineage/JOB:analytics:ExtremelyLongJobNameForTestingCoverage'
+    )
     expect(encodeNodeMock).toHaveBeenCalledWith('JOB', 'analytics', longJobName)
   })
 
@@ -397,8 +398,6 @@ describe('OpenSearch Component', () => {
     expect(screen.getByTestId('chip-TestFieldOne')).toHaveAttribute('data-color', 'primary')
     expect(screen.getByTestId('chip-OtherField')).toHaveAttribute('data-color', 'default')
 
-    expect(
-      screen.getByText((content) => content.trim() === '+ 2')
-    ).toBeInTheDocument()
+    expect(screen.getByText((content) => content.trim() === '+ 2')).toBeInTheDocument()
   })
 })

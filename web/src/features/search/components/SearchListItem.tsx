@@ -1,8 +1,8 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { Icon, faCog, faDatabase } from '@/shared/components/icons'
 import { Box, darken } from '@mui/material'
+import { Icon, faCog, faDatabase } from '@/shared/components/icons'
 import { JobOrDataset } from '@/shared/types/lineage'
 import { Link as RouterLink } from 'react-router-dom'
 import { SearchResult } from '@/shared/types/api'

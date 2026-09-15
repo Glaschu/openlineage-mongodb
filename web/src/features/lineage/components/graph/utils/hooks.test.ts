@@ -1,7 +1,7 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { useCallbackRef } from '@/features/lineage/components/graph/utils/hooks'
 
@@ -21,10 +21,9 @@ describe('useCallbackRef', () => {
     const callback1 = vi.fn()
     const callback2 = vi.fn()
 
-    const { result, rerender } = renderHook(
-      ({ cb }) => useCallbackRef(cb, []),
-      { initialProps: { cb: callback1 } }
-    )
+    const { result, rerender } = renderHook(({ cb }) => useCallbackRef(cb, []), {
+      initialProps: { cb: callback1 },
+    })
 
     result.current('test1')
     expect(callback1).toHaveBeenCalledWith('test1')

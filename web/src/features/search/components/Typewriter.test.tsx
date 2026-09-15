@@ -40,11 +40,11 @@ describe('Typewriter', () => {
       })
     }
 
-  const states: string[] = []
-  const record = () => states.push(span.textContent ?? '')
+    const states: string[] = []
+    const record = () => states.push(span.textContent ?? '')
 
-  await step()
-  record()
+    await step()
+    record()
 
     await step()
     record()
@@ -70,7 +70,7 @@ describe('Typewriter', () => {
     await step(50)
     record()
 
-  expect(states).toEqual(['h', 'hi', 'hi', 'hi', 'h', '', '', 'h', 'hi'])
+    expect(states).toEqual(['h', 'hi', 'hi', 'hi', 'h', '', '', 'h', 'hi'])
   })
 
   it('keeps the final word when repeat count is one', async () => {

@@ -1,12 +1,8 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, it, expect } from 'vitest'
-import reducer, {
-  applicationError,
-  dialogToggle,
-  setIsLoading,
-} from '@/store/slices/displaySlice'
+import { describe, expect, it } from 'vitest'
+import reducer, { applicationError, dialogToggle, setIsLoading } from '@/store/slices/displaySlice'
 
 const baseState = {
   error: '',
@@ -17,8 +13,6 @@ const baseState = {
 }
 
 describe('display reducer', () => {
-
-
   it('should handle APPLICATION_ERROR', () => {
     const state = reducer(baseState as any, applicationError('boom'))
     expect(state).toEqual({

@@ -1,11 +1,11 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import type { Mock } from 'vitest'
-import { generateNodeId } from '@/shared/utils/nodes'
 import * as requestUtils from '@/shared/api/fetch'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { generateNodeId } from '@/shared/utils/nodes'
 import { getLineage } from '@/features/lineage/api'
+import type from 'vitest'
 
 describe('getLineage function', () => {
   let spy: ReturnType<typeof vi.spyOn>

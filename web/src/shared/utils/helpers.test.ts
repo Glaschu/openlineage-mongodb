@@ -1,7 +1,7 @@
 // Copyright 2018-2024 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { formatNumber } from '@/shared/utils/numbers'
 import { truncateText } from '@/shared/utils/text'
 

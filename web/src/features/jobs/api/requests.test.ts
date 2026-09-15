@@ -1,7 +1,6 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   addJobTag,
   deleteJob,
@@ -11,6 +10,7 @@ import {
   getJobsByState,
   getRuns,
 } from '@/features/jobs/api'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the global fetch
 global.fetch = vi.fn()

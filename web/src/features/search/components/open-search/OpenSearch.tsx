@@ -1,8 +1,8 @@
 // Copyright 2018-2024 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { Icon, faCog, faDatabase } from '@/shared/components/icons'
 import { Chip, Divider } from '@mui/material'
+import { Icon, faCog, faDatabase } from '@/shared/components/icons'
 import { Nullable } from '@/shared/types/util/Nullable'
 import { encodeNode, eventTypeColor } from '@/shared/utils/nodes'
 import { theme } from '@/shared/theme/theme'
@@ -14,7 +14,7 @@ import MQTooltip from '@/shared/components/MqTooltip/MQTooltip'
 import MqEmpty from '@/shared/components/MqEmpty/MqEmpty'
 import MqStatus from '@/shared/components/MqStatus/MqStatus'
 import MqText from '@/shared/components/MqText/MqText'
-import React, { useCallback, useEffect } from 'react'
+import React, { useEffect } from 'react'
 import airflow_logo from './airlfow-logo.svg'
 import dbt_logo from './dbt-logo.svg'
 import spark_logo from './spark-logo.svg'
@@ -349,21 +349,21 @@ const OpenSearch: React.FC<Props> = ({ search, onIsLoading }) => {
                       {hit.facets?.schema?.fields
                         .slice(0, FIELDS_TO_PRINT)
                         .map((field: SchemaField) => {
-                        return (
-                          <Chip
-                            key={field.name}
-                            label={field.name}
-                            variant={'outlined'}
-                            color={
-                              field.name.toLowerCase().includes(search.toLowerCase())
-                                ? 'primary'
-                                : 'default'
-                            }
-                            size={'small'}
-                            sx={{ mr: 1 }}
-                          />
-                        )
-                      })}
+                          return (
+                            <Chip
+                              key={field.name}
+                              label={field.name}
+                              variant={'outlined'}
+                              color={
+                                field.name.toLowerCase().includes(search.toLowerCase())
+                                  ? 'primary'
+                                  : 'default'
+                              }
+                              size={'small'}
+                              sx={{ mr: 1 }}
+                            />
+                          )
+                        })}
                       {hit.facets?.schema && hit.facets.schema.fields.length > FIELDS_TO_PRINT && (
                         <MqText inline subdued>{`+ ${
                           hit.facets.schema.fields.length - FIELDS_TO_PRINT

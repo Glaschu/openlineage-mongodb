@@ -3,7 +3,7 @@
 
 import { MqInputBase, MqInputNoIcon } from '@/shared/components/MqInputBase/MqInputBase'
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render } from '@testing-library/react'
 
 describe('MqInputBase Component', () => {
   it('should render without crashing', () => {

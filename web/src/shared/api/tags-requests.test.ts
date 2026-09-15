@@ -1,8 +1,8 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { addTags, getTags } from '@/shared/api'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the global fetch
 global.fetch = vi.fn()
@@ -40,7 +40,10 @@ describe('Tags Requests', () => {
 
       await getTags()
 
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringMatching(/\/tags$/), expect.any(Object))
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringMatching(/\/tags$/),
+        expect.any(Object)
+      )
     })
 
     it('handles empty tag list', async () => {

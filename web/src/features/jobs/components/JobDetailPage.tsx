@@ -1,8 +1,8 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { Icon, faCog } from '@/shared/components/icons'
 import { FEATURE_FLAGS } from '@/shared/config/featureFlags'
+import { Icon, faCog } from '@/shared/components/icons'
 import { useDeleteJob, useJob } from '@/features/jobs/api'
 import { useTranslation } from '@/i18n'
 import React, { ChangeEvent, useEffect } from 'react'

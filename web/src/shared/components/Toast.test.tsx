@@ -3,8 +3,8 @@
 
 import { Provider } from 'react-redux'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
 import { legacy_createStore as createStore } from '@reduxjs/toolkit'
+import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 import Toast from '@/shared/components/Toast'
 
@@ -177,7 +177,7 @@ describe('Toast Component', () => {
       success: '',
       dialogIsOpen: true,
     }
-    const { container } = renderWithStore(state)
+    renderWithStore(state)
 
     const closeButton = screen.getByRole('button', { name: /close/i })
     const icon = closeButton.querySelector('svg')

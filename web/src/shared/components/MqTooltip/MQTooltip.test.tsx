@@ -127,7 +127,7 @@ describe('MQTooltip Component', () => {
   })
 
   it('should render with icon as child', () => {
-    const { container } = render(
+    render(
       <MQTooltip title='Icon Tooltip'>
         <span data-testid='icon'>🔍</span>
       </MQTooltip>

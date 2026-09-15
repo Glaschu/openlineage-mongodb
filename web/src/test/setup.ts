@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { afterEach, expect, vi } from 'vitest'
+import { afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
 // happy-dom v20 doesn't expose localStorage unless --localstorage-file is set.

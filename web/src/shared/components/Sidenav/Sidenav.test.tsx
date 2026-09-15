@@ -1,7 +1,6 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { Icon } from '@/shared/components/icons'
 import { MemoryRouter } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -50,7 +49,19 @@ vi.mock('@/i18n', () => ({
 
 vi.mock('@/shared/components/MqIconButton/MqIconButton', () => ({
   __esModule: true,
-  default: ({ id, title, active, to, children }: { id: string; title: string; active: boolean; to: string; children: React.ReactNode }) => {
+  default: ({
+    id,
+    title,
+    active,
+    to,
+    children,
+  }: {
+    id: string
+    title: string
+    active: boolean
+    to: string
+    children: React.ReactNode
+  }) => {
     buttonRenders.push({ id, title, active, to })
 
     return (

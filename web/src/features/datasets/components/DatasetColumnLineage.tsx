@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Box, Button } from '@mui/material'
-import { Dataset } from '@/shared/types/api'
-import { RootState } from '@/store/store'
 import { LineageDataset } from '@/shared/types/lineage'
 import { fileSize } from '@/shared/utils'
 import { saveAs } from 'file-saver'

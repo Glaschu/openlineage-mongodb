@@ -1,13 +1,6 @@
 import { Nullable } from '@/shared/types/util/Nullable'
 import { RunState } from '@/shared/types/api'
-import {
-  addJobTag,
-  deleteJob,
-  deleteJobTag,
-  getJob,
-  getJobs,
-  getRuns,
-} from '@/features/jobs/api'
+import { addJobTag, deleteJob, deleteJobTag, getJob, getJobs, getRuns } from '@/features/jobs/api'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 export const useJobs = (

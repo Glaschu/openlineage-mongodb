@@ -1,23 +1,25 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
 import * as requestUtils from '@/shared/api'
+import { describe, expect, it, vi } from 'vitest'
 import { parseResponse } from '@/shared/api'
 
 export const mockFetch = (requestBody: any = []) => {
-  return vi.fn().mockImplementation(() => Promise.resolve({
-    json: () => Promise.resolve(requestBody),
-    text: () => Promise.resolve(JSON.stringify(requestBody)),
-    ok: true
-  }))
+  return vi.fn().mockImplementation(() =>
+    Promise.resolve({
+      json: () => Promise.resolve(requestBody),
+      text: () => Promise.resolve(JSON.stringify(requestBody)),
+      ok: true,
+    })
+  )
 }
 
 const generateMockResponse = (status = 200, ok: boolean, returnBody?: object) => ({
   ok,
   status,
   json: () => Promise.resolve(returnBody || {}),
-  text: () => Promise.resolve(returnBody ? JSON.stringify(returnBody) : '')
+  text: () => Promise.resolve(returnBody ? JSON.stringify(returnBody) : ''),
 })
 
 describe('parseResponse function', () => {
@@ -35,7 +37,6 @@ describe('parseResponse function', () => {
   })
 
   describe('for a unsuccessful response', () => {
-
     it('throws an error', async () => {
       const errorBody = { code: 500, message: 'Server Error', details: 'Something went wrong' }
       const testResponse = generateMockResponse(500, false, errorBody)

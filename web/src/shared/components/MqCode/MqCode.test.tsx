@@ -27,7 +27,7 @@ describe('MqCode Component', () => {
   })
 
   it('should render with description', () => {
-    const { container } = render(<MqCode code='const x = 1;' description='Variable declaration' />)
+    render(<MqCode code='const x = 1;' description='Variable declaration' />)
     expect(screen.getByText('Variable declaration')).toBeInTheDocument()
   })
 
@@ -63,7 +63,7 @@ describe('MqCode Component', () => {
   })
 
   it('should render description with bold and mono font', () => {
-    const { container } = render(<MqCode code='const x = 1;' description='Test Description' />)
+    render(<MqCode code='const x = 1;' description='Test Description' />)
     expect(screen.getByText('Test Description')).toBeInTheDocument()
   })
 })

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { renderHook, RenderHookOptions } from '@testing-library/react'
+import { RenderHookOptions, renderHook } from '@testing-library/react'
 import React, { ReactNode } from 'react'
 
 // Returns a fresh QueryClient that doesn't retry, so failed mocks don't spin forever.

@@ -1,7 +1,6 @@
 import { Box, Stack } from '@mui/system'
 import { Button, ButtonGroup, Container, Divider, Drawer, Grid, Skeleton } from '@mui/material'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
-import { RootState } from '@/store/store'
 import { MiniGraphContainer } from './components/MiniGraphContainer'
 import { Nullable } from '@/shared/types/util/Nullable'
 import { RunState } from '@/shared/types/api'

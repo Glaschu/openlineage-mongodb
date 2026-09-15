@@ -1,7 +1,6 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { Icon } from '@/shared/components/icons'
 import * as useJobsHook from '@/features/jobs/api'
 import { MemoryRouter } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'

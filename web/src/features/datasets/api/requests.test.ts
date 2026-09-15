@@ -1,7 +1,6 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   addDatasetFieldTag,
   addDatasetTag,
@@ -9,9 +8,10 @@ import {
   deleteDatasetFieldTag,
   deleteDatasetTag,
   getDataset,
-  getDatasets,
   getDatasetVersions,
+  getDatasets,
 } from '@/features/datasets/api'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Mock the global fetch
 global.fetch = vi.fn()
@@ -246,9 +246,7 @@ describe('Datasets Requests', () => {
       await deleteDatasetTag('test-namespace', 'test-dataset', 'test-tag')
 
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining(
-          '/namespaces/test-namespace/datasets/test-dataset/tags/test-tag'
-        ),
+        expect.stringContaining('/namespaces/test-namespace/datasets/test-dataset/tags/test-tag'),
         expect.objectContaining({ method: 'DELETE' })
       )
     })
@@ -286,9 +284,7 @@ describe('Datasets Requests', () => {
       await addDatasetTag('test-namespace', 'test-dataset', 'test-tag')
 
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining(
-          '/namespaces/test-namespace/datasets/test-dataset/tags/test-tag'
-        ),
+        expect.stringContaining('/namespaces/test-namespace/datasets/test-dataset/tags/test-tag'),
         expect.objectContaining({ method: 'POST' })
       )
     })

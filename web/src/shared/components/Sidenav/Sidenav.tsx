@@ -1,7 +1,14 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { Icon, faCogs, faDatabase, faFolderTree, faLink, faShieldHalved } from '@/shared/components/icons'
+import {
+  Icon,
+  faCogs,
+  faDatabase,
+  faFolderTree,
+  faLink,
+  faShieldHalved,
+} from '@/shared/components/icons'
 import { useTranslation } from '@/i18n'
 import SVG from 'react-inlinesvg'
 

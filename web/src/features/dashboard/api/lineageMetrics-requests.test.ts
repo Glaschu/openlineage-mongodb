@@ -94,7 +94,6 @@ describe('Lineage Metrics Requests', () => {
 
     it('handles different timezones', async () => {
       mockResolvedOptions.mockReturnValue({ timeZone: 'Europe/London' })
-
       ;(global.fetch as any).mockResolvedValue({
         ok: true,
         text: async () => JSON.stringify([]),
@@ -110,7 +109,6 @@ describe('Lineage Metrics Requests', () => {
 
     it('handles UTC timezone', async () => {
       mockResolvedOptions.mockReturnValue({ timeZone: 'UTC' })
-
       ;(global.fetch as any).mockResolvedValue({
         ok: true,
         text: async () => JSON.stringify([]),
@@ -126,7 +124,6 @@ describe('Lineage Metrics Requests', () => {
 
     it('handles Asia/Tokyo timezone', async () => {
       mockResolvedOptions.mockReturnValue({ timeZone: 'Asia/Tokyo' })
-
       ;(global.fetch as any).mockResolvedValue({
         ok: true,
         text: async () => JSON.stringify([]),

@@ -1,7 +1,7 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import reducer, { selectNamespace } from '@/features/namespaces/slice'
 
 const baseState = { selectedNamespace: null }

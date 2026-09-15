@@ -18,7 +18,7 @@ describe('MqScreenLoad Component', () => {
   })
 
   it('should show children when loading is false and children are provided', () => {
-    const { container } = render(
+    render(
       <MqScreenLoad loading={false}>
         <div data-testid='child-content'>Child Content</div>
       </MqScreenLoad>
@@ -27,7 +27,7 @@ describe('MqScreenLoad Component', () => {
   })
 
   it('should not show children when loading is true', () => {
-    const { container } = render(
+    render(
       <MqScreenLoad loading={true}>
         <div data-testid='child-content'>Child Content</div>
       </MqScreenLoad>

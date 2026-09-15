@@ -1,15 +1,15 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import React from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, screen, within } from '@testing-library/react'
+import React from 'react'
 
+import * as useJobsHook from '@/features/jobs/api'
+import { renderWithProviders } from '@/test/utils'
 import Jobs from '@/features/jobs/JobsPage'
 import type { Run } from '@/shared/types/api'
-import { renderWithProviders } from '@/test/utils'
-import * as useJobsHook from '@/features/jobs/api'
 
 const {
   resetJobsMock,
@@ -20,13 +20,15 @@ const {
   truncateTextMock,
 } = vi.hoisted(() => {
   const resetJobsMock = vi.fn(() => ({ type: 'RESET_JOBS' }))
-  const encodeNodeMock = vi.fn((type: string, namespace: string, name: string) =>
-    `${type}:${namespace}:${name}`
+  const encodeNodeMock = vi.fn(
+    (type: string, namespace: string, name: string) => `${type}:${namespace}:${name}`
   )
   const runStateColorMock = vi.fn((state: string) => `color(${state})`)
   const formatUpdatedAtMock = vi.fn((value: string) => `formatted(${value})`)
   const stopWatchDurationMock = vi.fn((durationMs: number) => `duration(${durationMs})`)
-  const truncateTextMock = vi.fn((value: string, length: number) => `${value.slice(0, length)}:${length}`)
+  const truncateTextMock = vi.fn(
+    (value: string, length: number) => `${value.slice(0, length)}:${length}`
+  )
 
   return {
     resetJobsMock,
@@ -72,13 +74,7 @@ vi.mock('@/i18n', () => ({
 }))
 
 vi.mock('@/shared/components/MqScreenLoad/MqScreenLoad', () => ({
-  MqScreenLoad: ({
-    loading,
-    children,
-  }: {
-    loading: boolean
-    children: React.ReactElement
-  }) => (
+  MqScreenLoad: ({ loading, children }: { loading: boolean; children: React.ReactElement }) => (
     <div data-testid='screen-load' data-loading={loading}>
       {children}
     </div>
@@ -161,24 +157,22 @@ vi.mock('@/features/namespaces/components/NamespaceSelect', () => ({
   default: () => <div data-testid='namespace-select'>namespace-select</div>,
 }))
 
-const renderJobsRoute = (
-  {
-    result = [],
-    totalCount = 0,
-    isLoading = false,
-    selectedNamespace = 'analytics'
-  }: {
-    result?: Array<{
-      name: string
-      namespace: string
-      updatedAt: string
-      latestRun?: Partial<Run> | null
-    }>
-    totalCount?: number
-    isLoading?: boolean
-    selectedNamespace?: string | null
-  } = {}
-) => {
+const renderJobsRoute = ({
+  result = [],
+  totalCount = 0,
+  isLoading = false,
+  selectedNamespace = 'analytics',
+}: {
+  result?: Array<{
+    name: string
+    namespace: string
+    updatedAt: string
+    latestRun?: Partial<Run> | null
+  }>
+  totalCount?: number
+  isLoading?: boolean
+  selectedNamespace?: string | null
+} = {}) => {
   const mockRefetch = vi.fn()
 
   vi.spyOn(useJobsHook, 'useJobs').mockReturnValue({
@@ -203,7 +197,7 @@ const renderJobsRoute = (
       </MemoryRouter>,
       { initialState }
     ),
-    mockRefetch
+    mockRefetch,
   }
 }
 
@@ -216,7 +210,7 @@ describe('Jobs route', () => {
     stopWatchDurationMock.mockClear()
     truncateTextMock.mockClear()
     vi.restoreAllMocks() // restores useJobs spy
-      ; (window as unknown as { scrollTo: () => void }).scrollTo = vi.fn()
+    ;(window as unknown as { scrollTo: () => void }).scrollTo = vi.fn()
   })
 
   it('renders empty state, triggers refresh, and resets on unmount', () => {
@@ -290,11 +284,11 @@ describe('Jobs route', () => {
     // But Jobs component passes selectedNamespace to useJobs.
     // If we mock useJobs, we check what it was called with.
 
-    // We can't easily check what useJobs was called with inside renderJobsRoute easily 
+    // We can't easily check what useJobs was called with inside renderJobsRoute easily
     // without exposing the spy.
 
     renderJobsRoute({
-      selectedNamespace: null
+      selectedNamespace: null,
     })
 
     // In the component, if namespace is missing, useJobs might be disabled or return empty.

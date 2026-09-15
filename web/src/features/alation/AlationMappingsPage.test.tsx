@@ -1,9 +1,9 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import React, { ReactNode } from 'react'
 
 const acceptMutate = vi.fn()
@@ -134,7 +134,9 @@ describe('AlationMappingsPage', () => {
     await waitFor(() => screen.getByText('alation_mappings.suggest_dialog_title'))
 
     // Set schemaId via input
-    const schemaInput = screen.getByLabelText('alation_mappings.schema_id_label') as HTMLInputElement
+    const schemaInput = screen.getByLabelText(
+      'alation_mappings.schema_id_label'
+    ) as HTMLInputElement
     fireEvent.change(schemaInput, { target: { value: '123' } })
 
     // Set namespace via Autocomplete: bypass by directly invoking handleSuggestSubmit through the button

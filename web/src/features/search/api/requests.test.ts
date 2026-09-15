@@ -222,10 +222,7 @@ describe('Search Requests', () => {
 
       await getOpenSearchJobs('')
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('q='),
-        expect.any(Object)
-      )
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('q='), expect.any(Object))
     })
 
     it('handles fetch errors', async () => {
@@ -293,10 +290,7 @@ describe('Search Requests', () => {
 
       await getOpenSearchDatasets('')
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('q='),
-        expect.any(Object)
-      )
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('q='), expect.any(Object))
     })
 
     it('handles fetch errors', async () => {

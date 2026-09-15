@@ -37,7 +37,7 @@ describe('MqStatus Component', () => {
   it('should render with different colors', () => {
     const colors = ['#ff0000', '#00ff00', '#0000ff', 'yellow', 'orange']
     colors.forEach((color) => {
-      const { container } = render(<MqStatus color={color} label={`Status ${color}`} />)
+      render(<MqStatus color={color} label={`Status ${color}`} />)
       expect(screen.getByText(`Status ${color}`)).toBeInTheDocument()
     })
   })
@@ -49,17 +49,17 @@ describe('MqStatus Component', () => {
   })
 
   it('should render with hex color', () => {
-    const { container } = render(<MqStatus color='#FF5733' label='Custom' />)
+    render(<MqStatus color='#FF5733' label='Custom' />)
     expect(screen.getByText('Custom')).toBeInTheDocument()
   })
 
   it('should render with rgb color', () => {
-    const { container } = render(<MqStatus color='rgb(255, 0, 0)' label='RGB Color' />)
+    render(<MqStatus color='rgb(255, 0, 0)' label='RGB Color' />)
     expect(screen.getByText('RGB Color')).toBeInTheDocument()
   })
 
   it('should apply border styling with the color', () => {
-    const { container } = render(<MqStatus color='purple' label='Purple Status' />)
+    render(<MqStatus color='purple' label='Purple Status' />)
     expect(screen.getByText('Purple Status')).toBeInTheDocument()
   })
 })

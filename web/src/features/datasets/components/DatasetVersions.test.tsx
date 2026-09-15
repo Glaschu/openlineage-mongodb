@@ -25,7 +25,7 @@ vi.mock('@/features/datasets/api', () => ({
 // Mock DatasetTags to prevent import issues
 vi.mock('@/features/datasets/components/DatasetTags', () => ({
   __esModule: true,
-  default: () => <div data-testid="mock-dataset-tags">Tags</div>
+  default: () => <div data-testid='mock-dataset-tags'>Tags</div>,
 }))
 
 // Mock i18next
@@ -68,9 +68,7 @@ describe('DatasetVersions Component', () => {
       refetch: vi.fn(),
     })
 
-    return renderWithProviders(
-      <DatasetVersions dataset={mockDataset} />
-    )
+    return renderWithProviders(<DatasetVersions dataset={mockDataset} />)
   }
 
   it('should render nothing with empty versions', () => {
@@ -85,7 +83,7 @@ describe('DatasetVersions Component', () => {
         createdAt: '2023-01-01T00:00:00Z',
         fields: [],
         facets: {},
-        createdByRun: { id: 'run-1' }
+        createdByRun: { id: 'run-1' },
       },
     ]
     const { getByText } = renderDatasetVersions(mockVersions, false, 1)
@@ -113,7 +111,8 @@ describe('DatasetVersions Component', () => {
     const { container, getByText } = renderDatasetVersions(mockVersions, false, 1)
     fireEvent.click(getByText('abcdef12...'))
     // After clicking we should now be in info view (back button present)
-    const backBtn = container.querySelector('button[aria-label]') || container.querySelector('button')
+    const backBtn =
+      container.querySelector('button[aria-label]') || container.querySelector('button')
     expect(backBtn).toBeTruthy()
     if (backBtn) fireEvent.click(backBtn)
   })

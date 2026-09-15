@@ -160,10 +160,7 @@ describe('JobRunItem Component', () => {
   it('should render runs with null duration without NaN bar heights', () => {
     const jobWithNullDuration = {
       ...mockJob,
-      latestRuns: [
-        { ...mockJob.latestRuns[0], durationMs: null },
-        mockJob.latestRuns[1],
-      ],
+      latestRuns: [{ ...mockJob.latestRuns[0], durationMs: null }, mockJob.latestRuns[1]],
     } as any
     render(
       <MemoryRouter>

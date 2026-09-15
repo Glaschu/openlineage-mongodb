@@ -1,15 +1,14 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { Provider } from 'react-redux'
+import * as useNamespacesHook from '@/features/namespaces/api'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
-import NamespaceSelect from '@/features/namespaces/components/NamespaceSelect'
-import React from 'react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { legacy_createStore as createStore } from '@reduxjs/toolkit'
 import { fireEvent, screen } from '@testing-library/react'
-import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { renderWithProviders } from '@/test/utils'
-import * as useNamespacesHook from '@/features/namespaces/api'
+import NamespaceSelect from '@/features/namespaces/components/NamespaceSelect'
+import React from 'react'
 
 // Mock action creator
 const { selectNamespaceMock } = vi.hoisted(() => ({
@@ -43,7 +42,10 @@ describe('NamespaceSelect', () => {
     return store
   }
 
-  const renderComponent = (selectedNamespace: string | null = null, namespacesList: string[] = []) => {
+  const renderComponent = (
+    selectedNamespace: string | null = null,
+    namespacesList: string[] = []
+  ) => {
     const store = createMockStore(selectedNamespace)
     const theme = createTheme()
 

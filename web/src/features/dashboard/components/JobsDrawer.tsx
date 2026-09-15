@@ -1,13 +1,11 @@
 import { Box } from '@mui/system'
-import { RootState } from '@/store/store'
-import { Job } from '@/shared/types/api'
 import { theme } from '@/shared/theme/theme'
 import { useJobs } from '@/features/jobs/api'
 import CircularProgress from '@mui/material/CircularProgress/CircularProgress'
 import JobRunItem from './JobRunItem'
 import MqPaging from '@/shared/components/Paging/MqPaging'
 import MqText from '@/shared/components/MqText/MqText'
-import React, { useEffect } from 'react'
+import React from 'react'
 const WIDTH = 800
 const PAGE_SIZE = 10
 

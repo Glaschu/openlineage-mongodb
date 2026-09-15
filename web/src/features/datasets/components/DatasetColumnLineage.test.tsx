@@ -1,12 +1,12 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import React from 'react'
-import { renderWithProviders } from '@/test/utils'
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { fireEvent, screen } from '@testing-library/react'
 import * as useDatasetHook from '@/features/datasets/api'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, screen } from '@testing-library/react'
+import { renderWithProviders } from '@/test/utils'
 import DatasetColumnLineage from '@/features/datasets/components/DatasetColumnLineage'
+import React from 'react'
 import type { Dataset } from '@/shared/types/api'
 import type { LineageDataset } from '@/shared/types/lineage'
 
@@ -20,7 +20,15 @@ vi.mock('@/shared/components/MqJsonView/MqJsonView', () => ({
 
 vi.mock('@/shared/components/MqEmpty/MqEmpty', () => ({
   __esModule: true,
-  default: ({ title, body, children }: { title?: React.ReactNode; body?: React.ReactNode; children?: React.ReactNode }) => (
+  default: ({
+    title,
+    body,
+    children,
+  }: {
+    title?: React.ReactNode
+    body?: React.ReactNode
+    children?: React.ReactNode
+  }) => (
     <div data-testid='mq-empty'>
       <div>{title}</div>
       <div>{body}</div>
@@ -37,7 +45,10 @@ vi.mock('@/shared/components/MqText/MqText', () => ({
 }))
 
 // Mock Helpers
-const fileSizeMock = vi.fn((payload: string) => ({ kiloBytes: payload.length, megaBytes: payload.length / 1024 }))
+const fileSizeMock = vi.fn((payload: string) => ({
+  kiloBytes: payload.length,
+  megaBytes: payload.length / 1024,
+}))
 vi.mock('@/shared/utils', () => ({
   fileSize: (...args: any[]) => fileSizeMock(...args),
 }))
@@ -95,12 +106,9 @@ describe('DatasetColumnLineage', () => {
       isError: false,
     } as any)
 
-    renderWithProviders(
-      <DatasetColumnLineage lineageDataset={lineageDataset} />,
-      {
-        initialEntries: ['/analytics/orders']
-      }
-    )
+    renderWithProviders(<DatasetColumnLineage lineageDataset={lineageDataset} />, {
+      initialEntries: ['/analytics/orders'],
+    })
 
     expect(screen.getByTestId('mq-json-view')).toHaveTextContent(JSON.stringify(columnLineage))
   })
@@ -114,12 +122,9 @@ describe('DatasetColumnLineage', () => {
       isError: false,
     } as any)
 
-    renderWithProviders(
-      <DatasetColumnLineage lineageDataset={lineageDataset} />,
-      {
-        initialEntries: ['/analytics/orders']
-      }
-    )
+    renderWithProviders(<DatasetColumnLineage lineageDataset={lineageDataset} />, {
+      initialEntries: ['/analytics/orders'],
+    })
 
     expect(screen.getByTestId('mq-empty')).toBeInTheDocument()
     expect(screen.queryByTestId('mq-json-view')).toBeNull()
@@ -138,12 +143,9 @@ describe('DatasetColumnLineage', () => {
     // Force fileSize to return > 500
     vi.mocked(fileSizeMock).mockReturnValueOnce({ kiloBytes: 501, megaBytes: 0.49 })
 
-    renderWithProviders(
-      <DatasetColumnLineage lineageDataset={lineageDataset} />,
-      {
-        initialEntries: ['/analytics/orders']
-      }
-    )
+    renderWithProviders(<DatasetColumnLineage lineageDataset={lineageDataset} />, {
+      initialEntries: ['/analytics/orders'],
+    })
 
     const downloadButton = screen.getByRole('button', { name: 'Download payload' })
     fireEvent.click(downloadButton)

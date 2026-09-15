@@ -1,9 +1,9 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderQueryHook } from '@/test/query-helpers'
+import { waitFor } from '@testing-library/react'
 
 vi.mock('@/features/jobs/api/requests', () => ({
   getJobs: vi.fn(),
@@ -15,14 +15,7 @@ vi.mock('@/features/jobs/api/requests', () => ({
 }))
 
 import * as requests from '@/features/jobs/api/requests'
-import {
-  useAddJobTag,
-  useDeleteJob,
-  useDeleteJobTag,
-  useJob,
-  useJobRuns,
-  useJobs,
-} from './queries'
+import { useAddJobTag, useDeleteJob, useDeleteJobTag, useJob, useJobRuns, useJobs } from './queries'
 
 beforeEach(() => vi.clearAllMocks())
 
@@ -54,9 +47,27 @@ describe('jobs queries', () => {
   })
 
   it.each([
-    ['useDeleteJob', useDeleteJob, { namespace: 'ns', jobName: 'j' }, requests.deleteJob, ['ns', 'j']],
-    ['useAddJobTag', useAddJobTag, { namespace: 'ns', jobName: 'j', tag: 't' }, requests.addJobTag, ['ns', 'j', 't']],
-    ['useDeleteJobTag', useDeleteJobTag, { namespace: 'ns', jobName: 'j', tag: 't' }, requests.deleteJobTag, ['ns', 'j', 't']],
+    [
+      'useDeleteJob',
+      useDeleteJob,
+      { namespace: 'ns', jobName: 'j' },
+      requests.deleteJob,
+      ['ns', 'j'],
+    ],
+    [
+      'useAddJobTag',
+      useAddJobTag,
+      { namespace: 'ns', jobName: 'j', tag: 't' },
+      requests.addJobTag,
+      ['ns', 'j', 't'],
+    ],
+    [
+      'useDeleteJobTag',
+      useDeleteJobTag,
+      { namespace: 'ns', jobName: 'j', tag: 't' },
+      requests.deleteJobTag,
+      ['ns', 'j', 't'],
+    ],
   ])('%s mutates and invalidates', async (_, hook, vars, fn, args) => {
     vi.mocked(fn as never).mockResolvedValue({} as never)
     const { result } = renderQueryHook(() => hook())

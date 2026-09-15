@@ -1,9 +1,9 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderQueryHook } from '@/test/query-helpers'
+import { waitFor } from '@testing-library/react'
 
 vi.mock('@/features/datasets/api/requests', () => ({
   getDatasets: vi.fn(),
@@ -65,11 +65,41 @@ describe('datasets queries', () => {
   })
 
   it.each([
-    ['useDeleteDataset', useDeleteDataset, { namespace: 'ns', datasetName: 'd' }, requests.deleteDataset, ['ns', 'd']],
-    ['useAddDatasetTag', useAddDatasetTag, { namespace: 'ns', datasetName: 'd', tag: 't' }, requests.addDatasetTag, ['ns', 'd', 't']],
-    ['useDeleteDatasetTag', useDeleteDatasetTag, { namespace: 'ns', datasetName: 'd', tag: 't' }, requests.deleteDatasetTag, ['ns', 'd', 't']],
-    ['useAddDatasetFieldTag', useAddDatasetFieldTag, { namespace: 'ns', datasetName: 'd', field: 'f', tag: 't' }, requests.addDatasetFieldTag, ['ns', 'd', 'f', 't']],
-    ['useDeleteDatasetFieldTag', useDeleteDatasetFieldTag, { namespace: 'ns', datasetName: 'd', field: 'f', tag: 't' }, requests.deleteDatasetFieldTag, ['ns', 'd', 'f', 't']],
+    [
+      'useDeleteDataset',
+      useDeleteDataset,
+      { namespace: 'ns', datasetName: 'd' },
+      requests.deleteDataset,
+      ['ns', 'd'],
+    ],
+    [
+      'useAddDatasetTag',
+      useAddDatasetTag,
+      { namespace: 'ns', datasetName: 'd', tag: 't' },
+      requests.addDatasetTag,
+      ['ns', 'd', 't'],
+    ],
+    [
+      'useDeleteDatasetTag',
+      useDeleteDatasetTag,
+      { namespace: 'ns', datasetName: 'd', tag: 't' },
+      requests.deleteDatasetTag,
+      ['ns', 'd', 't'],
+    ],
+    [
+      'useAddDatasetFieldTag',
+      useAddDatasetFieldTag,
+      { namespace: 'ns', datasetName: 'd', field: 'f', tag: 't' },
+      requests.addDatasetFieldTag,
+      ['ns', 'd', 'f', 't'],
+    ],
+    [
+      'useDeleteDatasetFieldTag',
+      useDeleteDatasetFieldTag,
+      { namespace: 'ns', datasetName: 'd', field: 'f', tag: 't' },
+      requests.deleteDatasetFieldTag,
+      ['ns', 'd', 'f', 't'],
+    ],
   ])('%s mutation invokes the request and invalidates', async (_, hook, vars, fn, args) => {
     vi.mocked(fn as never).mockResolvedValue({} as never)
     const { result } = renderQueryHook(() => hook())

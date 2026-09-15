@@ -18,17 +18,17 @@ describe('MqEmpty Component', () => {
   })
 
   it('should render without title', () => {
-    const { container } = render(<MqEmpty body='Only body text' />)
+    render(<MqEmpty body='Only body text' />)
     expect(screen.getByText('Only body text')).toBeInTheDocument()
   })
 
   it('should render without body', () => {
-    const { container } = render(<MqEmpty title='Only title' />)
+    render(<MqEmpty title='Only title' />)
     expect(screen.getByText('Only title')).toBeInTheDocument()
   })
 
   it('should render with emoji', () => {
-    const { container } = render(<MqEmpty title='No Data' body='No data available' emoji='📭' />)
+    render(<MqEmpty title='No Data' body='No data available' emoji='📭' />)
     expect(screen.getByText('No Data')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'icon' })).toBeInTheDocument()
     expect(screen.getByText('📭')).toBeInTheDocument()
@@ -36,7 +36,7 @@ describe('MqEmpty Component', () => {
 
   it('should render with children', () => {
     const CustomChild = () => <div data-testid='custom-child'>Custom Content</div>
-    const { container } = render(
+    render(
       <MqEmpty title='Custom'>
         <CustomChild />
       </MqEmpty>
@@ -47,7 +47,7 @@ describe('MqEmpty Component', () => {
 
   it('should render with all props', () => {
     const CustomChild = () => <div data-testid='all-props-child'>All Props Child</div>
-    const { container } = render(
+    render(
       <MqEmpty title='Complete Example' body='This has everything' emoji='🎉'>
         <CustomChild />
       </MqEmpty>
@@ -64,7 +64,7 @@ describe('MqEmpty Component', () => {
   })
 
   it('should render with only emoji', () => {
-    const { container } = render(<MqEmpty emoji='⚠️' />)
+    render(<MqEmpty emoji='⚠️' />)
     expect(screen.getByText('⚠️')).toBeInTheDocument()
   })
 

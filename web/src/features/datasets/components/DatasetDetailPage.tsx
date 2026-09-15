@@ -1,11 +1,11 @@
 // Copyright 2018-2023 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { Icon, faDatabase } from '@/shared/components/icons'
 import { Box, Button, Divider, FormControlLabel, Grid, Switch, Tab, Tabs } from '@mui/material'
 import { CalendarIcon } from '@mui/x-date-pickers/icons'
 import { CircularProgress } from '@mui/material'
 import { FEATURE_FLAGS } from '@/shared/config/featureFlags'
+import { Icon, faDatabase } from '@/shared/components/icons'
 import { LineageDataset } from '@/shared/types/lineage'
 import { MqInfo } from '@/shared/components/MqInfo/MqInfo'
 import { RootState } from '@/store/store'

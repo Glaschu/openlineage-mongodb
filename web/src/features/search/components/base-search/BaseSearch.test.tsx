@@ -49,8 +49,8 @@ vi.mock('react-redux', async () => {
   }
 })
 
-import { renderWithProviders } from '@/test/utils'
 import * as useSearchHook from '@/features/search/api'
+import { renderWithProviders } from '@/test/utils'
 
 const mockSearchResults = new Map([
   [
@@ -129,7 +129,6 @@ describe('BaseSearch Component', () => {
     // We can't easily check internal state hook args without spying deeply or effect.
     // Assuming UI update works.
   })
-
 
   it('displays search results when available', () => {
     renderBaseSearch()

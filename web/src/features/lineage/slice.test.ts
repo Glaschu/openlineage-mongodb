@@ -1,16 +1,16 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import reducer, {
-  setSelectedNode,
-  setBottomBarHeight,
-  setTabIndex,
-  setLineageGraphDepth,
-  setShowFullGraph,
-  resetLineage,
-} from '@/features/lineage/slice'
 import { HEADER_HEIGHT } from '@/shared/theme/theme'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import reducer, {
+  resetLineage,
+  setBottomBarHeight,
+  setLineageGraphDepth,
+  setSelectedNode,
+  setShowFullGraph,
+  setTabIndex,
+} from '@/features/lineage/slice'
 
 const unknown = { type: 'UNKNOWN' } as any
 
@@ -41,10 +41,7 @@ describe('lineage reducer', () => {
     expect(state.selectedNode).toBe('node-1')
     expect(state.tabIndex).toBe(0)
 
-    const tabState = reducer(
-      { ...state, tabIndex: 1 } as any,
-      setSelectedNode('node-2')
-    )
+    const tabState = reducer({ ...state, tabIndex: 1 } as any, setSelectedNode('node-2'))
     expect(tabState.selectedNode).toBe('node-2')
     expect(tabState.tabIndex).toBe(1)
   })

@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { describe, expect, it, vi } from 'vitest'
-import { waitFor } from '@testing-library/react'
 import { renderQueryHook } from '@/test/query-helpers'
+import { waitFor } from '@testing-library/react'
 
 vi.mock('@/features/namespaces/api/requests', () => ({
   getNamespaces: vi.fn(),

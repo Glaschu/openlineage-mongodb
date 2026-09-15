@@ -42,4 +42,3 @@ export const genericFetchWrapper = async (url: string, params: IParams, function
   const response = await fetch(url, params)
   return parseResponse(response, functionName)
 }
-

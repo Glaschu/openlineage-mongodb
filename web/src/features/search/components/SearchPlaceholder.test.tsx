@@ -49,7 +49,7 @@ describe('SearchPlaceholder Component', () => {
   })
 
   it('displays text in disabled state', () => {
-    const { container } = render(<SearchPlaceholder />)
+    render(<SearchPlaceholder />)
     // Check for disabled styling
     expect(screen.getByText('Search your')).toBeInTheDocument()
   })

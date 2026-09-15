@@ -1,14 +1,14 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import * as useDatasetsHook from '@/features/datasets/api'
+import * as useTagsHook from '@/shared/api'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { renderWithProviders } from '@/test/utils'
 import DatasetTags from '@/features/datasets/components/DatasetTags'
 import React from 'react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import * as useDatasetsHook from '@/features/datasets/api'
-import * as useTagsHook from '@/shared/api'
 
 // Mock Tooltip
 // Mock Tooltip
@@ -16,9 +16,13 @@ vi.mock('@/shared/components/MqTooltip/MQTooltip', () => {
   const React = require('react')
   return {
     __esModule: true,
-    default: React.forwardRef(({ title, children }: { title: string; children: React.ReactElement }, ref: any) => (
-      <span ref={ref} aria-label={typeof title === 'string' ? title : undefined}>{children}</span>
-    )),
+    default: React.forwardRef(
+      ({ title, children }: { title: string; children: React.ReactElement }, ref: any) => (
+        <span ref={ref} aria-label={typeof title === 'string' ? title : undefined}>
+          {children}
+        </span>
+      )
+    ),
   }
 })
 
@@ -69,7 +73,12 @@ const { MockAutocomplete } = vi.hoisted(() => {
         return
       }
       const current = value as string[]
-      onChange({}, current.filter((item: string) => item !== tag), 'removeOption', { option: tag })
+      onChange(
+        {},
+        current.filter((item: string) => item !== tag),
+        'removeOption',
+        { option: tag }
+      )
     }
 
     return (
@@ -101,7 +110,11 @@ const { MockAutocomplete } = vi.hoisted(() => {
             {(value as string[]).map((tag: string) => (
               <li key={tag} data-testid={`tag-${tag}`}>
                 {tag}
-                <button type='button' data-testid={`remove-${tag}`} onClick={() => handleRemove(tag)}>
+                <button
+                  type='button'
+                  data-testid={`remove-${tag}`}
+                  onClick={() => handleRemove(tag)}
+                >
                   remove
                 </button>
               </li>
@@ -146,10 +159,13 @@ const addDatasetFieldTagMock = vi.fn()
 const deleteDatasetFieldTagMock = vi.fn()
 const addTagsMock = vi.fn()
 
-const renderDatasetTags = (propsOverride = {}, tagsState = [
-  { name: 'beta', description: 'Beta tag' },
-  { name: 'alpha', description: 'Alpha tag' }
-]) => {
+const renderDatasetTags = (
+  propsOverride = {},
+  tagsState = [
+    { name: 'beta', description: 'Beta tag' },
+    { name: 'alpha', description: 'Alpha tag' },
+  ]
+) => {
   const theme = createTheme()
 
   vi.spyOn(useTagsHook, 'useTags').mockReturnValue({
@@ -220,13 +236,21 @@ describe('DatasetTags', () => {
 
     // Add tag by selecting 'beta' from list (mocked select)
     fireEvent.change(screen.getByTestId('dataset-tags'), { target: { value: 'beta' } })
-    expect(addDatasetTagMock).toHaveBeenCalledWith({ namespace: 'analytics', datasetName: 'orders', tag: 'beta' })
+    expect(addDatasetTagMock).toHaveBeenCalledWith({
+      namespace: 'analytics',
+      datasetName: 'orders',
+      tag: 'beta',
+    })
 
     // Remove tag 'alpha'
     // My mock renders <ul> list for existing tags if passed
     const removeBtn = screen.getByTestId('remove-alpha')
     fireEvent.click(removeBtn)
-    expect(deleteDatasetTagMock).toHaveBeenCalledWith({ namespace: 'analytics', datasetName: 'orders', tag: 'alpha' })
+    expect(deleteDatasetTagMock).toHaveBeenCalledWith({
+      namespace: 'analytics',
+      datasetName: 'orders',
+      tag: 'alpha',
+    })
   })
 
   it('opens dialog, edits descriptions, and submits new tags', async () => {
@@ -248,7 +272,9 @@ describe('DatasetTags', () => {
     await waitFor(() => expect(submitButton).not.toBeDisabled())
     fireEvent.click(submitButton)
 
-    await waitFor(() => expect(addTagsMock).toHaveBeenCalledWith({ tag: 'beta', description: 'Updated description' }))
+    await waitFor(() =>
+      expect(addTagsMock).toHaveBeenCalledWith({ tag: 'beta', description: 'Updated description' })
+    )
   })
 
   it('handles dataset field tags', () => {
@@ -259,11 +285,21 @@ describe('DatasetTags', () => {
 
     // Add 'alpha'
     fireEvent.change(screen.getByTestId('dataset-tags'), { target: { value: 'alpha' } })
-    expect(addDatasetFieldTagMock).toHaveBeenCalledWith({ namespace: 'analytics', datasetName: 'orders', field: 'country', tag: 'alpha' })
+    expect(addDatasetFieldTagMock).toHaveBeenCalledWith({
+      namespace: 'analytics',
+      datasetName: 'orders',
+      field: 'country',
+      tag: 'alpha',
+    })
 
     // Remove 'beta'
     const removeBtn = screen.getByTestId('remove-beta')
     fireEvent.click(removeBtn)
-    expect(deleteDatasetFieldTagMock).toHaveBeenCalledWith({ namespace: 'analytics', datasetName: 'orders', field: 'country', tag: 'beta' })
+    expect(deleteDatasetFieldTagMock).toHaveBeenCalledWith({
+      namespace: 'analytics',
+      datasetName: 'orders',
+      field: 'country',
+      tag: 'beta',
+    })
   })
 })

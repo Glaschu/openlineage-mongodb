@@ -1,14 +1,14 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import * as useJobsHook from '@/features/jobs/api'
+import * as useMetricsHook from '@/features/dashboard/api'
 import { MemoryRouter } from 'react-router-dom'
 import { act, fireEvent, screen } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '@/test/utils'
 import Dashboard from '@/features/dashboard/DashboardPage'
 import React from 'react'
-import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
-import * as useJobsHook from '@/features/jobs/api'
-import * as useMetricsHook from '@/features/dashboard/api'
 
 // Define hoisted mocks for actions or other imports if needed
 const {
@@ -137,7 +137,7 @@ const renderDashboard = (
         return {
           data: customInitialState?.jobMetrics?.data || [],
           isLoading: customInitialState?.jobMetrics?.isLoading || false,
-          refetch: vi.fn()
+          refetch: vi.fn(),
         } as any
       case 'datasets':
         return { data: [], isLoading: false, refetch: vi.fn() } as any
@@ -183,7 +183,7 @@ describe('Dashboard', () => {
     renderDashboard()
 
     // Initially called on mount (mocked)
-    // expect(fetchLineageMetricsMock).toHaveBeenCalled() 
+    // expect(fetchLineageMetricsMock).toHaveBeenCalled()
 
     await act(async () => {
       const buttons = screen.getAllByRole('button', { name: '7 Days' })

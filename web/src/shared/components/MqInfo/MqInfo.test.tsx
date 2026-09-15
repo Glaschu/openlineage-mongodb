@@ -1,10 +1,10 @@
 // Copyright 2018-2024 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import InfoIcon from '@mui/icons-material/Info'
 import { MqInfo } from '@/shared/components/MqInfo/MqInfo'
 import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import InfoIcon from '@mui/icons-material/Info'
 
 describe('MqInfo Component', () => {
   it('should render without crashing', () => {
@@ -30,9 +30,7 @@ describe('MqInfo Component', () => {
   })
 
   it('should render icon', () => {
-    const { container } = render(
-      <MqInfo icon={<InfoIcon data-testid='info-icon' />} label='Test' value='Value' />
-    )
+    render(<MqInfo icon={<InfoIcon data-testid='info-icon' />} label='Test' value='Value' />)
     expect(screen.getByTestId('info-icon')).toBeInTheDocument()
   })
 
@@ -44,7 +42,7 @@ describe('MqInfo Component', () => {
   })
 
   it('should render multiple MqInfo components', () => {
-    const { container } = render(
+    render(
       <>
         <MqInfo icon={<InfoIcon />} label='Label 1' value='Value 1' />
         <MqInfo icon={<InfoIcon />} label='Label 2' value='Value 2' />
