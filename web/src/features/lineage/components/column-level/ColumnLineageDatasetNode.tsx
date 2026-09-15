@@ -4,7 +4,7 @@ import { PositionedNode } from '@/features/lineage/components/graph'
 import { theme } from '@/shared/theme/theme'
 import { truncateText } from '@/shared/utils/text'
 import { useParams, useSearchParams } from 'react-router-dom'
-import Box from '@mui/system/Box'
+import Box from '@mui/material/Box'
 import React from 'react'
 
 interface ColumnLineageDatasetNodeProps {

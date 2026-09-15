@@ -1,7 +1,7 @@
 // Copyright 2018-2024 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { Box } from '@mui/system'
+import { Box } from '@mui/material'
 import { Button } from '@mui/material'
 import { Link as RouterLink } from 'react-router-dom'
 import MqEmpty from '@/shared/components/MqEmpty/MqEmpty'

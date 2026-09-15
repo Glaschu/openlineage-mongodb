@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { useTheme } from '@mui/material/styles'
 import { zoomIdentity } from 'd3-zoom'
-import Box from '@mui/system/Box'
+import Box from '@mui/material/Box'
 import LinearProgress from '@mui/material/LinearProgress'
 import ReactFlow, {
   BackgroundVariant,

@@ -1,4 +1,4 @@
-import { Box } from '@mui/system'
+import { Box } from '@mui/material'
 import { IntervalMetric } from '@/features/dashboard/api'
 import { formatNumber } from '@/shared/utils/numbers'
 import MiniGraph from './MiniGraph'

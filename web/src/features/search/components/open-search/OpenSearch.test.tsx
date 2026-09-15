@@ -99,7 +99,7 @@ vi.mock('@mui/material', () => ({
   Divider: muiStubs.Divider,
 }))
 
-vi.mock('@mui/system/Box', () => ({
+vi.mock('@mui/material/Box', () => ({
   __esModule: true,
   default: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
     <div data-box='true' onClick={onClick}>

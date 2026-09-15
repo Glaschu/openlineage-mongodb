@@ -3,7 +3,7 @@
 
 import { type ReactElement } from 'react'
 
-import { Box, SxProps } from '@mui/system'
+import { Box, SxProps } from '@mui/material'
 import { Link as LinkRouter } from 'react-router-dom'
 import { THEME_EXTRA } from '@/shared/theme/theme'
 import { Typography } from '@mui/material'

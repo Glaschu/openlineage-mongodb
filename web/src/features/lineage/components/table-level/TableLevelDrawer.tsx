@@ -1,4 +1,4 @@
-import { Box } from '@mui/system'
+import { Box } from '@mui/material'
 import { LineageDataset, LineageJob } from '@/shared/types/lineage'
 import { LineageGraph } from '@/shared/types/api'
 import { useSearchParams } from 'react-router-dom'

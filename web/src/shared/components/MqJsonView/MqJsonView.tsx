@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { Box } from '@mui/system'
+import { Box } from '@mui/material'
 import { THEME_EXTRA, theme } from '@/shared/theme/theme'
 import { githubDarkTheme } from '@uiw/react-json-view/githubDark'
 import JsonView from '@uiw/react-json-view'

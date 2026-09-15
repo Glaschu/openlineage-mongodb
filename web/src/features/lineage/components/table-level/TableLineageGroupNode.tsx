@@ -1,4 +1,4 @@
-import { Box } from '@mui/system'
+import { Box } from '@mui/material'
 import { PositionedNode } from '@/features/lineage/components/graph'
 import { theme } from '@/shared/theme/theme'
 import React from 'react'

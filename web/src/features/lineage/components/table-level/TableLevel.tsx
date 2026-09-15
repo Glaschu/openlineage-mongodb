@@ -1,5 +1,5 @@
 import { ActionBar, GraphSearchOption } from './ActionBar'
-import { Box } from '@mui/system'
+import { Box } from '@mui/material'
 import { CircularProgress, Drawer } from '@mui/material'
 import {
   DEFAULT_MAX_SCALE,

@@ -1,4 +1,4 @@
-import { Box, Stack } from '@mui/system'
+import { Box, Stack } from '@mui/material'
 import { Button, ButtonGroup, Container, Divider, Drawer, Grid, Skeleton } from '@mui/material'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import { MiniGraphContainer } from './components/MiniGraphContainer'

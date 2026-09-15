@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { Box } from '@mui/system'
+import { Box } from '@mui/material'
 import { Chip, Divider } from '@mui/material'
 import { Job } from '@/shared/types/api'
 import { encodeNode, runStateColor } from '@/shared/utils/nodes'

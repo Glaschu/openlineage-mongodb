@@ -3,6 +3,7 @@
 
 import {
   Icon,
+  SearchArrowIcon,
   faCogs,
   faDatabase,
   faFolderTree,
@@ -10,7 +11,6 @@ import {
   faShieldHalved,
 } from '@/shared/components/icons'
 import { useTranslation } from '@/i18n'
-import SVG from 'react-inlinesvg'
 
 import { Link, useLocation } from 'react-router-dom'
 import Box from '@mui/material/Box'
@@ -26,7 +26,6 @@ import { MqInputNoIcon } from '@/shared/components/MqInputBase/MqInputBase'
 import { useTheme } from '@mui/material/styles'
 
 import Dashboard from '@mui/icons-material/Dashboard'
-import iconSearchArrow from '@/assets/img/iconSearchArrow.svg'
 import marquez_logo from './marquez-icon-white-solid.svg'
 
 const Sidenav = () => {
@@ -127,7 +126,7 @@ const Sidenav = () => {
             title={t('sidenav.events')}
             active={location.pathname === '/events'}
           >
-            <SVG src={iconSearchArrow} width={'20px'} />
+            <SearchArrowIcon width={20} height={20} />
           </MqIconButton>
           <MqIconButton
             id={'alationMappingsButton'}

@@ -10,7 +10,7 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material'
-import { Box } from '@mui/system'
+import { Box } from '@mui/material'
 import { ColumnLineageGraph } from '@/shared/types/api'
 import { Fragment } from 'react'
 import { Icon, faArrowRightLong, faDatabase } from '@/shared/components/icons'

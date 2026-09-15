@@ -1,4 +1,4 @@
-import { Box } from '@mui/system'
+import { Box } from '@mui/material'
 import { theme } from '@/shared/theme/theme'
 import { useJobs } from '@/features/jobs/api'
 import CircularProgress from '@mui/material/CircularProgress/CircularProgress'

@@ -11,7 +11,6 @@
 
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { BrowserRouter } from 'react-router-dom'
-import { HelmetProvider } from 'react-helmet-async'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Provider as ReduxProvider } from 'react-redux'
@@ -36,15 +35,13 @@ interface Props {
 export const AppProviders = ({ children }: Props): ReactElement => (
   <QueryClientProvider client={queryClient}>
     <ReduxProvider store={store}>
-      <HelmetProvider>
-        <BrowserRouter>
-          <StyledEngineProvider injectFirst>
-            <ThemeProvider theme={theme}>
-              <LocalizationProvider dateAdapter={AdapterDayjs}>{children}</LocalizationProvider>
-            </ThemeProvider>
-          </StyledEngineProvider>
-        </BrowserRouter>
-      </HelmetProvider>
+      <BrowserRouter>
+        <StyledEngineProvider injectFirst>
+          <ThemeProvider theme={theme}>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>{children}</LocalizationProvider>
+          </ThemeProvider>
+        </StyledEngineProvider>
+      </BrowserRouter>
     </ReduxProvider>
   </QueryClientProvider>
 )

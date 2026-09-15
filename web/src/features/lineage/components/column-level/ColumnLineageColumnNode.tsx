@@ -4,7 +4,7 @@ import { grey } from '@mui/material/colors'
 import { theme } from '@/shared/theme/theme'
 import { truncateText } from '@/shared/utils/text'
 import { useSearchParams } from 'react-router-dom'
-import Box from '@mui/system/Box'
+import Box from '@mui/material/Box'
 import React from 'react'
 
 interface ColumnLineageColumnNodeProps {
