@@ -1,5 +1,5 @@
-import { Icon, faDatabase } from '@/shared/components/icons'
 import { ColumnLineageDatasetNodeData } from './nodes'
+import { Icon, faDatabase } from '@/shared/components/icons'
 import { PositionedNode } from '@/features/lineage/components/graph'
 import { theme } from '@/shared/theme/theme'
 import { truncateText } from '@/shared/utils/text'
@@ -11,7 +11,7 @@ interface ColumnLineageDatasetNodeProps {
   node: PositionedNode<'dataset', ColumnLineageDatasetNodeData>
 }
 export const ColumnLineageDatasetNode = ({ node }: ColumnLineageDatasetNodeProps) => {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [, setSearchParams] = useSearchParams()
   const { namespace, name } = useParams()
   const shine = name === node.data.dataset && namespace === node.data.namespace
   return (

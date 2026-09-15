@@ -1,4 +1,5 @@
 import {
+  Autocomplete,
   Chip,
   Divider,
   FormControlLabel,
@@ -21,14 +22,30 @@ import MQTooltip from '@/shared/components/MqTooltip/MQTooltip'
 import MqText from '@/shared/components/MqText/MqText'
 import React from 'react'
 
+export interface ColumnSearchOption {
+  /** datasetField:{namespace}:{dataset}:{column} — the node id the graph uses. */
+  id: string
+  column: string
+  dataset: string
+  namespace: string
+}
+
 interface ActionBarProps {
   refresh: () => void
   depth: number
   setDepth: (depth: number) => void
   onExportCsv?: () => void
+  /** Every column in the current graph, for the find-a-column box. */
+  searchOptions?: ColumnSearchOption[]
 }
 
-export const ActionBar = ({ refresh, depth, setDepth, onExportCsv }: ActionBarProps) => {
+export const ActionBar = ({
+  refresh,
+  depth,
+  setDepth,
+  onExportCsv,
+  searchOptions = [],
+}: ActionBarProps) => {
   const { namespace, name } = useParams()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -42,6 +59,21 @@ export const ActionBar = ({ refresh, depth, setDepth, onExportCsv }: ActionBarPr
     const params = new URLSearchParams(searchParams)
     mutate(params)
     setSearchParams(params)
+  }
+
+  // Selecting from the search box goes through the same params a column click
+  // writes, so centring, the drawer and isolate all behave identically.
+  const selectColumn = (option: ColumnSearchOption | null) => {
+    if (!option) {
+      clearColumnSelection()
+      return
+    }
+    updateParams((params) => {
+      params.set('dataset', option.dataset)
+      params.set('namespace', option.namespace)
+      params.set('column', option.id)
+      params.set('columnName', option.column)
+    })
   }
 
   const clearColumnSelection = () =>
@@ -104,6 +136,25 @@ export const ActionBar = ({ refresh, depth, setDepth, onExportCsv }: ActionBarPr
         )}
       </Box>
       <Box display={'flex'} alignItems={'center'}>
+        <Autocomplete
+          id='column-search'
+          size='small'
+          sx={{ width: 240, mr: 2 }}
+          options={searchOptions}
+          getOptionLabel={(option) => option.column}
+          groupBy={(option) => option.dataset}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
+          value={searchOptions.find((option) => option.id === searchParams.get('column')) ?? null}
+          onChange={(_event, option) => selectColumn(option)}
+          renderOption={(props, option) => (
+            <li {...props} key={option.id}>
+              <MqText font={'mono'}>{option.column}</MqText>
+            </li>
+          )}
+          renderInput={(params) => (
+            <TextField {...params} label='Find column' variant='outlined' size='small' />
+          )}
+        />
         <MQTooltip
           title={
             selectedColumn

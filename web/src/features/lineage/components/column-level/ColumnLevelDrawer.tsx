@@ -1,4 +1,3 @@
-import { Icon, faArrowRightLong, faDatabase } from '@/shared/components/icons'
 import {
   Accordion,
   AccordionDetails,
@@ -14,6 +13,7 @@ import {
 import { Box } from '@mui/system'
 import { ColumnLineageGraph } from '@/shared/types/api'
 import { Fragment } from 'react'
+import { Icon, faArrowRightLong, faDatabase } from '@/shared/components/icons'
 import { parseColumnLineageNode } from './layout'
 import { theme } from '@/shared/theme/theme'
 import { useDataset } from '@/features/datasets/api'

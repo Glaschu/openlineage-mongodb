@@ -1,10 +1,10 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
-import { ActionBar } from '@/features/lineage/components/column-level/ActionBar'
+import { ActionBar, ColumnSearchOption } from '@/features/lineage/components/column-level/ActionBar'
 import { type Location, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import React from 'react'
 
@@ -24,7 +24,11 @@ const LocationSpy = ({ onChange }: { onChange: (location: Location) => void }) =
 
 const renderActionBar = (
   initialEntry: string,
-  overrides: { depth?: number; setDepth?: (depth: number) => void } = {}
+  overrides: {
+    depth?: number
+    setDepth?: (depth: number) => void
+    searchOptions?: ColumnSearchOption[]
+  } = {}
 ) => {
   const fetchColumnLineage = vi.fn()
   const setDepth = vi.fn(overrides.setDepth ?? (() => undefined))
@@ -44,6 +48,7 @@ const renderActionBar = (
                   refresh={fetchColumnLineage}
                   depth={overrides.depth ?? 2}
                   setDepth={setDepth}
+                  searchOptions={overrides.searchOptions}
                 />
               </>
             }
@@ -61,6 +66,7 @@ const renderActionBar = (
                   refresh={fetchColumnLineage}
                   depth={overrides.depth ?? 2}
                   setDepth={setDepth}
+                  searchOptions={overrides.searchOptions}
                 />
               </>
             }
@@ -74,8 +80,55 @@ const renderActionBar = (
 }
 
 describe('column-level/ActionBar', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
+  it('finds a column and selects it through the same params a node click writes', () => {
+    const searchOptions: ColumnSearchOption[] = [
+      {
+        id: 'datasetField:analytics:orders:order_id',
+        column: 'order_id',
+        dataset: 'orders',
+        namespace: 'analytics',
+      },
+      {
+        id: 'datasetField:analytics:orders:total',
+        column: 'total',
+        dataset: 'orders',
+        namespace: 'analytics',
+      },
+    ]
+    const { locationRef } = renderActionBar('/column-level/analytics/orders?depth=2', {
+      searchOptions,
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open' }))
+    const options = screen.getAllByRole('option')
+    expect(options).toHaveLength(2)
+
+    fireEvent.click(options[1])
+
+    const params = new URLSearchParams(locationRef.current?.search ?? '')
+    expect(params.get('column')).toBe('datasetField:analytics:orders:total')
+    expect(params.get('columnName')).toBe('total')
+    expect(params.get('dataset')).toBe('orders')
+    expect(params.get('namespace')).toBe('analytics')
+    // Unrelated params survive the selection.
+    expect(params.get('depth')).toBe('2')
+  })
+
+  it('shows the column already selected in the URL', () => {
+    const searchOptions: ColumnSearchOption[] = [
+      {
+        id: 'datasetField:analytics:orders:total',
+        column: 'total',
+        dataset: 'orders',
+        namespace: 'analytics',
+      },
+    ]
+    renderActionBar(
+      '/column-level/analytics/orders?column=datasetField%3Aanalytics%3Aorders%3Atotal&columnName=total',
+      { searchOptions }
+    )
+
+    expect(screen.getByRole('combobox', { name: 'Find column' })).toHaveValue('total')
   })
 
   it('invokes fetchColumnLineage as refresh when refresh is clicked', () => {

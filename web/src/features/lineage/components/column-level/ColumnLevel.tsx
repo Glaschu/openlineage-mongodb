@@ -1,4 +1,4 @@
-import { ActionBar } from './ActionBar'
+import { ActionBar, ColumnSearchOption } from './ActionBar'
 import { CircularProgress, Drawer } from '@mui/material'
 import { ColumnLevelNodeData, ColumnLevelNodeKinds, columnLevelNodeRenderer } from './nodes'
 import { Graph, ZoomPanControls } from '@/features/lineage/components/graph'
@@ -54,6 +54,23 @@ const ColumnLevel: React.FC = () => {
     [columnLineage, column, direction, isolate]
   )
 
+  const searchOptions = useMemo<ColumnSearchOption[]>(() => {
+    if (!columnLineage) return []
+
+    return (
+      columnLineage.graph
+        .filter((node) => !!node.data)
+        .map((node) => ({
+          id: node.id,
+          column: node.data.field,
+          dataset: node.data.dataset,
+          namespace: node.data.namespace,
+        }))
+        // Autocomplete's groupBy expects options already grouped by dataset.
+        .sort((a, b) => a.dataset.localeCompare(b.dataset) || a.column.localeCompare(b.column))
+    )
+  }, [columnLineage])
+
   useEffect(() => {
     if (nodes.length > 0) {
       const timer = setTimeout(() => {
@@ -95,6 +112,7 @@ const ColumnLevel: React.FC = () => {
         depth={depth}
         setDepth={setDepth}
         onExportCsv={handleExportCsv}
+        searchOptions={searchOptions}
       />
       <Box height={`calc(100vh - ${HEADER_HEIGHT}px - 64px)`}>
         {isFetching && (
