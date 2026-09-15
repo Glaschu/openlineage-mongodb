@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import ELK, { ElkNode } from 'elkjs'
+// elk-api is the thin (12 kB) client; the layout algorithm itself lives in the
+// worker. Importing 'elkjs' instead pulls elk.bundled.js — the entire 1.4 MB
+// algorithm — into the main bundle where it is never executed.
+import ELK from 'elkjs/lib/elk-api'
+import type { ElkNode } from 'elkjs/lib/elk-api'
 
 import { deepEqual } from '@/shared/utils/deepEqual'
 import { useCallbackRef } from '../utils/hooks'
@@ -8,6 +12,21 @@ import type { Direction, Edge, Node, NodeRenderer, PositionedEdge, PositionedNod
 
 // Import the worker file as a URL - Vite will handle bundling it
 import elkWorkerUrl from 'elkjs/lib/elk-worker.min.js?url'
+
+// One ELK client (and therefore one worker) per worker URL, shared by every
+// graph on the page. Creating one per layout meant the browser re-parsed and
+// re-initialised 1.4 MB of worker script on every expand, collapse or depth
+// change.
+const elkClients = new Map<string, InstanceType<typeof ELK>>()
+
+const getElkClient = (workerUrl: string): InstanceType<typeof ELK> => {
+  let client = elkClients.get(workerUrl)
+  if (!client) {
+    client = new ELK({ workerFactory: () => new Worker(workerUrl, { type: 'classic' }) })
+    elkClients.set(workerUrl, client)
+  }
+  return client
+}
 
 export interface Props<K, D> {
   id?: string
@@ -30,20 +49,27 @@ interface Output<K, D> {
   isRendering: boolean
 }
 
-const positionNodes = <K, D>(nodes: Node<K, D>[], elkOutput: ElkNode[]) =>
-  nodes.reduce<PositionedNode<K, D>[]>((acc, node) => {
-    const elkNode = elkOutput?.find((child) => child.id === node.id)
+const positionNodes = <K, D>(nodes: Node<K, D>[], elkOutput: ElkNode[]) => {
+  // Index once instead of scanning elkOutput for every node (was O(n^2)).
+  const elkById = new Map<string, ElkNode>()
+  for (const child of elkOutput ?? []) elkById.set(child.id, child)
+
+  return nodes.reduce<PositionedNode<K, D>[]>((acc, node) => {
+    const elkNode = elkById.get(node.id)
     if (!elkNode) return acc
     const { x, y, height, width } = elkNode
-    if (!x || !y || !height || !width) return acc
+    // x/y of 0 are valid coordinates, so test for finiteness rather than
+    // truthiness — a falsy check silently dropped nodes laid out at the origin.
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return acc
+    if (!height || !width) return acc
 
     acc.push({
       ...node,
       height,
       width,
       bottomLeftCorner: {
-        x,
-        y,
+        x: x as number,
+        y: y as number,
       },
       children:
         node.children && elkNode.children
@@ -52,6 +78,7 @@ const positionNodes = <K, D>(nodes: Node<K, D>[], elkOutput: ElkNode[]) =>
     })
     return acc
   }, [])
+}
 
 const addLayoutOptions = <K, D>(
   nodes: Node<K, D>[],
@@ -71,7 +98,7 @@ export const useLayout = <K, D>({
   edges,
   direction = 'right',
   keepPreviousGraph: keepPreviousLayout = false,
-  webWorkerUrl = '/elk-worker.min.js',
+  webWorkerUrl = elkWorkerUrl,
   getLayoutOptions = (node) => node,
 }: Props<K, D>): Output<K, D> => {
   /* STATE */
@@ -166,31 +193,28 @@ export const useLayout = <K, D>({
   /* EFFECTS */
   // Render
   useEffect(() => {
-    const elk = new ELK({
-      workerFactory: () => {
-        // Use the imported worker URL - Vite will bundle this from node_modules
-        // This keeps it in sync with the elkjs package version automatically
-        return new Worker(elkWorkerUrl, { type: 'classic' })
-      },
-    })
+    // The worker is shared, so an in-flight layout cannot be cancelled by
+    // terminating it. Ignore its result instead: only the newest request is
+    // allowed to write state.
+    let isCurrent = true
 
-    elk
+    getElkClient(webWorkerUrl)
       .layout(elkInput)
       .then((rootNode) => {
+        if (!isCurrent) return
         setElkRenderedInput(elkInput)
         setElkOutput(rootNode)
         setError(undefined)
       })
       .catch((err) => {
+        if (!isCurrent) return
         setElkRenderedInput(elkInput)
         setElkOutput(undefined)
         setError(err)
       })
 
-    // Cancel the current job when input changes.
     return () => {
-      // @ts-expect-error https://github.com/kieler/elkjs/issues/208
-      if (elk.worker) elk.terminateWorker()
+      isCurrent = false
     }
   }, [elkInput, webWorkerUrl])
 
@@ -215,8 +239,11 @@ export const useLayout = <K, D>({
 
     const newNodes = positionNodes(nodes, elkOutput.children)
 
+    const elkEdgeById = new Map<string, NonNullable<ElkNode['edges']>[number]>()
+    for (const elkEdge of elkOutput.edges ?? []) elkEdgeById.set(elkEdge.id, elkEdge)
+
     const newEdges = edges.reduce<PositionedEdge[]>((acc, edge) => {
-      const elkEdge = elkOutput?.edges?.find((e) => e.id === edge.id)
+      const elkEdge = elkEdgeById.get(edge.id)
       if (!elkEdge?.sections?.[0]) return acc
       const section = elkEdge.sections[0]
 

@@ -400,7 +400,7 @@ type ColumnLineageField = {
   transformationType: string
 }
 
-type SchemaField = {
+export type SchemaField = {
   name: string
   type: string
   fields: any[]

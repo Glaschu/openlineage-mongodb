@@ -41,14 +41,14 @@ export const lineageJob: LineageJob = {
       "name": "public.orders_7_days"
     }
   ],
-  "location": null,
-  "description": null,
+  "location": "",
+  "description": "",
   "latestRun": {
     "id": "ffba2c14-4170-48da-bec3-ab5fd4ec9a3f",
     "createdAt": "2020-02-22T22:42:42Z",
     "updatedAt": "2020-02-22T22:44:02Z",
-    "nominalStartTime": null,
-    "nominalEndTime": null,
+    "nominalStartTime": "",
+    "nominalEndTime": "",
     "state": "COMPLETED",
     "startedAt": "2020-02-22T22:42:42Z",
     "endedAt": "2020-02-22T22:44:02Z",

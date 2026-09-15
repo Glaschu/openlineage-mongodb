@@ -3,6 +3,7 @@ import 'reactflow/dist/style.css'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import useSize from '@react-hook/size'
 
+import { useTheme } from '@mui/material/styles'
 import { zoomIdentity } from 'd3-zoom'
 import Box from '@mui/system/Box'
 import LinearProgress from '@mui/material/LinearProgress'
@@ -29,11 +30,15 @@ import {
 } from './ZoomPanSvg/ZoomPanSvg'
 import { Edge as EdgeComponent } from './Edge'
 import { MiniMap, MiniMapPlacement } from './ZoomPanSvg/MiniMap'
-import { Node as NodeComponent } from './Node'
 import { useLayout } from './layout/useLayout'
 import type { Direction, Edge, Node, NodeRenderer, PositionedEdge, PositionedNode } from './types'
 
 const MINIMAP_SCALE = 1 / 8
+
+// Stable identities: `?? []` would hand every memo below a fresh array on each
+// render while the first layout is still in flight.
+const NO_NODES: PositionedNode<any, any>[] = []
+const NO_EDGES: PositionedEdge[] = []
 
 interface Props<K, D> {
   id: string
@@ -67,7 +72,7 @@ type GraphEdgeData = {
 
 const HIDDEN_HANDLE_STYLE: React.CSSProperties = { opacity: 0, pointerEvents: 'none' }
 
-const GraphNodeComponent = ({ data }: FlowNodeProps<GraphNodeData>) => {
+const GraphNodeComponent = React.memo(({ data }: FlowNodeProps<GraphNodeData>) => {
   const { positionedNode, nodeRenderers } = data
   const Renderer = nodeRenderers.get(positionedNode.kind)
 
@@ -88,9 +93,10 @@ const GraphNodeComponent = ({ data }: FlowNodeProps<GraphNodeData>) => {
       </svg>
     </>
   )
-}
+})
+GraphNodeComponent.displayName = 'GraphNodeComponent'
 
-const GraphEdgeComponent = ({ data }: FlowEdgeProps<GraphEdgeData>) => {
+const GraphEdgeComponent = React.memo(({ data }: FlowEdgeProps<GraphEdgeData>) => {
   const positionedEdge = data?.positionedEdge
 
   if (!positionedEdge) {
@@ -102,7 +108,8 @@ const GraphEdgeComponent = ({ data }: FlowEdgeProps<GraphEdgeData>) => {
       <EdgeComponent edge={positionedEdge} />
     </g>
   )
-}
+})
+GraphEdgeComponent.displayName = 'GraphEdgeComponent'
 
 const NODE_TYPES = { graphNode: GraphNodeComponent }
 const EDGE_TYPES = { graphEdge: GraphEdgeComponent }
@@ -175,13 +182,23 @@ const GraphCanvas = <K, D>({
       nodeRenderers.get(node.kind)?.getLayoutOptions(node) || node,
   })
 
-  const positionedNodes = layout?.nodes ?? []
-  const positionedEdges = layout?.edges ?? []
+  const positionedNodes = (layout?.nodes ?? NO_NODES) as PositionedNode<K, D>[]
+  const positionedEdges = layout?.edges ?? NO_EDGES
   const contentWidth = layout?.width ?? 0
   const contentHeight = layout?.height ?? 0
 
   const minZoom = minScaleMinimum ?? 0.1
   const maxZoom = maxScale
+
+  const theme = useTheme()
+  const minimapColors = useMemo(
+    () => ({
+      node: theme.palette.primary.main,
+      container: theme.palette.divider,
+      edge: theme.palette.text.disabled,
+    }),
+    [theme]
+  )
 
   const reactFlowInstance = useReactFlow()
   const transform = useStore((state) => state.transform)
@@ -195,10 +212,7 @@ const GraphCanvas = <K, D>({
     }
   }, [error])
 
-  const flattened = useMemo(
-    () => flattenNodes(positionedNodes as PositionedNode<K, D>[]),
-    [positionedNodes]
-  )
+  const flattened = useMemo(() => flattenNodes(positionedNodes), [positionedNodes])
 
   useEffect(() => {
     if (!positionedNodes.length) return
@@ -363,7 +377,7 @@ const GraphCanvas = <K, D>({
       fitContent() {
         reactFlowInstance.fitView({ padding: containerPadding, duration: 250 })
       },
-      fitExtent(extent, zoomIn = true) {
+      fitExtent(extent, _zoomIn = true) {
         const [min, max] = extent
         const width = max[0] - min[0]
         const height = max[1] - min[1]
@@ -447,6 +461,11 @@ const GraphCanvas = <K, D>({
       return null
     }
 
+    // The minimap is drawn at 1/8 scale, where node internals are illegible.
+    // Rendering the real node components there doubled the cost of every graph
+    // render (and each one re-filtered the whole edge list to find its own
+    // edges). Plain rects and polylines give the same overview for a fraction
+    // of the DOM.
     return (
       <MiniMap
         containerWidth={containerWidth}
@@ -458,18 +477,35 @@ const GraphCanvas = <K, D>({
         placement={miniMapPlacement}
         sx={{ pointerEvents: 'none' }}
       >
-        {positionedNodes.map((node) => (
-          <NodeComponent
-            key={node.id}
-            node={node}
-            nodeRenderers={nodeRenderers}
-            edges={positionedEdges}
-            isMiniMap
-          />
-        ))}
-        {positionedEdges.map((edge) => (
-          <EdgeComponent key={edge.id} edge={edge} isMiniMap />
-        ))}
+        <g>
+          {adjustedEdges.map((edge) => (
+            <polyline
+              key={edge.id}
+              points={[edge.startPoint, ...(edge.bendPoints ?? []), edge.endPoint]
+                .map((point) => `${point.x},${point.y}`)
+                .join(' ')}
+              fill='none'
+              stroke={minimapColors.edge}
+              strokeWidth={2}
+            />
+          ))}
+          {flattened.map(({ node, absolutePosition }) => {
+            const isContainer = Boolean(node.children?.length)
+            return (
+              <rect
+                key={node.id}
+                x={absolutePosition.x}
+                y={absolutePosition.y}
+                width={node.width}
+                height={node.height}
+                rx={4}
+                fill={isContainer ? 'none' : minimapColors.node}
+                stroke={isContainer ? minimapColors.container : 'none'}
+                strokeWidth={isContainer ? 2 : 0}
+              />
+            )
+          })}
+        </g>
       </MiniMap>
     )
   }, [
@@ -479,9 +515,9 @@ const GraphCanvas = <K, D>({
     contentWidth,
     contentHeight,
     zoomTransform,
-    positionedNodes,
-    positionedEdges,
-    nodeRenderers,
+    flattened,
+    adjustedEdges,
+    minimapColors,
   ])
 
   const shouldShowEmptyState = !positionedNodes.length && emptyMessage
@@ -513,6 +549,7 @@ const GraphCanvas = <K, D>({
           nodesDraggable={false}
           elementsSelectable={false}
           nodesConnectable={false}
+          onlyRenderVisibleElements
           proOptions={{ hideAttribution: true }}
           style={{ width: '100%', height: '100%' }}
         >

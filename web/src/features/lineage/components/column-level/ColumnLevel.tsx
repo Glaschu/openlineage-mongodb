@@ -13,7 +13,7 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import ColumnLevelDrawer from './ColumnLevelDrawer'
 import ParentSize from '@visx/responsive/lib/components/ParentSize'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 const zoomInFactor = 1.5
 const zoomOutFactor = 1 / zoomInFactor
@@ -46,9 +46,13 @@ const ColumnLevel: React.FC = () => {
   })
 
   // Provide fallback empty objects if columnLineage is not loaded yet
-  const { nodes, edges } = columnLineage
-    ? createElkNodes(columnLineage, column, direction, isolate)
-    : { nodes: [], edges: [] }
+  const { nodes, edges } = useMemo(
+    () =>
+      columnLineage
+        ? createElkNodes(columnLineage, column, direction, isolate)
+        : { nodes: [], edges: [] },
+    [columnLineage, column, direction, isolate]
+  )
 
   useEffect(() => {
     if (nodes.length > 0) {

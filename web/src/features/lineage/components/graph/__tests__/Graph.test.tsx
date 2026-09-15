@@ -156,6 +156,10 @@ const baseEdges: PositionedEdge[] = [
   },
 ]
 
+const isRenderableComponent = (value: unknown) =>
+  typeof value === 'function' ||
+  (typeof value === 'object' && value !== null && '$$typeof' in value)
+
 const renderGraph = (overrides: Partial<React.ComponentProps<typeof Graph>> = {}) => {
   const rendererA = createRenderer('A')
   const rendererB = createRenderer('B')
@@ -238,8 +242,9 @@ describe('Graph', () => {
     expect(firstEdge.animated).toBe(true)
 
     expect(screen.getByTestId('reactflow')).toBeInTheDocument()
-    expect(typeof latestReactFlowProps.nodeTypes.graphNode).toBe('function')
-    expect(typeof latestReactFlowProps.edgeTypes.graphEdge).toBe('function')
+    // Both are React.memo-wrapped, so they are objects rather than functions.
+    expect(isRenderableComponent(latestReactFlowProps.nodeTypes.graphNode)).toBe(true)
+    expect(isRenderableComponent(latestReactFlowProps.edgeTypes.graphEdge)).toBe(true)
 
     latestReactFlowProps.onMove?.()
 

@@ -51,10 +51,11 @@ export const ColumnLineageDatasetNode = ({ node }: ColumnLineageDatasetNodeProps
         stroke={'white'}
         cursor={'pointer'}
         onClick={() =>
-          setSearchParams({
-            ...searchParams,
-            dataset: node.data.dataset,
-            namespace: node.data.namespace,
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev)
+            next.set('dataset', node.data.dataset)
+            next.set('namespace', node.data.namespace)
+            return next
           })
         }
       >

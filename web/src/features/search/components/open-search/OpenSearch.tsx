@@ -20,6 +20,7 @@ import React, { useCallback, useEffect } from 'react'
 import airflow_logo from './airlfow-logo.svg'
 import dbt_logo from './dbt-logo.svg'
 import spark_logo from './spark-logo.svg'
+import type { SchemaField } from '@/shared/types/api'
 
 interface Props {
   search: string
@@ -347,7 +348,9 @@ const OpenSearch: React.FC<Props> = ({ search, onIsLoading }) => {
                       Fields
                     </MqText>
                     <Box>
-                      {hit.facets?.schema?.fields.slice(0, FIELDS_TO_PRINT).map((field) => {
+                      {hit.facets?.schema?.fields
+                        .slice(0, FIELDS_TO_PRINT)
+                        .map((field: SchemaField) => {
                         return (
                           <Chip
                             key={field.name}

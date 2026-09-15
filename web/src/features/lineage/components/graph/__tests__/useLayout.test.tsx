@@ -18,8 +18,12 @@ vi.mock('elkjs/lib/elk-worker.min.js?url', () => ({
   default: 'worker-url',
 }))
 
+const workerInstances: WorkerMock[] = []
+
 class WorkerMock {
-  constructor(public url: string, public options?: any) {}
+  constructor(public url: string, public options?: any) {
+    workerInstances.push(this)
+  }
   terminate() {}
 }
 
@@ -31,12 +35,17 @@ afterAll(() => {
   vi.unstubAllGlobals()
 })
 
-vi.mock('elkjs', () => ({
+const elkConstructions: any[] = []
+
+vi.mock('elkjs/lib/elk-api', () => ({
   __esModule: true,
   default: class {
     worker: boolean
     terminateWorker: () => void
-    constructor() {
+    constructor(options?: any) {
+      elkConstructions.push(options)
+      // Mirror the real client: build the worker through the supplied factory.
+      options?.workerFactory?.('worker-url')
       this.worker = true
       this.terminateWorker = vi.fn()
     }
@@ -167,6 +176,82 @@ describe('useLayout hook', () => {
     expect(edge?.startPoint).toEqual({ x: 1, y: 2 })
     expect(edge?.bendPoints?.[0]).toEqual({ x: 3, y: 4 })
     expect(edge?.label?.text).toBe('Edge Label')
+  })
+
+  it('keeps nodes that ELK positions at the origin', async () => {
+    layoutResponses.push({
+      type: 'resolve',
+      value: {
+        id: 'root',
+        width: 400,
+        height: 300,
+        children: [
+          {
+            id: 'root-node',
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 80,
+            children: [{ id: 'child-node', x: 0, y: 0, width: 40, height: 30 }],
+          },
+        ],
+        edges: [],
+      },
+    })
+
+    const updates: ReturnType<typeof useLayout>[] = []
+    render(
+      <LayoutHarness
+        cfg={{ id: 'graph', nodes, edges: [] }}
+        onUpdate={(result) => updates.push(result)}
+      />
+    )
+
+    await waitFor(() => expect(updates.at(-1)?.layout).toBeDefined())
+
+    const rootNode = updates.at(-1)?.layout?.nodes.find((node) => node.id === 'root-node')
+    expect(rootNode).toBeDefined()
+    expect(rootNode?.bottomLeftCorner).toEqual({ x: 0, y: 0 })
+    expect(rootNode?.children?.[0].bottomLeftCorner).toEqual({ x: 0, y: 0 })
+  })
+
+  it('reuses one ELK client and worker across layouts', async () => {
+    const workersBefore = workerInstances.length
+    const clientsBefore = elkConstructions.length
+
+    const layoutOutput = (x: number) => ({
+      type: 'resolve' as const,
+      value: {
+        id: 'root',
+        width: 400,
+        height: 300,
+        children: [{ id: 'root-node', x, y: 20, width: 100, height: 80 }],
+        edges: [],
+      },
+    })
+
+    layoutResponses.push(layoutOutput(10), layoutOutput(30))
+
+    const updates: ReturnType<typeof useLayout>[] = []
+    const { rerender } = render(
+      <LayoutHarness
+        cfg={{ id: 'graph', nodes, edges: [] }}
+        onUpdate={(result) => updates.push(result)}
+      />
+    )
+    await waitFor(() => expect(updates.at(-1)?.layout).toBeDefined())
+
+    // A different graph forces a second layout pass.
+    rerender(
+      <LayoutHarness
+        cfg={{ id: 'graph', nodes: [{ ...nodes[0], width: 123 }], edges: [] }}
+        onUpdate={(result) => updates.push(result)}
+      />
+    )
+    await waitFor(() => expect(layoutInputs.length).toBeGreaterThan(1))
+
+    expect(elkConstructions.length - clientsBefore).toBeLessThanOrEqual(1)
+    expect(workerInstances.length - workersBefore).toBeLessThanOrEqual(1)
   })
 
   it('keeps previous layout while new layout renders when keepPreviousGraph is true', async () => {

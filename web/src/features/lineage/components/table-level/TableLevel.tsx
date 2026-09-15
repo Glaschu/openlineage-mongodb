@@ -1,11 +1,9 @@
 import { ActionBar } from './ActionBar'
 import { Box } from '@mui/system'
-import { DEFAULT_MAX_SCALE, Graph, ZoomPanControls } from '@/features/lineage/components/graph'
 import { CircularProgress, Drawer } from '@mui/material'
+import { DEFAULT_MAX_SCALE, Graph, ZoomPanControls } from '@/features/lineage/components/graph'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
-import { RootState } from '@/store/store'
 import { JobOrDataset } from '@/shared/types/lineage'
-import { LineageGraph } from '@/shared/types/api'
 import { TableLevelNodeData, tableLevelNodeRenderer } from './nodes'
 import { ZoomControls } from '../column-level/ZoomControls'
 import { createElkNodes } from './layout'
@@ -13,7 +11,7 @@ import { useCallbackRef } from '@/shared/hooks/hooks'
 import { useLineage } from '@/features/lineage/api'
 import { useParams, useSearchParams } from 'react-router-dom'
 import ParentSize from '@visx/responsive/lib/components/ParentSize'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import TableLevelDrawer from './TableLevelDrawer'
 
 const zoomInFactor = 1.5
@@ -45,16 +43,20 @@ const ColumnLevel = () => {
     graphControls.current = zoomControls
   })
 
-  const { nodes, edges } = lineage
-    ? createElkNodes(
-      lineage,
-      `${nodeType}:${namespace}:${name}`,
-      isCompact,
-      isFull,
-      collapsedNodes,
-      aggregateByParent
-    )
-    : { nodes: [], edges: [] }
+  const { nodes, edges } = useMemo(
+    () =>
+      lineage
+        ? createElkNodes(
+            lineage,
+            `${nodeType}:${namespace}:${name}`,
+            isCompact,
+            isFull,
+            collapsedNodes,
+            aggregateByParent
+          )
+        : { nodes: [], edges: [] },
+    [lineage, nodeType, namespace, name, isCompact, isFull, collapsedNodes, aggregateByParent]
+  )
 
   useEffect(() => {
     if (nodes.length > 0) {

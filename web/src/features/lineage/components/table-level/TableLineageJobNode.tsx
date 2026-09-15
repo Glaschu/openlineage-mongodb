@@ -1,6 +1,5 @@
 import { Divider } from '@mui/material'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { RootState } from '@/store/store'
 import { LineageGraph } from '@/shared/types/api'
 import { LineageJob } from '@/shared/types/lineage'
 import { PositionedNode } from '@/features/lineage/components/graph'
@@ -11,7 +10,6 @@ import { runStateColor } from '@/shared/utils/nodes'
 import { theme } from '@/shared/theme/theme'
 import { truncateText, truncateTextFront } from '@/shared/utils/text'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useSelector } from 'react-redux'
 import Box from '@mui/system/Box'
 import MQTooltip from '@/shared/components/MqTooltip/MQTooltip'
 import MqStatus from '@/shared/components/MqStatus/MqStatus'
@@ -25,7 +23,6 @@ interface TableLineageJobNodeProps {
 const ICON_SIZE = 12
 
 const TableLineageJobNode = ({ node }: TableLineageJobNodeProps) => {
-  const lineage = useSelector((state: RootState) => state.lineage.lineage)
   const navigate = useNavigate()
   const { name, namespace } = useParams()
   const isSelected = name === node.data.job.name && namespace === node.data.job.namespace
