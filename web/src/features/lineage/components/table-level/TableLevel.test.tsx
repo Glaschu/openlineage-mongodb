@@ -10,11 +10,19 @@ import React from 'react'
 import TableLevel from '@/features/lineage/components/table-level/TableLevel'
 import type { LineageGraph } from '@/shared/types/api'
 
-const { createElkNodesMock, graphRenderMock, zoomControls } = vi.hoisted(() => ({
+const {
+  createElkNodesMock,
+  findDownstreamNodesMock,
+  findUpstreamNodesMock,
+  graphRenderMock,
+  zoomControls,
+} = vi.hoisted(() => ({
   createElkNodesMock: vi.fn(() => ({
     nodes: [{ id: 'node-1' }],
     edges: [{ id: 'edge-1', source: 'node-1', target: 'node-1' }],
   })),
+  findDownstreamNodesMock: vi.fn(() => ({ nodes: [], edges: [] })),
+  findUpstreamNodesMock: vi.fn(() => ({ nodes: [], edges: [] })),
   graphRenderMock: vi.fn(),
   zoomControls: [] as Array<{
     scaleZoom: ReturnType<typeof vi.fn>
@@ -47,6 +55,8 @@ vi.mock('@/features/lineage/components/graph', () => ({
 
 vi.mock('@/features/lineage/components/table-level/layout', () => ({
   createElkNodes: (...args: Parameters<typeof createElkNodesMock>) => createElkNodesMock(...args),
+  findDownstreamNodes: (...args: unknown[]) => findDownstreamNodesMock(...args),
+  findUpstreamNodes: (...args: unknown[]) => findUpstreamNodesMock(...args),
 }))
 
 const zoomControlsMock = vi.hoisted(() => ({ props: null as null | Record<string, () => void> }))
@@ -189,5 +199,73 @@ describe('TableLevel', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+describe('TableLevel automatic compacting', () => {
+  const graph = () =>
+    ({ graph: [{ id: 'DATASET:analytics:daily-table' }] } as unknown as LineageGraph)
+
+  // The shared harness URL pins isCompact, which would mask the automatic
+  // behaviour; these cases need a URL that expresses no preference.
+  const NO_PREFERENCE = '/table-level/DATASET/analytics/daily-table?depth=2'
+
+  // height mirrors what createElkNodes produces: 24 when compact, 34 + 10 per
+  // column at full size.
+  const graphOfHeight = (count: number, height: number) => ({
+    nodes: Array.from({ length: count }).map((_, i) => ({ id: `node-${i}`, height })),
+    edges: [],
+  })
+
+  const compactArgs = () => createElkNodesMock.mock.calls.map((call) => call[2])
+
+  beforeEach(() => {
+    createElkNodesMock.mockClear()
+    graphRenderMock.mockClear()
+  })
+
+  it('compacts a graph too large to read at full size', () => {
+    // 17 nodes of a 90-column table — the shape that made deep graphs unreadable.
+    createElkNodesMock.mockReturnValue(graphOfHeight(17, 934) as never)
+    renderTableLevel(graph(), NO_PREFERENCE)
+
+    // Built once at the user's setting, then rebuilt compact once its size is known.
+    expect(compactArgs()).toContain(true)
+    expect(screen.getByRole('checkbox', { name: 'Compact Nodes (auto)' })).toBeChecked()
+  })
+
+  it('counts nested group children toward the budget', () => {
+    createElkNodesMock.mockReturnValue({
+      nodes: [
+        {
+          id: 'group-1',
+          height: 0,
+          children: [
+            { id: 'a', height: 1400 },
+            { id: 'b', height: 1400 },
+          ],
+        },
+      ],
+      edges: [],
+    } as never)
+    renderTableLevel(graph(), NO_PREFERENCE)
+
+    expect(compactArgs()).toContain(true)
+  })
+
+  it('leaves a small graph at full size', () => {
+    createElkNodesMock.mockReturnValue(graphOfHeight(5, 74) as never)
+    renderTableLevel(graph(), NO_PREFERENCE)
+
+    expect(compactArgs()).not.toContain(true)
+    expect(screen.getByRole('checkbox', { name: 'Compact Nodes' })).not.toBeChecked()
+  })
+
+  it('does not override an explicit choice in the URL', () => {
+    createElkNodesMock.mockReturnValue(graphOfHeight(17, 934) as never)
+    renderTableLevel(graph(), '/table-level/DATASET/analytics/daily-table?isCompact=false')
+
+    expect(compactArgs()).not.toContain(true)
+    expect(screen.getByRole('checkbox', { name: 'Compact Nodes' })).not.toBeChecked()
   })
 })

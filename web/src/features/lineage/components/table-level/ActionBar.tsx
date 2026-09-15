@@ -19,6 +19,8 @@ interface ActionBarProps {
   setDepth: (depth: number) => void
   isCompact: boolean
   setIsCompact: (isCompact: boolean) => void
+  /** True when compact mode was turned on for us because the graph is large. */
+  isCompactAutomatic?: boolean
   isFull: boolean
   setIsFull: (isFull: boolean) => void
   aggregateByParent: boolean
@@ -32,6 +34,7 @@ export const ActionBar = ({
   setDepth,
   isCompact,
   setIsCompact,
+  isCompactAutomatic = false,
   isFull,
   setIsFull,
   aggregateByParent,
@@ -120,8 +123,7 @@ export const ActionBar = ({
             control={
               <Switch
                 size={'small'}
-                value={isFull}
-                defaultChecked={searchParams.get('isFull') === 'true'}
+                checked={isFull}
                 onChange={(_, checked) => {
                   setIsFull(checked)
                   searchParams.set('isFull', checked.toString())
@@ -135,8 +137,7 @@ export const ActionBar = ({
             control={
               <Switch
                 size={'small'}
-                value={isCompact}
-                defaultChecked={searchParams.get('isCompact') === 'true'}
+                checked={isCompact}
                 onChange={(_, checked) => {
                   setIsCompact(checked)
                   searchParams.set('isCompact', checked.toString())
@@ -144,15 +145,23 @@ export const ActionBar = ({
                 }}
               />
             }
-            label={<MqText font={'mono'}>Compact Nodes</MqText>}
+            label={
+              <MqText font={'mono'}>
+                {isCompactAutomatic ? 'Compact Nodes (auto)' : 'Compact Nodes'}
+              </MqText>
+            }
+            title={
+              isCompactAutomatic
+                ? 'Compacted automatically because this graph is large. Toggle to override.'
+                : 'Collapse dataset nodes to a single row'
+            }
           />
           {FEATURE_FLAGS.showGroupByParentToggle && (
             <FormControlLabel
               control={
                 <Switch
                   size={'small'}
-                  value={aggregateByParent}
-                  defaultChecked={searchParams.get('aggregateByParent') === 'true'}
+                  checked={aggregateByParent}
                   onChange={(_, checked) => {
                     setAggregateByParent(checked)
                     searchParams.set('aggregateByParent', checked.toString())

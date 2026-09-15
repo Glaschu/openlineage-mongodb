@@ -17,6 +17,21 @@ import TableLevelDrawer from './TableLevelDrawer'
 const zoomInFactor = 1.5
 const zoomOutFactor = 1 / zoomInFactor
 
+// Full-size dataset cards carry one row per column, so a handful of wide
+// tables is already several screens of text. Measure the content the graph
+// would draw rather than counting nodes: 17 nodes of a 90-column table is just
+// as unreadable as 60 small ones.
+const AUTO_COMPACT_HEIGHT_BUDGET_PX = 2500
+
+const totalNodeHeight = (nodes: { height?: number; children?: unknown[] }[]): number =>
+  nodes.reduce(
+    (total, node) =>
+      total +
+      (node.height ?? 0) +
+      totalNodeHeight((node.children ?? []) as { height?: number; children?: unknown[] }[]),
+    0
+  )
+
 const ColumnLevel = () => {
   const { nodeType, namespace, name } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -24,6 +39,8 @@ const ColumnLevel = () => {
   const [depth, setDepth] = useState(Number(searchParams.get('depth')) || 2)
 
   const [isCompact, setIsCompact] = useState(searchParams.get('isCompact') === 'true')
+  // Only auto-compact while the user has expressed no preference.
+  const isCompactExplicit = searchParams.has('isCompact')
   const [isFull, setIsFull] = useState(searchParams.get('isFull') === 'true')
   const [aggregateByParent, setAggregateByParent] = useState(
     searchParams.get('aggregateByParent') === 'true'
@@ -48,20 +65,39 @@ const ColumnLevel = () => {
     graphControls.current = zoomControls
   })
 
-  const { nodes, edges } = useMemo(
-    () =>
-      lineage
-        ? createElkNodes(
-            lineage,
-            `${nodeType}:${namespace}:${name}`,
-            isCompact,
-            isFull,
-            collapsedNodes,
-            aggregateByParent
-          )
-        : { nodes: [], edges: [] },
-    [lineage, nodeType, namespace, name, isCompact, isFull, collapsedNodes, aggregateByParent]
-  )
+  const { nodes, edges, autoCompacted } = useMemo(() => {
+    if (!lineage) return { nodes: [], edges: [], autoCompacted: false }
+
+    const build = (compact: boolean) =>
+      createElkNodes(
+        lineage,
+        `${nodeType}:${namespace}:${name}`,
+        compact,
+        isFull,
+        collapsedNodes,
+        aggregateByParent
+      )
+
+    const built = build(isCompact)
+    if (
+      !isCompact &&
+      !isCompactExplicit &&
+      totalNodeHeight(built.nodes) > AUTO_COMPACT_HEIGHT_BUDGET_PX
+    ) {
+      return { ...build(true), autoCompacted: true }
+    }
+    return { ...built, autoCompacted: false }
+  }, [
+    lineage,
+    nodeType,
+    namespace,
+    name,
+    isCompact,
+    isCompactExplicit,
+    isFull,
+    collapsedNodes,
+    aggregateByParent,
+  ])
 
   const highlight = useMemo(() => {
     if (!hoveredNodeId || !lineage) return null
@@ -117,8 +153,9 @@ const ColumnLevel = () => {
         refresh={refetch}
         depth={depth}
         setDepth={setDepth}
-        isCompact={isCompact}
+        isCompact={isCompact || autoCompacted}
         setIsCompact={setIsCompact}
+        isCompactAutomatic={autoCompacted}
         isFull={isFull}
         setIsFull={setIsFull}
         aggregateByParent={aggregateByParent}
