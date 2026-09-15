@@ -15,7 +15,7 @@ import {
   scaleToContainer,
 } from '../utils/zoom'
 import { MiniMap } from './MiniMap'
-import { PositionedNode } from '@/shared/types'
+import { PositionedNode } from '../types'
 import { useCallbackRef } from '../utils/hooks'
 import { useD3Selection } from '../utils/useD3Selection'
 import type { MiniMapPlacement } from './MiniMap'

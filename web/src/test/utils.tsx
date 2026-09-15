@@ -1,7 +1,7 @@
 import { Provider } from 'react-redux'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RenderOptions, render } from '@testing-library/react'
-import { legacy_createStore as createStore } from 'redux'
+import { legacy_createStore as createStore } from '@reduxjs/toolkit'
 import React, { ReactElement } from 'react'
 
 const createMockStore = (initialState: any) => {

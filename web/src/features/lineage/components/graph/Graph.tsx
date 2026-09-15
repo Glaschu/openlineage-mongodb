@@ -31,7 +31,7 @@ import { Edge as EdgeComponent } from './Edge'
 import { MiniMap, MiniMapPlacement } from './ZoomPanSvg/MiniMap'
 import { Node as NodeComponent } from './Node'
 import { useLayout } from './layout/useLayout'
-import type { Direction, Edge, Node, NodeRenderer, PositionedEdge, PositionedNode } from '@/shared/types'
+import type { Direction, Edge, Node, NodeRenderer, PositionedEdge, PositionedNode } from './types'
 
 const MINIMAP_SCALE = 1 / 8
 

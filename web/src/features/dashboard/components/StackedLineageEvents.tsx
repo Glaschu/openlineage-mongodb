@@ -5,7 +5,6 @@ import { Chip } from '@mui/material'
 import { LineChart } from '@mui/x-charts'
 import { LineageMetric } from '@/features/dashboard/api'
 import { pluralize } from '@/shared/utils/text'
-import { sum } from 'lodash'
 import { theme } from '@/shared/theme/theme'
 import Box from '@mui/system/Box'
 import MqText from '@/shared/components/MqText/MqText'
@@ -43,6 +42,7 @@ const StackedLineageEvents = ({ lineageMetrics }: Props) => {
   const startData = lineageMetrics.map((item) => item.start)
   const completeData = lineageMetrics.map((item) => item.complete)
   const abortData = lineageMetrics.map((item) => item.abort)
+  const sum = (values: number[]) => values.reduce((total, value) => total + value, 0)
   const totalEvents = sum(failData) + sum(startData) + sum(completeData) + sum(abortData)
 
   const tallest = Math.max(...[...failData, ...startData, ...completeData, ...abortData])

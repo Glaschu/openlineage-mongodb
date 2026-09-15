@@ -6,7 +6,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { act } from 'react'
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, screen } from '@testing-library/react'
-import { legacy_createStore as createStore } from 'redux'
+import { legacy_createStore as createStore } from '@reduxjs/toolkit'
 
 import OpenSearch from '@/features/search/components/open-search/OpenSearch'
 

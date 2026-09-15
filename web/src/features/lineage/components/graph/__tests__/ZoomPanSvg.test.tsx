@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { MiniMapPlacement } from '../ZoomPanSvg/MiniMap'
 import { ZoomPanSvg, clamp, getNodeExtent } from '../ZoomPanSvg/ZoomPanSvg'
-import type { PositionedNode } from '@/shared/types'
+import type { PositionedNode } from '../types'
 
 const hoistedMocks = vi.hoisted(() => ({
   mockUseD3Selection: vi.fn(),

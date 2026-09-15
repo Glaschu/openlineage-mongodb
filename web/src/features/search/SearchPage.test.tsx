@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { legacy_createStore as createStore } from 'redux'
+import { legacy_createStore as createStore } from '@reduxjs/toolkit'
 import React from 'react'
 import Search from '@/features/search/SearchPage'
 

@@ -4,7 +4,7 @@
 import { Provider } from 'react-redux'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { legacy_createStore as createStore } from 'redux'
+import { legacy_createStore as createStore } from '@reduxjs/toolkit'
 import React from 'react'
 import Toast from '@/shared/components/Toast'
 

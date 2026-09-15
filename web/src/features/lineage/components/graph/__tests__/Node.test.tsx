@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 
 import { Node } from '../Node/Node'
-import type { NodeRenderer, PositionedEdge, PositionedNode } from '@/shared/types'
+import type { NodeRenderer, PositionedEdge, PositionedNode } from '../types'
 
 vi.mock('../Edge', () => ({
   Edge: ({ edge, isMiniMap }: { edge: PositionedEdge; isMiniMap?: boolean }) => (

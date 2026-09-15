@@ -28,18 +28,6 @@ module.exports = {
     'react/react-in-jsx-scope': 'off',
     '@typescript-eslint/camelcase': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
-    '@typescript-eslint/member-delimiter-style': [
-      'error',
-      {
-        multiline: {
-          delimiter: 'none'
-        },
-        singleline: {
-          delimiter: 'semi',
-          requireLast: false
-        }
-      }
-    ],
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/no-empty-interface': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
@@ -52,9 +40,6 @@ module.exports = {
     ],
     '@typescript-eslint/no-use-before-define': 'off',
     '@typescript-eslint/no-var-requires': 'off',
-    quotes: 'off',
-    '@typescript-eslint/quotes': ['error', 'single'],
-    '@typescript-eslint/semi': ['error', 'never'],
     "sort-imports-es6-autofix/sort-imports-es6": [2, {
       "ignoreCase": false,
       "ignoreMemberSort": false,
@@ -72,12 +57,6 @@ module.exports = {
     }]
   },
   'overrides': [
-    {
-      'files': './src/i18n/resources.ts',
-      'rules': {
-        '@typescript-eslint/quotes': 'off'
-      }
-    },
     {
       // Allow features to import their own internals; restriction is for cross-feature imports.
       'files': './src/features/**/*',

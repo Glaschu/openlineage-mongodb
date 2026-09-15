@@ -4,7 +4,7 @@
 import { type Location, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createStore } from 'redux'
+import { legacy_createStore as createStore } from '@reduxjs/toolkit'
 import { fireEvent, render } from '@testing-library/react'
 import ColumnLineageColumnNode, {
   encodeQueryString,

@@ -10,16 +10,16 @@
 //     feature slice.ts files, registered in @/store/store.ts.
 
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import { BrowserRouter } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import { LocalizationProvider } from '@mui/x-date-pickers'
-import { Provider as ReduxProvider } from 'react-redux'
-import { ReduxRouter } from '@lagunovsky/redux-react-router'
-import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Provider as ReduxProvider } from 'react-redux'
+import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles'
 import React, { ReactElement, ReactNode } from 'react'
 
-import { history, default as store } from '@/store/store'
 import { theme } from '@/shared/theme/theme'
+import store from '@/store/store'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,13 +37,13 @@ export const AppProviders = ({ children }: Props): ReactElement => (
   <QueryClientProvider client={queryClient}>
     <ReduxProvider store={store}>
       <HelmetProvider>
-        <ReduxRouter history={history}>
+        <BrowserRouter>
           <StyledEngineProvider injectFirst>
             <ThemeProvider theme={theme}>
               <LocalizationProvider dateAdapter={AdapterDayjs}>{children}</LocalizationProvider>
             </ThemeProvider>
           </StyledEngineProvider>
-        </ReduxRouter>
+        </BrowserRouter>
       </HelmetProvider>
     </ReduxProvider>
   </QueryClientProvider>

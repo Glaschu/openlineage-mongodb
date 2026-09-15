@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import ELK, { ElkNode } from 'elkjs'
-import isEqual from 'lodash/isEqual'
 
+import { deepEqual } from '@/shared/utils/deepEqual'
 import { useCallbackRef } from '../utils/hooks'
-import type { Direction, Edge, Node, NodeRenderer, PositionedEdge, PositionedNode } from '@/shared/types'
+import type { Direction, Edge, Node, NodeRenderer, PositionedEdge, PositionedNode } from '../types'
 
 // Import the worker file as a URL - Vite will handle bundling it
 import elkWorkerUrl from 'elkjs/lib/elk-worker.min.js?url'
@@ -154,7 +154,7 @@ export const useLayout = <K, D>({
     }
 
     // If the graph hasn't changed, don't update the object to prevent useEffect triggering.
-    if (elkInputRef.current && isEqual(newElkInput, elkInputRef.current)) {
+    if (elkInputRef.current && deepEqual(newElkInput, elkInputRef.current)) {
       return elkInputRef.current
     }
 

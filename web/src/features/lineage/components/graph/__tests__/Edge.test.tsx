@@ -7,7 +7,7 @@ import { Edge } from '../Edge/Edge'
 import { EdgeLabel } from '../Edge/EdgeLabel'
 import { ElbowEdge } from '../Edge/ElbowEdge'
 import { StraightEdge } from '../Edge/StraightEdge'
-import type { PositionedEdge } from '@/shared/types'
+import type { PositionedEdge } from '../types'
 
 const useMediaQueryMock = vi.hoisted(() => vi.fn().mockReturnValue(false))
 vi.mock('@mui/material/useMediaQuery', () => ({ default: useMediaQueryMock }))

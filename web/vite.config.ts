@@ -3,6 +3,18 @@ import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
 import path from 'path'
 
+const apiTarget =
+  process.env.MARQUEZ_HOST && process.env.MARQUEZ_PORT
+    ? `http://${process.env.MARQUEZ_HOST}:${process.env.MARQUEZ_PORT}`
+    : 'http://localhost:8080'
+
+const apiProxy = {
+  '/api': {
+    target: apiTarget,
+    changeOrigin: true,
+  },
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
@@ -26,14 +38,13 @@ export default defineConfig({
   server: {
     port: 1337,
     open: true,
-    proxy: {
-      '/api': {
-        target: process.env.MARQUEZ_HOST && process.env.MARQUEZ_PORT
-          ? `http://${process.env.MARQUEZ_HOST}:${process.env.MARQUEZ_PORT}`
-          : 'http://localhost:8080',
-        changeOrigin: true,
-      },
-    },
+    proxy: apiProxy,
+  },
+  // `vite preview` serves dist/ in the Docker image; it needs the same API proxy.
+  preview: {
+    port: Number(process.env.WEB_PORT) || 3000,
+    host: true,
+    proxy: apiProxy,
   },
   build: {
     outDir: 'dist',
@@ -43,7 +54,7 @@ export default defineConfig({
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'mui-vendor': ['@mui/material', '@mui/icons-material', '@mui/x-date-pickers', '@mui/x-charts'],
-          'vis-vendor': ['d3-selection', 'd3-transition', 'd3-zoom', 'reactflow', 'elkjs'],
+          'vis-vendor': ['d3-selection', 'd3-zoom', 'reactflow'],
         },
       },
     },

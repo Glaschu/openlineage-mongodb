@@ -5,7 +5,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 
 import { Graph } from '../Graph'
 import { MiniMapPlacement } from '../ZoomPanSvg/MiniMap'
-import type { Edge, NodeRenderer, PositionedEdge, PositionedNode } from '@/shared/types'
+import type { Edge, NodeRenderer, PositionedEdge, PositionedNode } from '../types'
 
 vi.mock('reactflow/dist/style.css', () => ({}))
 

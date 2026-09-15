@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { Edge } from '../Edge'
-import type { NodeRenderer, PositionedEdge, PositionedNode } from '@/shared/types'
+import type { NodeRenderer, PositionedEdge, PositionedNode } from '../types'
 
 interface Props<K, D> {
   node: PositionedNode<K, D>

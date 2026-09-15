@@ -4,7 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { render, waitFor } from '@testing-library/react'
 
 import { useLayout } from '../layout/useLayout'
-import type { Edge, Node } from '@/shared/types'
+import type { Edge, Node } from '../types'
 
 const layoutResponses: Array<
   | { type: 'resolve'; value: any }

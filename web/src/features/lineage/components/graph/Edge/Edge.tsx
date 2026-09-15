@@ -2,7 +2,7 @@ import React from 'react'
 
 import { ElbowEdge } from './ElbowEdge'
 import { StraightEdge } from './StraightEdge'
-import type { PositionedEdge } from '@/shared/types'
+import type { PositionedEdge } from '../types'
 
 export interface EdgeProps {
   edge: PositionedEdge

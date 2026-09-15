@@ -5,7 +5,7 @@ import { ElbowEdge } from '@/features/lineage/components/graph/Edge/ElbowEdge'
 import { describe, expect, it } from 'vitest'
 import { render } from '@testing-library/react'
 import React from 'react'
-import type { PositionedEdge } from '@/shared/types'
+import type { PositionedEdge } from '../types'
 
 describe('ElbowEdge Component', () => {
   const mockEdge: PositionedEdge = {
