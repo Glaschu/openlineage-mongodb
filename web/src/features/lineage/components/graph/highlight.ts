@@ -17,6 +17,26 @@ export const GraphHighlightContext = createContext<GraphHighlight | null>(null)
 
 export const useGraphHighlight = () => useContext(GraphHighlightContext)
 
+export interface HoveredEdge {
+  id: string
+  sourceNodeId: string
+  targetNodeId: string
+  /** Viewport coordinates of the pointer, for positioning a tooltip. */
+  clientX: number
+  clientY: number
+}
+
+/**
+ * React Flow adds an `inactive` class to edges when selection is off, and its
+ * stylesheet sets pointer-events: none on those, so onEdgeMouseEnter never
+ * fires. The edge component therefore reports hover itself, through here.
+ */
+export const GraphEdgeHoverContext = createContext<((edge: HoveredEdge | null) => void) | null>(
+  null
+)
+
+export const useGraphEdgeHover = () => useContext(GraphEdgeHoverContext)
+
 /** Opacity applied to nodes and edges outside the focused subgraph. */
 export const DIMMED_OPACITY = 0.15
 

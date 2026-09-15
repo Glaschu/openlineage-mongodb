@@ -24,7 +24,7 @@ describe('ElbowEdge Component', () => {
         <ElbowEdge edge={mockEdge} />
       </svg>
     )
-    const polyline = container.querySelector('polyline')
+    const polyline = container.querySelector('polyline:not([stroke="transparent"])')
     expect(polyline).toBeTruthy()
     expect(polyline?.getAttribute('points')).toContain('0,0')
     expect(polyline?.getAttribute('points')).toContain('200,200')
@@ -43,7 +43,7 @@ describe('ElbowEdge Component', () => {
         <ElbowEdge edge={edgeWithBends} />
       </svg>
     )
-    const polyline = container.querySelector('polyline')
+    const polyline = container.querySelector('polyline:not([stroke="transparent"])')
     const points = polyline?.getAttribute('points') || ''
     expect(points).toContain('0,0')
     expect(points).toContain('50,50')
@@ -62,7 +62,7 @@ describe('ElbowEdge Component', () => {
         <ElbowEdge edge={customEdge} />
       </svg>
     )
-    const polyline = container.querySelector('polyline')
+    const polyline = container.querySelector('polyline:not([stroke="transparent"])')
     expect(polyline?.getAttribute('stroke')).toBe('#ff0000')
     expect(polyline?.getAttribute('stroke-width')).toBe('5')
   })
@@ -92,7 +92,7 @@ describe('ElbowEdge Component', () => {
         <ElbowEdge edge={animatedEdge} />
       </svg>
     )
-    const polylines = container.querySelectorAll('polyline')
+    const polylines = container.querySelectorAll('polyline:not([stroke="transparent"])')
     expect(polylines.length).toBeGreaterThan(1)
   })
 
@@ -107,7 +107,7 @@ describe('ElbowEdge Component', () => {
       </svg>
     )
     // Should only have one polyline (no animation in minimap)
-    const polylines = container.querySelectorAll('polyline')
+    const polylines = container.querySelectorAll('polyline:not([stroke="transparent"])')
     expect(polylines.length).toBe(1)
   })
 
@@ -117,7 +117,7 @@ describe('ElbowEdge Component', () => {
         <ElbowEdge edge={mockEdge} />
       </svg>
     )
-    const polyline = container.querySelector('polyline')
+    const polyline = container.querySelector('polyline:not([stroke="transparent"])')
     expect(polyline?.getAttribute('id')).toBe('source-target')
   })
 })

@@ -63,6 +63,59 @@ const csvEscape = (value: Nullable<string>) => {
   return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
 }
 
+export interface ColumnTransformation {
+  type: string
+  description: string
+}
+
+/**
+ * Indexes the transformation metadata carried by a dataset's columnLineage facet,
+ * keyed by the (source column -> target column) pair it describes.
+ *
+ * The column lineage graph endpoint returns edges as origin/destination only, so
+ * this is the only provenance the UI can show: the API drops transformationType
+ * and transformationDescription at the point it builds each edge, and the facet
+ * is fetched for the center dataset alone. Edges into other datasets therefore
+ * resolve to undefined rather than to "no transformation".
+ */
+export const buildTransformationIndex = (
+  centerDataset?: Nullable<Dataset>
+): Map<string, ColumnTransformation> => {
+  const index = new Map<string, ColumnTransformation>()
+  if (!centerDataset?.columnLineage) return index
+
+  for (const entry of centerDataset.columnLineage) {
+    for (const input of entry.inputFields ?? []) {
+      const key = [
+        input.namespace,
+        input.name,
+        input.field,
+        centerDataset.namespace,
+        centerDataset.name,
+        entry.name,
+      ].join(KEY_SEPARATOR)
+      index.set(key, {
+        type: input.transformationType ?? entry.transformationType ?? '',
+        description: input.transformationDescription ?? entry.transformationDescription ?? '',
+      })
+    }
+  }
+  return index
+}
+
+export const transformationKey = (
+  source: { namespace: string; dataset: string; column: string },
+  target: { namespace: string; dataset: string; column: string }
+) =>
+  [
+    source.namespace,
+    source.dataset,
+    source.column,
+    target.namespace,
+    target.dataset,
+    target.column,
+  ].join(KEY_SEPARATOR)
+
 /**
  * Flattens the column lineage graph into a CSV edge list. Transformation metadata is
  * joined from the center dataset's columnLineage facet where available — the graph
@@ -83,25 +136,7 @@ export const buildColumnLineageCsv = (
     'transformation_description',
   ].join(',')
 
-  const transformationByTarget = new Map<string, { type: string; description: string }>()
-  if (centerDataset?.columnLineage) {
-    for (const entry of centerDataset.columnLineage) {
-      for (const input of entry.inputFields ?? []) {
-        const key = [
-          input.namespace,
-          input.name,
-          input.field,
-          centerDataset.namespace,
-          centerDataset.name,
-          entry.name,
-        ].join(KEY_SEPARATOR)
-        transformationByTarget.set(key, {
-          type: input.transformationType ?? entry.transformationType ?? '',
-          description: input.transformationDescription ?? entry.transformationDescription ?? '',
-        })
-      }
-    }
-  }
+  const transformationByTarget = buildTransformationIndex(centerDataset)
 
   const seen = new Set<string>()
   const rows: string[] = []
@@ -113,16 +148,7 @@ export const buildColumnLineageCsv = (
 
       const source = parseColumnLineageNode(edge.origin)
       const target = parseColumnLineageNode(edge.destination)
-      const transformation = transformationByTarget.get(
-        [
-          source.namespace,
-          source.dataset,
-          source.column,
-          target.namespace,
-          target.dataset,
-          target.column,
-        ].join(KEY_SEPARATOR)
-      )
+      const transformation = transformationByTarget.get(transformationKey(source, target))
 
       rows.push(
         [

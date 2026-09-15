@@ -1,17 +1,22 @@
 import { ActionBar, ColumnSearchOption } from './ActionBar'
 import { CircularProgress, Drawer } from '@mui/material'
 import { ColumnLevelNodeData, ColumnLevelNodeKinds, columnLevelNodeRenderer } from './nodes'
-import { Graph, ZoomPanControls } from '@/features/lineage/components/graph'
+import { Graph, HoveredEdge, ZoomPanControls } from '@/features/lineage/components/graph'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import { ZoomControls } from './ZoomControls'
+import {
+  buildTransformationIndex,
+  downloadColumnLineageCsv,
+  isLineageDirection,
+} from './columnLineageUtils'
 import { createElkNodes } from './layout'
-import { downloadColumnLineageCsv, isLineageDirection } from './columnLineageUtils'
 import { useCallbackRef } from '@/shared/hooks/hooks'
 import { useColumnLineage } from '@/features/lineage/api'
 import { useDataset } from '@/features/datasets/api'
 import { useParams, useSearchParams } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import ColumnLevelDrawer from './ColumnLevelDrawer'
+import EdgeProvenance from './EdgeProvenance'
 import MqParentSize from '@/shared/components/MqParentSize/MqParentSize'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -44,6 +49,11 @@ const ColumnLevel: React.FC = () => {
   const setGraphControls = useCallbackRef((zoomControls) => {
     graphControls.current = zoomControls
   })
+
+  // Edges only carry topology, so provenance is joined from the focused
+  // dataset's columnLineage facet — the same index the CSV export uses.
+  const [hoveredEdge, setHoveredEdge] = useState<HoveredEdge | null>(null)
+  const transformations = useMemo(() => buildTransformationIndex(centerDataset), [centerDataset])
 
   // Provide fallback empty objects if columnLineage is not loaded yet
   const { nodes, edges } = useMemo(
@@ -164,11 +174,19 @@ const ColumnLevel: React.FC = () => {
               edges={edges}
               direction='right'
               nodeRenderers={columnLevelNodeRenderer}
+              onEdgeHover={setHoveredEdge}
               setZoomPanControls={setGraphControls}
             />
           )}
         </MqParentSize>
       </Box>
+      {hoveredEdge && (
+        <EdgeProvenance
+          edge={hoveredEdge}
+          transformations={transformations}
+          centerDataset={namespace && name ? { namespace, name } : null}
+        />
+      )}
     </>
   )
 }

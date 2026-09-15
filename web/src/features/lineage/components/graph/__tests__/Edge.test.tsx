@@ -38,7 +38,9 @@ describe('Edge component', () => {
 
   it('renders StraightEdge when type is straight', () => {
     const { container } = render(<Edge edge={baseEdge} />)
-    expect(container.querySelectorAll('line')).toHaveLength(1)
+    // A transparent hit line sits under the visible one so the edge can be hovered.
+    expect(container.querySelectorAll('line')).toHaveLength(2)
+    expect(container.querySelector('line[stroke="transparent"]')).toBeInTheDocument()
   })
 
   it('renders ElbowEdge for non-straight types', () => {
@@ -49,7 +51,8 @@ describe('Edge component', () => {
     }
 
     const { container } = render(<Edge edge={elbowEdge} />)
-    expect(container.querySelectorAll('polyline')).toHaveLength(1)
+    expect(container.querySelectorAll('polyline')).toHaveLength(2)
+    expect(container.querySelector('polyline[stroke="transparent"]')).toBeInTheDocument()
   })
 })
 
@@ -77,9 +80,10 @@ describe('StraightEdge', () => {
     useMediaQueryMock.mockReturnValue(false)
     const { container } = render(<StraightEdge edge={edge} isMiniMap={false} />)
 
-    const lines = container.querySelectorAll('line')
-    expect(lines).toHaveLength(2)
-    const [baseLine, animatedLine] = Array.from(lines)
+    const lines = Array.from(container.querySelectorAll('line'))
+    expect(lines).toHaveLength(3)
+    const [hitLine, baseLine, animatedLine] = lines
+    expect(hitLine.getAttribute('stroke')).toBe('transparent')
     expect(baseLine.getAttribute('x1')).toBe('0')
     expect(animatedLine.getAttribute('id')).toBe('a-b-animated')
 
@@ -89,6 +93,7 @@ describe('StraightEdge', () => {
   it('omits animation when reduced motion is preferred or minimap', () => {
     useMediaQueryMock.mockReturnValue(true)
     const { container } = render(<StraightEdge edge={edge} isMiniMap />)
+    // The minimap is not interactive, so it gets no hit area either.
     expect(container.querySelectorAll('line')).toHaveLength(1)
   })
 })
@@ -121,10 +126,11 @@ describe('ElbowEdge', () => {
     useMediaQueryMock.mockReturnValue(false)
     const { container } = render(<ElbowEdge edge={edge} />)
 
-    const polylines = container.querySelectorAll('polyline')
-    expect(polylines).toHaveLength(2)
-    expect(polylines[0].getAttribute('points')).toContain('20,20')
-    expect(polylines[1].getAttribute('id')).toBe('a-b-animated')
+    const polylines = Array.from(container.querySelectorAll('polyline'))
+    expect(polylines).toHaveLength(3)
+    expect(polylines[0].getAttribute('stroke')).toBe('transparent')
+    expect(polylines[1].getAttribute('points')).toContain('20,20')
+    expect(polylines[2].getAttribute('id')).toBe('a-b-animated')
     expect(screen.getByText('Elbow Label')).toBeInTheDocument()
   })
 

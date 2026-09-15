@@ -24,7 +24,7 @@ describe('StraightEdge Component', () => {
         <StraightEdge edge={mockEdge} />
       </svg>
     )
-    const line = container.querySelector('line')
+    const line = container.querySelector('line:not([stroke="transparent"])')
     expect(line).toBeTruthy()
     expect(line?.getAttribute('x1')).toBe('10')
     expect(line?.getAttribute('y1')).toBe('20')
@@ -43,7 +43,7 @@ describe('StraightEdge Component', () => {
         <StraightEdge edge={customEdge} />
       </svg>
     )
-    const line = container.querySelector('line')
+    const line = container.querySelector('line:not([stroke="transparent"])')
     expect(line?.getAttribute('stroke')).toBe('#00ff00')
     expect(line?.getAttribute('stroke-width')).toBe('3')
   })
@@ -73,7 +73,7 @@ describe('StraightEdge Component', () => {
         <StraightEdge edge={animatedEdge} />
       </svg>
     )
-    const lines = container.querySelectorAll('line')
+    const lines = container.querySelectorAll('line:not([stroke="transparent"])')
     expect(lines.length).toBeGreaterThan(1)
   })
 
@@ -88,7 +88,7 @@ describe('StraightEdge Component', () => {
       </svg>
     )
     // Should only have one line (no animation in minimap)
-    const lines = container.querySelectorAll('line')
+    const lines = container.querySelectorAll('line:not([stroke="transparent"])')
     expect(lines.length).toBe(1)
   })
 
@@ -98,7 +98,7 @@ describe('StraightEdge Component', () => {
         <StraightEdge edge={mockEdge} />
       </svg>
     )
-    const line = container.querySelector('line')
+    const line = container.querySelector('line:not([stroke="transparent"])')
     expect(line?.getAttribute('id')).toBe('source-target')
   })
 
@@ -108,7 +108,7 @@ describe('StraightEdge Component', () => {
         <StraightEdge edge={mockEdge} />
       </svg>
     )
-    const line = container.querySelector('line')
+    const line = container.querySelector('line:not([stroke="transparent"])')
     expect(line?.getAttribute('stroke-width')).toBe('2')
   })
 })

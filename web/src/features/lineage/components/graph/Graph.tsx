@@ -29,9 +29,12 @@ import {
 } from './ZoomPanSvg/ZoomPanSvg'
 import {
   DIMMED_OPACITY,
+  GraphEdgeHoverContext,
   GraphHighlight,
   GraphHighlightContext,
+  HoveredEdge,
   isDimmed,
+  useGraphEdgeHover,
   useGraphHighlight,
 } from './highlight'
 import { Edge as EdgeComponent } from './Edge'
@@ -70,6 +73,8 @@ interface Props<K, D> {
   highlight?: GraphHighlight | null
   /** Fires with the node under the pointer, and with null when it leaves. */
   onNodeHover?: (nodeId: string | null) => void
+  /** Fires with the edge under the pointer, and with null when it leaves. */
+  onEdgeHover?: (edge: HoveredEdge | null) => void
 }
 
 type GraphNodeData = {
@@ -117,6 +122,7 @@ GraphNodeComponent.displayName = 'GraphNodeComponent'
 const GraphEdgeComponent = React.memo(({ id, data }: FlowEdgeProps<GraphEdgeData>) => {
   const positionedEdge = data?.positionedEdge
   const highlight = useGraphHighlight()
+  const onEdgeHover = useGraphEdgeHover()
 
   if (!positionedEdge) {
     return null
@@ -125,6 +131,16 @@ const GraphEdgeComponent = React.memo(({ id, data }: FlowEdgeProps<GraphEdgeData
   return (
     <g
       className='react-flow__edge-path'
+      onMouseEnter={(event) =>
+        onEdgeHover?.({
+          id,
+          sourceNodeId: positionedEdge.sourceNodeId,
+          targetNodeId: positionedEdge.targetNodeId,
+          clientX: event.clientX,
+          clientY: event.clientY,
+        })
+      }
+      onMouseLeave={() => onEdgeHover?.(null)}
       style={{
         opacity: isDimmed(highlight, id, 'edge') ? DIMMED_OPACITY : 1,
         transition: 'opacity 120ms ease-out',
@@ -197,6 +213,7 @@ const GraphCanvas = <K, D>({
   setZoomPanControls,
   highlight = null,
   onNodeHover,
+  onEdgeHover,
 }: GraphCanvasProps<K, D>) => {
   const { layout, error, isRendering } = useLayout<K, D>({
     id,
@@ -565,35 +582,41 @@ const GraphCanvas = <K, D>({
       sx={{ bgcolor: backgroundColor }}
     >
       {isReady && (
-        <GraphHighlightContext.Provider value={highlight}>
-          <ReactFlow
-            nodes={flowNodes}
-            edges={flowEdges}
-            nodeTypes={NODE_TYPES}
-            edgeTypes={EDGE_TYPES}
-            connectionMode={ConnectionMode.Loose}
-            onNodeMouseEnter={handleNodeMouseEnter}
-            onNodeMouseLeave={handleNodeMouseLeave}
-            onMove={handleViewportInteraction}
-            onMoveStart={handleViewportInteraction}
-            onMoveEnd={handleViewportInteraction}
-            minZoom={minZoom}
-            maxZoom={maxZoom}
-            zoomOnScroll={!disableZoomPan}
-            zoomOnPinch={!disableZoomPan}
-            panOnDrag={!disableZoomPan}
-            nodesDraggable={false}
-            elementsSelectable={false}
-            nodesConnectable={false}
-            onlyRenderVisibleElements
-            proOptions={{ hideAttribution: true }}
-            style={{ width: '100%', height: '100%' }}
-          >
-            {!hideDotGrid && (
-              <ReactFlowBackground color={dotGridColor} variant={BackgroundVariant.Dots} gap={16} />
-            )}
-          </ReactFlow>
-        </GraphHighlightContext.Provider>
+        <GraphEdgeHoverContext.Provider value={onEdgeHover ?? null}>
+          <GraphHighlightContext.Provider value={highlight}>
+            <ReactFlow
+              nodes={flowNodes}
+              edges={flowEdges}
+              nodeTypes={NODE_TYPES}
+              edgeTypes={EDGE_TYPES}
+              connectionMode={ConnectionMode.Loose}
+              onNodeMouseEnter={handleNodeMouseEnter}
+              onNodeMouseLeave={handleNodeMouseLeave}
+              onMove={handleViewportInteraction}
+              onMoveStart={handleViewportInteraction}
+              onMoveEnd={handleViewportInteraction}
+              minZoom={minZoom}
+              maxZoom={maxZoom}
+              zoomOnScroll={!disableZoomPan}
+              zoomOnPinch={!disableZoomPan}
+              panOnDrag={!disableZoomPan}
+              nodesDraggable={false}
+              elementsSelectable={false}
+              nodesConnectable={false}
+              onlyRenderVisibleElements
+              proOptions={{ hideAttribution: true }}
+              style={{ width: '100%', height: '100%' }}
+            >
+              {!hideDotGrid && (
+                <ReactFlowBackground
+                  color={dotGridColor}
+                  variant={BackgroundVariant.Dots}
+                  gap={16}
+                />
+              )}
+            </ReactFlow>
+          </GraphHighlightContext.Provider>
+        </GraphEdgeHoverContext.Provider>
       )}
       {minimapContent}
       {isRendering && (

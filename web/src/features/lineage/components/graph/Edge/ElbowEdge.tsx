@@ -3,9 +3,9 @@ import React, { useMemo } from 'react'
 import { keyframes } from '@emotion/react'
 import useMediaQuery from '@mui/material/useMediaQuery'
 
+import { EDGE_HIT_WIDTH, type EdgeProps } from './Edge'
 import { EdgeLabel } from './EdgeLabel'
 import { grey } from '@mui/material/colors'
-import type { EdgeProps } from './Edge'
 
 const marchingAnts = keyframes({ from: { strokeDashoffset: 60 }, to: { strokeDashoffset: 0 } })
 
@@ -35,8 +35,20 @@ export const ElbowEdge = ({ edge, isMiniMap }: EdgeProps) => {
       }
     })
   }
+  const pointsAttribute = points.map(({ x, y }) => `${x},${y}`).join(' ')
+
   return (
     <>
+      {!isMiniMap && (
+        <polyline
+          fill='none'
+          stroke='transparent'
+          strokeWidth={EDGE_HIT_WIDTH}
+          strokeLinejoin='round'
+          points={pointsAttribute}
+          style={{ pointerEvents: 'stroke' }}
+        />
+      )}
       <polyline
         id={`${edge.sourceNodeId}-${edge.targetNodeId}`}
         fill='none'
