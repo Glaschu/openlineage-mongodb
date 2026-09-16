@@ -1,7 +1,17 @@
-import { Autocomplete, Chip, Divider, FormControlLabel, Switch, TextField } from '@mui/material'
+import {
+  Autocomplete,
+  Chip,
+  Divider,
+  FormControlLabel,
+  Switch,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+} from '@mui/material'
 import { FEATURE_FLAGS } from '@/shared/config/featureFlags'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import ArrowBackIosRounded from '@mui/icons-material/ArrowBackIosRounded'
+import FileDownloadOutlined from '@mui/icons-material/FileDownloadOutlined'
 import Refresh from '@mui/icons-material/Refresh'
 
 import { truncateText } from '@/shared/utils/text'
@@ -37,6 +47,10 @@ interface ActionBarProps {
   /** Every node currently laid out, for the find-a-node box. */
   searchOptions?: GraphSearchOption[]
   onSelectNode?: (nodeId: string | null) => void
+  view: 'graph' | 'impact'
+  setView: (view: 'graph' | 'impact') => void
+  /** Writes the impact list to a CSV; absent while there is nothing to export. */
+  onExportImpact?: () => void
 }
 
 export const ActionBar = ({
@@ -55,6 +69,9 @@ export const ActionBar = ({
   setGroupByNamespace,
   searchOptions = [],
   onSelectNode,
+  view,
+  setView,
+  onExportImpact,
 }: ActionBarProps) => {
   const { namespace, name } = useParams()
   const navigate = useNavigate()
@@ -157,6 +174,34 @@ export const ActionBar = ({
             <TextField {...params} label='Find node' variant='outlined' size='small' />
           )}
         />
+        <ToggleButtonGroup
+          size={'small'}
+          exclusive
+          value={view}
+          sx={{ mr: 2 }}
+          onChange={(_event, value) => {
+            if (value !== 'graph' && value !== 'impact') return
+            setView(value)
+            searchParams.set('view', value)
+            setSearchParams(searchParams)
+          }}
+        >
+          <ToggleButton value={'graph'}>Graph</ToggleButton>
+          <ToggleButton value={'impact'}>Impact</ToggleButton>
+        </ToggleButtonGroup>
+        <MQTooltip title={'Export the impact list as CSV for a change ticket or evidence pack'}>
+          <span>
+            <IconButton
+              size={'small'}
+              color={'primary'}
+              sx={{ mr: 1 }}
+              disabled={!onExportImpact}
+              onClick={() => onExportImpact?.()}
+            >
+              <FileDownloadOutlined fontSize={'small'} />
+            </IconButton>
+          </span>
+        </MQTooltip>
         <MQTooltip title={'Refresh'}>
           <IconButton
             sx={{ mr: 2 }}

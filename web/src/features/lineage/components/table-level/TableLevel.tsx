@@ -16,11 +16,14 @@ import {
   tableLevelNodeRenderer,
 } from './nodes'
 import { ZoomControls } from '../column-level/ZoomControls'
+import { buildImpactCsv, buildImpactRows } from './impact'
 import { createElkNodes, findDownstreamNodes, findUpstreamNodes } from './layout'
+import { downloadBlob } from '@/shared/utils/download'
 import { useCallbackRef } from '@/shared/hooks/hooks'
 import { useLineage } from '@/features/lineage/api'
 import { useParams, useSearchParams } from 'react-router-dom'
 import EdgeProvenance from './EdgeProvenance'
+import ImpactTable from './ImpactTable'
 import MqParentSize from '@/shared/components/MqParentSize/MqParentSize'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import TableLevelDrawer from './TableLevelDrawer'
@@ -60,6 +63,10 @@ const ColumnLevel = () => {
     searchParams.get('groupByNamespace') === 'true'
   )
   const expandedNamespaces = searchParams.get('expandedNamespaces')
+  const [view, setView] = useState<'graph' | 'impact'>(
+    searchParams.get('view') === 'impact' ? 'impact' : 'graph'
+  )
+  const [impactFilter, setImpactFilter] = useState('')
 
   const graphControls = useRef<ZoomPanControls>()
 
@@ -123,6 +130,18 @@ const ColumnLevel = () => {
   ])
 
   const focusedNodeId = hoveredNodeId ?? pinnedNodeId
+
+  const focusNodeId = `${nodeType}:${namespace}:${name}`
+
+  const impactRows = useMemo(() => buildImpactRows(lineage, focusNodeId), [lineage, focusNodeId])
+
+  const handleExportImpact = useCallbackRef(() => {
+    const csv = buildImpactCsv(impactRows)
+    downloadBlob(
+      new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+      `impact-${namespace ?? 'unknown'}-${name ?? 'unknown'}.csv`
+    )
+  })
 
   const nodesById = useMemo(
     () => new Map((lineage?.graph ?? []).map((node) => [node.id, node])),
@@ -227,6 +246,9 @@ const ColumnLevel = () => {
         setGroupByNamespace={setGroupByNamespace}
         searchOptions={searchOptions}
         onSelectNode={handleSelectNode}
+        view={view}
+        setView={setView}
+        onExportImpact={impactRows.length ? handleExportImpact : undefined}
       />
       <Box height={`calc(100vh - ${HEADER_HEIGHT}px - ${HEADER_HEIGHT}px - 1px)`}>
         {isFetching && (
@@ -266,31 +288,39 @@ const ColumnLevel = () => {
             <TableLevelDrawer lineageGraph={lineage} />
           </Box>
         </Drawer>
-        <ZoomControls
-          handleCenterOnNode={handleCenterOnNode}
-          handleScaleZoom={handleScaleZoom}
-          handleResetZoom={handleResetZoom}
-        />
-        <MqParentSize>
-          {(parent) => (
-            <Graph<JobOrDataset | 'GROUP' | 'NAMESPACE', TableLevelNodeData>
-              id='column-level-graph'
-              backgroundColor={theme.palette.background.default}
-              height={parent.height}
-              width={parent.width}
-              nodes={nodes}
-              edges={edges}
-              direction='right'
-              nodeRenderers={tableLevelNodeRenderer}
-              setZoomPanControls={setGraphControls}
-              highlight={highlight}
-              onNodeHover={setHoveredNodeId}
-              onEdgeHover={setHoveredEdge}
+        {view === 'impact' ? (
+          <ImpactTable rows={impactRows} filter={impactFilter} onFilterChange={setImpactFilter} />
+        ) : (
+          <>
+            <ZoomControls
+              handleCenterOnNode={handleCenterOnNode}
+              handleScaleZoom={handleScaleZoom}
+              handleResetZoom={handleResetZoom}
             />
-          )}
-        </MqParentSize>
+            <MqParentSize>
+              {(parent) => (
+                <Graph<JobOrDataset | 'GROUP' | 'NAMESPACE', TableLevelNodeData>
+                  id='column-level-graph'
+                  backgroundColor={theme.palette.background.default}
+                  height={parent.height}
+                  width={parent.width}
+                  nodes={nodes}
+                  edges={edges}
+                  direction='right'
+                  nodeRenderers={tableLevelNodeRenderer}
+                  setZoomPanControls={setGraphControls}
+                  highlight={highlight}
+                  onNodeHover={setHoveredNodeId}
+                  onEdgeHover={setHoveredEdge}
+                />
+              )}
+            </MqParentSize>
+          </>
+        )}
       </Box>
-      {hoveredEdge && <EdgeProvenance edge={hoveredEdge} nodesById={nodesById} />}
+      {view === 'graph' && hoveredEdge && (
+        <EdgeProvenance edge={hoveredEdge} nodesById={nodesById} />
+      )}
     </>
   )
 }
