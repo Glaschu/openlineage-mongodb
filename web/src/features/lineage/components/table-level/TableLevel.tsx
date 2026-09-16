@@ -248,7 +248,6 @@ const ColumnLevel = () => {
         onSelectNode={handleSelectNode}
         view={view}
         setView={setView}
-        onExportImpact={impactRows.length ? handleExportImpact : undefined}
       />
       <Box height={`calc(100vh - ${HEADER_HEIGHT}px - ${HEADER_HEIGHT}px - 1px)`}>
         {isFetching && (
@@ -289,7 +288,12 @@ const ColumnLevel = () => {
           </Box>
         </Drawer>
         {view === 'impact' ? (
-          <ImpactTable rows={impactRows} filter={impactFilter} onFilterChange={setImpactFilter} />
+          <ImpactTable
+            rows={impactRows}
+            filter={impactFilter}
+            onFilterChange={setImpactFilter}
+            onExport={handleExportImpact}
+          />
         ) : (
           <>
             <ZoomControls

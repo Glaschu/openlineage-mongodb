@@ -4,17 +4,20 @@ import { ColumnLevelNodeData, ColumnLevelNodeKinds, columnLevelNodeRenderer } fr
 import { Graph, HoveredEdge, ZoomPanControls } from '@/features/lineage/components/graph'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import { ZoomControls } from './ZoomControls'
+import { buildColumnImpactCsv, buildColumnImpactRows } from './columnImpact'
 import {
   buildTransformationIndex,
   downloadColumnLineageCsv,
   isLineageDirection,
 } from './columnLineageUtils'
 import { createElkNodes } from './layout'
+import { downloadBlob } from '@/shared/utils/download'
 import { useCallbackRef } from '@/shared/hooks/hooks'
 import { useColumnLineage } from '@/features/lineage/api'
 import { useDataset } from '@/features/datasets/api'
 import { useParams, useSearchParams } from 'react-router-dom'
 import Box from '@mui/material/Box'
+import ColumnImpactTable from './ColumnImpactTable'
 import ColumnLevelDrawer from './ColumnLevelDrawer'
 import EdgeProvenance from './EdgeProvenance'
 import MqParentSize from '@/shared/components/MqParentSize/MqParentSize'
@@ -54,6 +57,25 @@ const ColumnLevel: React.FC = () => {
   // dataset's columnLineage facet — the same index the CSV export uses.
   const [hoveredEdge, setHoveredEdge] = useState<HoveredEdge | null>(null)
   const transformations = useMemo(() => buildTransformationIndex(centerDataset), [centerDataset])
+
+  const [view, setView] = useState<'graph' | 'impact'>(
+    searchParams.get('view') === 'impact' ? 'impact' : 'graph'
+  )
+  const [impactFilter, setImpactFilter] = useState('')
+
+  const impactRows = useMemo(
+    () => buildColumnImpactRows(columnLineage?.graph, column, transformations),
+    [columnLineage, column, transformations]
+  )
+
+  const handleExportImpact = useCallbackRef(() => {
+    const csv = buildColumnImpactCsv(impactRows)
+    const columnName = searchParams.get('columnName') ?? 'column'
+    downloadBlob(
+      new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+      `column-impact-${namespace ?? 'unknown'}-${name ?? 'unknown'}-${columnName}.csv`
+    )
+  })
 
   // Provide fallback empty objects if columnLineage is not loaded yet
   const { nodes, edges } = useMemo(
@@ -123,6 +145,8 @@ const ColumnLevel: React.FC = () => {
         setDepth={setDepth}
         onExportCsv={handleExportCsv}
         searchOptions={searchOptions}
+        view={view}
+        setView={setView}
       />
       <Box height={`calc(100vh - ${HEADER_HEIGHT}px - 64px)`}>
         {isFetching && (
@@ -162,25 +186,37 @@ const ColumnLevel: React.FC = () => {
             <ColumnLevelDrawer columnLineage={columnLineage} />
           </Box>
         </Drawer>
-        <ZoomControls handleScaleZoom={handleScaleZoom} handleResetZoom={handleResetZoom} />
-        <MqParentSize>
-          {(parent) => (
-            <Graph<ColumnLevelNodeKinds, ColumnLevelNodeData>
-              id='column-level-graph'
-              backgroundColor={theme.palette.background.default}
-              height={parent.height}
-              width={parent.width}
-              nodes={nodes}
-              edges={edges}
-              direction='right'
-              nodeRenderers={columnLevelNodeRenderer}
-              onEdgeHover={setHoveredEdge}
-              setZoomPanControls={setGraphControls}
-            />
-          )}
-        </MqParentSize>
+        {view === 'impact' ? (
+          <ColumnImpactTable
+            rows={impactRows}
+            selectedColumn={column}
+            filter={impactFilter}
+            onFilterChange={setImpactFilter}
+            onExport={handleExportImpact}
+          />
+        ) : (
+          <>
+            <ZoomControls handleScaleZoom={handleScaleZoom} handleResetZoom={handleResetZoom} />
+            <MqParentSize>
+              {(parent) => (
+                <Graph<ColumnLevelNodeKinds, ColumnLevelNodeData>
+                  id='column-level-graph'
+                  backgroundColor={theme.palette.background.default}
+                  height={parent.height}
+                  width={parent.width}
+                  nodes={nodes}
+                  edges={edges}
+                  direction='right'
+                  nodeRenderers={columnLevelNodeRenderer}
+                  onEdgeHover={setHoveredEdge}
+                  setZoomPanControls={setGraphControls}
+                />
+              )}
+            </MqParentSize>
+          </>
+        )}
       </Box>
-      {hoveredEdge && (
+      {view === 'graph' && hoveredEdge && (
         <EdgeProvenance
           edge={hoveredEdge}
           transformations={transformations}

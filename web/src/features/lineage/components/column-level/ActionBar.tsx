@@ -37,6 +37,8 @@ interface ActionBarProps {
   onExportCsv?: () => void
   /** Every column in the current graph, for the find-a-column box. */
   searchOptions?: ColumnSearchOption[]
+  view: 'graph' | 'impact'
+  setView: (view: 'graph' | 'impact') => void
 }
 
 export const ActionBar = ({
@@ -45,6 +47,8 @@ export const ActionBar = ({
   setDepth,
   onExportCsv,
   searchOptions = [],
+  view,
+  setView,
 }: ActionBarProps) => {
   const { namespace, name } = useParams()
   const navigate = useNavigate()
@@ -155,6 +159,20 @@ export const ActionBar = ({
             <TextField {...params} label='Find column' variant='outlined' size='small' />
           )}
         />
+        <ToggleButtonGroup
+          size={'small'}
+          exclusive
+          value={view}
+          sx={{ mr: 2 }}
+          onChange={(_event, value) => {
+            if (value !== 'graph' && value !== 'impact') return
+            setView(value)
+            updateParams((params) => params.set('view', value))
+          }}
+        >
+          <ToggleButton value={'graph'}>Graph</ToggleButton>
+          <ToggleButton value={'impact'}>Impact</ToggleButton>
+        </ToggleButtonGroup>
         <MQTooltip
           title={
             selectedColumn

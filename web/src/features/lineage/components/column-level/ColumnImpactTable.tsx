@@ -13,55 +13,36 @@ import {
   TableSortLabel,
   TextField,
 } from '@mui/material'
-import { useNavigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useTheme } from '@mui/material/styles'
 import FileDownloadOutlined from '@mui/icons-material/FileDownloadOutlined'
 import React, { useMemo, useState } from 'react'
 
-import { ImpactRow } from './impact'
-import { RunState } from '@/shared/types/api'
-import { encodeNode, runStateColor } from '@/shared/utils/nodes'
-import { formatUpdatedAt } from '@/shared/utils'
+import { ColumnImpactRow } from './columnImpact'
 import MqEmpty from '@/shared/components/MqEmpty/MqEmpty'
-import MqStatus from '@/shared/components/MqStatus/MqStatus'
 import MqText from '@/shared/components/MqText/MqText'
 
-type SortKey = 'direction' | 'type' | 'namespace' | 'name' | 'hops' | 'state' | 'updatedAt'
+type SortKey = 'direction' | 'namespace' | 'dataset' | 'column' | 'hops' | 'transformation'
 
-interface Column {
-  key: SortKey
-  label: string
-  numeric?: boolean
-}
-
-const COLUMNS: Column[] = [
+const COLUMNS: { key: SortKey; label: string; numeric?: boolean }[] = [
   { key: 'direction', label: 'Direction' },
-  { key: 'type', label: 'Type' },
   { key: 'namespace', label: 'Namespace' },
-  { key: 'name', label: 'Name' },
+  { key: 'dataset', label: 'Dataset' },
+  { key: 'column', label: 'Column' },
   { key: 'hops', label: 'Hops', numeric: true },
-  { key: 'state', label: 'Latest run' },
-  { key: 'updatedAt', label: 'Updated' },
+  { key: 'transformation', label: 'Transformation' },
 ]
 
-interface Props {
-  rows: ImpactRow[]
-  /** Text the caller has already applied is not re-applied here. */
-  filter: string
-  onFilterChange: (filter: string) => void
-  onExport?: () => void
-}
-
-export const matchesFilter = (row: ImpactRow, filter: string) => {
+export const matchesColumnFilter = (row: ColumnImpactRow, filter: string) => {
   const needle = filter.trim().toLowerCase()
   if (!needle) return true
 
-  return [row.namespace, row.name, row.type, row.direction, row.state].some((value) =>
+  return [row.namespace, row.dataset, row.column, row.direction, row.transformation].some((value) =>
     value.toLowerCase().includes(needle)
   )
 }
 
-export const sortRows = (rows: ImpactRow[], key: SortKey, ascending: boolean) => {
+export const sortColumnRows = (rows: ColumnImpactRow[], key: SortKey, ascending: boolean) => {
   const direction = ascending ? 1 : -1
 
   return [...rows].sort((a, b) => {
@@ -70,23 +51,35 @@ export const sortRows = (rows: ImpactRow[], key: SortKey, ascending: boolean) =>
   })
 }
 
+interface Props {
+  rows: ColumnImpactRow[]
+  /** The column the list is computed from; absent means nothing is selected. */
+  selectedColumn?: string | null
+  filter: string
+  onFilterChange: (filter: string) => void
+  onExport?: () => void
+}
+
 /**
- * The impact list: every node reachable from the focused one, flat and
- * sortable.
- *
- * A graph answers "how does this connect"; a migration or change ticket needs
- * "what else is affected, and how far away is it", which is a list once the
- * answer runs past a few dozen rows.
+ * The flat answer to "what consumes this field" — the question a graph cannot
+ * answer once the reply runs to hundreds of rows, and the one an auditor
+ * tracing a regulated field asks first.
  */
-export const ImpactTable = ({ rows, filter, onFilterChange, onExport }: Props) => {
+export const ColumnImpactTable = ({
+  rows,
+  selectedColumn,
+  filter,
+  onFilterChange,
+  onExport,
+}: Props) => {
   const theme = useTheme()
-  const navigate = useNavigate()
+  const [, setSearchParams] = useSearchParams()
   const [sortKey, setSortKey] = useState<SortKey>('hops')
   const [ascending, setAscending] = useState(true)
 
   const visibleRows = useMemo(() => {
-    const filtered = rows.filter((row) => matchesFilter(row, filter))
-    return sortRows(filtered, sortKey, ascending)
+    const filtered = rows.filter((row) => matchesColumnFilter(row, filter))
+    return sortColumnRows(filtered, sortKey, ascending)
   }, [rows, filter, sortKey, ascending])
 
   const toggleSort = (key: SortKey) => {
@@ -98,20 +91,36 @@ export const ImpactTable = ({ rows, filter, onFilterChange, onExport }: Props) =
   }
 
   const upstreamCount = rows.filter((row) => row.direction === 'upstream').length
-  const downstreamCount = rows.length - upstreamCount
+
+  if (!selectedColumn) {
+    return (
+      <Box px={2} py={4}>
+        <MqEmpty title={'No column selected'}>
+          <MqText subdued>
+            Pick a column — in the graph or the Find column box — to list everything it feeds and
+            everything it is derived from.
+          </MqText>
+        </MqEmpty>
+      </Box>
+    )
+  }
 
   return (
     <Box px={2} py={2} height={'100%'} overflow={'auto'}>
       <Box display={'flex'} alignItems={'center'} gap={2} mb={2}>
         <MqText heading>Impact</MqText>
         <Chip size={'small'} variant={'outlined'} label={`${upstreamCount} upstream`} />
-        <Chip size={'small'} variant={'outlined'} label={`${downstreamCount} downstream`} />
+        <Chip
+          size={'small'}
+          variant={'outlined'}
+          label={`${rows.length - upstreamCount} downstream`}
+        />
         <TextField
           size={'small'}
           label={'Filter'}
           value={filter}
           onChange={(event) => onFilterChange(event.target.value)}
-          sx={{ width: 260, ml: 'auto' }}
+          sx={{ width: 240, ml: 'auto' }}
         />
         <Button
           size={'small'}
@@ -128,12 +137,12 @@ export const ImpactTable = ({ rows, filter, onFilterChange, onExport }: Props) =
         <MqEmpty title={'Nothing to show'}>
           <MqText subdued>
             {rows.length
-              ? 'No impacted objects match this filter.'
-              : 'Nothing upstream or downstream of this node in the loaded graph. Increase depth to trace further.'}
+              ? 'No impacted columns match this filter.'
+              : 'This column has no lineage in the loaded graph. Increase depth to trace further.'}
           </MqText>
         </MqEmpty>
       ) : (
-        <Table size={'small'} aria-label={'Impacted objects'}>
+        <Table size={'small'} aria-label={'Impacted columns'}>
           <TableHead>
             <TableRow>
               {COLUMNS.map((column) => (
@@ -156,13 +165,14 @@ export const ImpactTable = ({ rows, filter, onFilterChange, onExport }: Props) =
                 hover
                 sx={{ cursor: 'pointer' }}
                 onClick={() =>
-                  navigate(
-                    `/lineage/${encodeNode(
-                      row.type === 'JOB' ? 'JOB' : 'DATASET',
-                      row.namespace,
-                      row.name
-                    )}`
-                  )
+                  setSearchParams((previous) => {
+                    const next = new URLSearchParams(previous)
+                    next.set('column', row.id)
+                    next.set('columnName', row.column)
+                    next.set('dataset', row.dataset)
+                    next.set('namespace', row.namespace)
+                    return next
+                  })
                 }
               >
                 <TableCell>
@@ -177,26 +187,23 @@ export const ImpactTable = ({ rows, filter, onFilterChange, onExport }: Props) =
                   </MqText>
                 </TableCell>
                 <TableCell>
-                  <MqText font={'mono'}>{row.type}</MqText>
-                </TableCell>
-                <TableCell>
                   <MqText font={'mono'}>{row.namespace}</MqText>
                 </TableCell>
                 <TableCell>
-                  <MqText font={'mono'}>{row.name}</MqText>
+                  <MqText font={'mono'}>{row.dataset}</MqText>
+                </TableCell>
+                <TableCell>
+                  <MqText font={'mono'}>{row.column}</MqText>
                 </TableCell>
                 <TableCell align={'right'}>
                   <MqText>{row.hops}</MqText>
                 </TableCell>
                 <TableCell>
-                  {row.state ? (
-                    <MqStatus label={row.state} color={runStateColor(row.state as RunState)} />
+                  {row.transformation ? (
+                    <Chip size={'small'} variant={'outlined'} label={row.transformation} />
                   ) : (
                     <MqText subdued>—</MqText>
                   )}
-                </TableCell>
-                <TableCell>
-                  <MqText subdued>{row.updatedAt ? formatUpdatedAt(row.updatedAt) : '—'}</MqText>
                 </TableCell>
               </TableRow>
             ))}
@@ -207,4 +214,4 @@ export const ImpactTable = ({ rows, filter, onFilterChange, onExport }: Props) =
   )
 }
 
-export default ImpactTable
+export default ColumnImpactTable
