@@ -28,6 +28,15 @@ const getElkClient = (workerUrl: string): InstanceType<typeof ELK> => {
   return client
 }
 
+export const EDGE_LABEL_FONT_SIZE = 12
+export const EDGE_LABEL_HEIGHT = 16
+/**
+ * Mean glyph advance for the label font at EDGE_LABEL_FONT_SIZE. Measured at
+ * 6.0px in the browser; kept generous so ELK over-reserves rather than letting
+ * labels on parallel edges collide.
+ */
+export const EDGE_LABEL_CHAR_WIDTH = 7
+
 export interface Props<K, D> {
   id?: string
   nodes: Node<K, D>[]
@@ -170,10 +179,15 @@ export const useLayout = <K, D>({
         labels: edge.label
           ? [
               {
-                id: edge.label,
+                // Ids must be unique: two edges labelled "1 connection" would
+                // otherwise share one, and ELK places labels by id.
+                id: `${edge.id}:label`,
                 text: edge.label,
-                height: 20,
-                width: edge.label.length * 7,
+                height: EDGE_LABEL_HEIGHT,
+                // Approximates the rendered width at EDGE_LABEL_FONT_SIZE; ELK
+                // reserves this much room, so underestimating overlaps labels
+                // on parallel edges.
+                width: edge.label.length * EDGE_LABEL_CHAR_WIDTH,
               },
             ]
           : [],

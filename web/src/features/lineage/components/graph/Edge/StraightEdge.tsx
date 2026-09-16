@@ -39,7 +39,7 @@ export const StraightEdge = ({ edge, isMiniMap }: EdgeProps) => {
         x2={edge.endPoint.x}
         y2={edge.endPoint.y}
       />
-      <EdgeLabel label={edge.label} endPointY={edge.endPoint.y} />
+      <EdgeLabel label={edge.label} />
       {!reducedMotion && edge.isAnimated && (
         <line
           id={`${edge.sourceNodeId}-${edge.targetNodeId}-animated`}

@@ -102,13 +102,87 @@ export const findUpstreamNodes = (
   aggregateByParent: boolean
 ): TraversalResult => traverse(lineageGraph, currentGraphNode, aggregateByParent, 'upstream')
 
+interface NamespaceSummary {
+  namespace: string
+  datasetCount: number
+  jobCount: number
+}
+
+const NAMESPACE_NODE_WIDTH = 220
+const NAMESPACE_NODE_HEIGHT = 56
+
+/**
+ * Reduces the graph to one node per namespace. Edges within a namespace
+ * disappear — at this zoom the question is which domain feeds which — and
+ * edges between two namespaces collapse into one, labelled with how many
+ * underlying connections it stands for.
+ */
+const collapseToNamespaces = (filteredGraph: LineageNode[], renderedNodeIds: Set<string>) => {
+  const namespaceOf = new Map<string, string>()
+  const summaries = new Map<string, NamespaceSummary>()
+
+  for (const node of filteredGraph) {
+    const namespace = (node.data as LineageDataset | LineageJob).namespace
+    namespaceOf.set(node.id, namespace)
+
+    const summary = summaries.get(namespace) ?? { namespace, datasetCount: 0, jobCount: 0 }
+    if (node.type === 'DATASET') summary.datasetCount += 1
+    else summary.jobCount += 1
+    summaries.set(namespace, summary)
+  }
+
+  const connectionCounts = new Map<string, number>()
+  for (const node of filteredGraph) {
+    for (const edge of node.outEdges) {
+      if (!renderedNodeIds.has(edge.destination)) continue
+
+      const from = namespaceOf.get(edge.origin)
+      const to = namespaceOf.get(edge.destination)
+      if (!from || !to || from === to) continue
+
+      const key = `${from}\u0000${to}`
+      connectionCounts.set(key, (connectionCounts.get(key) ?? 0) + 1)
+    }
+  }
+
+  const nodes: ElkNode<JobOrDataset | 'GROUP' | 'NAMESPACE', TableLevelNodeData>[] = [
+    ...summaries.values(),
+  ].map((summary) => ({
+    id: `namespace:${summary.namespace}`,
+    kind: 'NAMESPACE' as const,
+    width: NAMESPACE_NODE_WIDTH,
+    height: NAMESPACE_NODE_HEIGHT,
+    data: summary,
+  }))
+
+  const edges: Edge[] = [...connectionCounts.entries()].map(([key, count]) => {
+    const [from, to] = key.split('\u0000')
+    return {
+      id: `namespace:${from}:${to}`,
+      sourceNodeId: `namespace:${from}`,
+      targetNodeId: `namespace:${to}`,
+      color: theme.palette.primary.main,
+      isAnimated: true,
+      label: count === 1 ? '1 connection' : `${count} connections`,
+    }
+  })
+
+  return { nodes, edges }
+}
+
 export const createElkNodes = (
   lineageGraph: LineageGraph,
   currentGraphNode: Nullable<string>,
   isCompact: boolean,
   isFull: boolean,
   collapsedNodes: Nullable<string>,
-  aggregateByParent: boolean
+  aggregateByParent: boolean,
+  /**
+   * Collapse the graph to one node per namespace, with the edges between them
+   * aggregated into a single labelled connection. At bank scale the useful
+   * first question is which domains feed which, not which table feeds which.
+   */
+  groupByNamespace = false
 ) => {
   const byId = indexById(lineageGraph)
   const downstream = traverse(lineageGraph, currentGraphNode, aggregateByParent, 'downstream', byId)
@@ -136,7 +210,30 @@ export const createElkNodes = (
 
   const renderedNodeIds = new Set(filteredGraph.map((node) => node.id))
 
+  if (groupByNamespace) {
+    return collapseToNamespaces(filteredGraph, renderedNodeIds)
+  }
+
   const groupNodesMap = new Map<string, ElkNode<JobOrDataset | 'GROUP', TableLevelNodeData>>()
+
+  /**
+   * Returns the container a node belongs in, creating it on first use. Parent-job
+   * grouping keeps its own containers, so the two modes never share one.
+   */
+  const containerFor = (groupId: string, name: string, namespace: string) => {
+    let group = groupNodesMap.get(groupId)
+    if (!group) {
+      group = {
+        id: groupId,
+        kind: 'GROUP',
+        children: [],
+        data: { name, namespace } as TableLevelNodeData,
+      }
+      groupNodesMap.set(groupId, group)
+      nodes.push(group)
+    }
+    return group
+  }
 
   for (const node of filteredGraph) {
     edges.push(
@@ -194,21 +291,11 @@ export const createElkNodes = (
       if (aggregateByParent && job.parentJobName) {
         // Parent jobs often reside in separate namespaces (e.g. airflow-ops vs spark-jobs)
         // Group exactly by the parent job name to unite cross-namespace pipelines
-        const groupId = `group:${job.parentJobName}`
-        if (!groupNodesMap.has(groupId)) {
-          const groupNode: ElkNode<JobOrDataset | 'GROUP', TableLevelNodeData> = {
-            id: groupId,
-            kind: 'GROUP',
-            children: [],
-            data: {
-              name: job.parentJobName,
-              namespace: 'grouped', // Virtual namespace for the visual container
-            } as any,
-          }
-          groupNodesMap.set(groupId, groupNode)
-          nodes.push(groupNode)
-        }
-        groupNodesMap.get(groupId)!.children!.push(jobElkNode)
+        containerFor(
+          `group:${job.parentJobName}`,
+          job.parentJobName,
+          'grouped' // Virtual namespace for the visual container
+        ).children?.push(jobElkNode)
       } else {
         nodes.push(jobElkNode)
       }

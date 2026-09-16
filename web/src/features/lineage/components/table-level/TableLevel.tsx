@@ -56,6 +56,9 @@ const ColumnLevel = () => {
   const [aggregateByParent, setAggregateByParent] = useState(
     searchParams.get('aggregateByParent') === 'true'
   )
+  const [groupByNamespace, setGroupByNamespace] = useState(
+    searchParams.get('groupByNamespace') === 'true'
+  )
 
   const graphControls = useRef<ZoomPanControls>()
 
@@ -90,7 +93,8 @@ const ColumnLevel = () => {
         compact,
         isFull,
         collapsedNodes,
-        aggregateByParent
+        aggregateByParent,
+        groupByNamespace
       )
 
     const built = build(isCompact)
@@ -112,6 +116,7 @@ const ColumnLevel = () => {
     isFull,
     collapsedNodes,
     aggregateByParent,
+    groupByNamespace,
   ])
 
   const focusedNodeId = hoveredNodeId ?? pinnedNodeId
@@ -215,6 +220,8 @@ const ColumnLevel = () => {
         setIsFull={setIsFull}
         aggregateByParent={aggregateByParent}
         setAggregateByParent={setAggregateByParent}
+        groupByNamespace={groupByNamespace}
+        setGroupByNamespace={setGroupByNamespace}
         searchOptions={searchOptions}
         onSelectNode={handleSelectNode}
       />
@@ -263,7 +270,7 @@ const ColumnLevel = () => {
         />
         <MqParentSize>
           {(parent) => (
-            <Graph<JobOrDataset | 'GROUP', TableLevelNodeData>
+            <Graph<JobOrDataset | 'GROUP' | 'NAMESPACE', TableLevelNodeData>
               id='column-level-graph'
               backgroundColor={theme.palette.background.default}
               height={parent.height}

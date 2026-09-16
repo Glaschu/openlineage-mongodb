@@ -161,7 +161,8 @@ describe('TableLevel', () => {
         true,
         false,
         null,
-        false
+        false,
+        false // groupByNamespace
       )
 
       expect(graphRenderMock).toHaveBeenCalledWith(

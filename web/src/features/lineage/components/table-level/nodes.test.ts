@@ -22,8 +22,8 @@ describe('Table Level Nodes', () => {
     expect(groupRenderer).toBeDefined()
   })
 
-  it('should have exactly 3 renderers', () => {
-    expect(tableLevelNodeRenderer.size).toBe(3)
+  it('should have exactly 4 renderers', () => {
+    expect(tableLevelNodeRenderer.size).toBe(4)
   })
 
   it('should return undefined for unknown types', () => {

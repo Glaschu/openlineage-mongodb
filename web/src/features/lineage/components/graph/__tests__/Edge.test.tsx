@@ -147,18 +147,19 @@ describe('EdgeLabel', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('applies fallback position when end point provided', () => {
+  it('renders the label where the layout placed it', () => {
     const label = {
       id: 'lbl',
-      text: 'With Adjust',
+      text: 'Laid out label',
       x: 12,
       y: 40,
       height: 10,
       width: 10,
     }
 
-    const { container } = render(<EdgeLabel label={label} endPointY={10} />)
-    const text = within(container).getByText('With Adjust')
-    expect(text.getAttribute('y')).toBe('35')
+    const { container } = render(<EdgeLabel label={label} />)
+    const text = within(container).getByText('Laid out label')
+    expect(text.getAttribute('x')).toBe('12')
+    expect(text.getAttribute('y')).toBe('40')
   })
 })

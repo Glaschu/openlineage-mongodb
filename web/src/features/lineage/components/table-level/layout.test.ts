@@ -236,3 +236,91 @@ describe('table-level layout at scale', () => {
     expect(upstream.nodes).toHaveLength(1001)
   })
 })
+
+describe('collapsing to namespaces', () => {
+  const buildCrossNamespaceGraph = (): LineageGraph => {
+    const sourceA = makeDatasetNode('raw-a', 1, { namespace: 'raw' })
+    const sourceB = makeDatasetNode('raw-b', 1, { namespace: 'raw' })
+    const job = makeJobNode('job-mid', { namespace: 'etl' })
+    const target = makeDatasetNode('curated-a', 1, { namespace: 'curated' })
+
+    const link = (from: LineageNode, to: LineageNode) => {
+      const edge = { origin: from.id, destination: to.id }
+      from.outEdges.push(edge)
+      to.inEdges.push(edge)
+    }
+    link(sourceA, job)
+    link(sourceB, job)
+    link(job, target)
+
+    return { graph: [sourceA, sourceB, job, target] }
+  }
+
+  const collapse = (graph: LineageGraph) =>
+    createElkNodes(graph, 'raw-a', true, true, null, false, true)
+
+  it('renders one node per namespace instead of one per table', () => {
+    const { nodes } = collapse(buildCrossNamespaceGraph())
+
+    expect(nodes.map((node) => node.id).sort()).toEqual([
+      'namespace:curated',
+      'namespace:etl',
+      'namespace:raw',
+    ])
+    expect(nodes.every((node) => node.kind === 'NAMESPACE')).toBe(true)
+  })
+
+  it('counts what each namespace stands for', () => {
+    const { nodes } = collapse(buildCrossNamespaceGraph())
+
+    expect(nodes.find((node) => node.id === 'namespace:raw')?.data).toMatchObject({
+      namespace: 'raw',
+      datasetCount: 2,
+      jobCount: 0,
+    })
+    expect(nodes.find((node) => node.id === 'namespace:etl')?.data).toMatchObject({
+      datasetCount: 0,
+      jobCount: 1,
+    })
+  })
+
+  it('aggregates the edges between two namespaces into one, labelled with the count', () => {
+    const { edges } = collapse(buildCrossNamespaceGraph())
+
+    expect(edges).toHaveLength(2)
+    const rawToEtl = edges.find((edge) => edge.id === 'namespace:raw:etl')
+    // raw-a -> job and raw-b -> job become a single connection.
+    expect(rawToEtl?.label).toBe('2 connections')
+    expect(edges.find((edge) => edge.id === 'namespace:etl:curated')?.label).toBe('1 connection')
+  })
+
+  it('drops edges that stay inside one namespace', () => {
+    const graph = buildCrossNamespaceGraph()
+    const [sourceA, sourceB] = graph.graph
+    const internal = { origin: sourceA.id, destination: sourceB.id }
+    sourceA.outEdges.push(internal)
+    sourceB.inEdges.push(internal)
+
+    const { edges } = collapse(graph)
+
+    // Still only the two cross-namespace connections: at this zoom, what
+    // happens inside a namespace is not the question being asked.
+    expect(edges).toHaveLength(2)
+    expect(edges.some((edge) => edge.sourceNodeId === edge.targetNodeId)).toBe(false)
+  })
+
+  it('leaves the graph uncollapsed when the mode is off', () => {
+    const { nodes } = createElkNodes(
+      buildCrossNamespaceGraph(),
+      'raw-a',
+      true,
+      true,
+      null,
+      false,
+      false
+    )
+
+    expect(nodes.some((node) => node.kind === 'NAMESPACE')).toBe(false)
+    expect(nodes).toHaveLength(4)
+  })
+})

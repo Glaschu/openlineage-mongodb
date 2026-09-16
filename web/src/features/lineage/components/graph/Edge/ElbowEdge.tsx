@@ -25,16 +25,6 @@ export const ElbowEdge = ({ edge, isMiniMap }: EdgeProps) => {
     ]
   }, [edge])
 
-  // Find the longest edge that the label would be near
-  let longestEdge: { y: number; length: number } | undefined
-  if (edge.label) {
-    points.forEach((p, i) => {
-      if (i > 0) {
-        const length = p.x - points[i - 1].x
-        if (!longestEdge || longestEdge.length < length) longestEdge = { y: p.y, length }
-      }
-    })
-  }
   const pointsAttribute = points.map(({ x, y }) => `${x},${y}`).join(' ')
 
   return (
@@ -57,7 +47,7 @@ export const ElbowEdge = ({ edge, isMiniMap }: EdgeProps) => {
         strokeLinejoin='round'
         points={points.map(({ x, y }) => `${x},${y}`).join(' ')}
       />
-      <EdgeLabel label={edge.label} endPointY={longestEdge?.y} />
+      <EdgeLabel label={edge.label} />
       {!reducedMotion && edge.isAnimated && (
         <polyline
           id={`${edge.sourceNodeId}-${edge.targetNodeId}-animated`}

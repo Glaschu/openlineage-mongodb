@@ -32,6 +32,8 @@ interface ActionBarProps {
   setIsFull: (isFull: boolean) => void
   aggregateByParent: boolean
   setAggregateByParent: (aggregateByParent: boolean) => void
+  groupByNamespace: boolean
+  setGroupByNamespace: (groupByNamespace: boolean) => void
   /** Every node currently laid out, for the find-a-node box. */
   searchOptions?: GraphSearchOption[]
   onSelectNode?: (nodeId: string | null) => void
@@ -49,6 +51,8 @@ export const ActionBar = ({
   setIsFull,
   aggregateByParent,
   setAggregateByParent,
+  groupByNamespace,
+  setGroupByNamespace,
   searchOptions = [],
   onSelectNode,
 }: ActionBarProps) => {
@@ -190,6 +194,21 @@ export const ActionBar = ({
                 ? 'Compacted automatically because this graph is large. Toggle to override.'
                 : 'Collapse dataset nodes to a single row'
             }
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                size={'small'}
+                checked={groupByNamespace}
+                onChange={(_, checked) => {
+                  setGroupByNamespace(checked)
+                  searchParams.set('groupByNamespace', checked.toString())
+                  setSearchParams(searchParams)
+                }}
+              />
+            }
+            label={<MqText font={'mono'}>Collapse to Namespaces</MqText>}
+            title={'Show one node per namespace, with the connections between them counted'}
           />
           {FEATURE_FLAGS.showGroupByParentToggle && (
             <FormControlLabel

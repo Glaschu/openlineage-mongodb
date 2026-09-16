@@ -53,29 +53,17 @@ describe('EdgeLabel Component', () => {
     expect(text).toBeFalsy()
   })
 
-  it('should adjust y position when endPointY is provided and label is above', () => {
-    const label = { text: 'Label', x: 50, y: 200 }
-    const endPointY = 100
-    const { container } = render(
-      <svg>
-        <EdgeLabel label={label} endPointY={endPointY} />
-      </svg>
-    )
-    const text = container.querySelector('text')
-    // When label.y - 5 >= endPointY, use endPointY + 25
-    expect(text?.getAttribute('y')).toBe('125')
-  })
+  it('uses the position ELK computed for the label', () => {
+    const label = { id: 'l', text: 'Edge Label', x: 40, y: 80 }
 
-  it('should adjust y position when endPointY is provided and label is below', () => {
-    const label = { text: 'Label', x: 50, y: 90 }
-    const endPointY = 100
     const { container } = render(
       <svg>
-        <EdgeLabel label={label} endPointY={endPointY} />
+        <EdgeLabel label={label} />
       </svg>
     )
+
     const text = container.querySelector('text')
-    // When label.y - 5 < endPointY, use endPointY - 15
-    expect(text?.getAttribute('y')).toBe('85')
+    expect(text?.getAttribute('x')).toBe('40')
+    expect(text?.getAttribute('y')).toBe('80')
   })
 })
