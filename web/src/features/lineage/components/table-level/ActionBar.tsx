@@ -11,6 +11,7 @@ import {
 import { FEATURE_FLAGS } from '@/shared/config/featureFlags'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import ArrowBackIosRounded from '@mui/icons-material/ArrowBackIosRounded'
+import LinkOutlined from '@mui/icons-material/LinkOutlined'
 import Refresh from '@mui/icons-material/Refresh'
 
 import { truncateText } from '@/shared/utils/text'
@@ -185,6 +186,16 @@ export const ActionBar = ({
           <ToggleButton value={'graph'}>Graph</ToggleButton>
           <ToggleButton value={'impact'}>Impact</ToggleButton>
         </ToggleButtonGroup>
+        <MQTooltip title={'Copy a shareable link to this exact view'}>
+          <IconButton
+            size={'small'}
+            color={'primary'}
+            sx={{ mr: 1 }}
+            onClick={() => navigator.clipboard?.writeText(window.location.href)}
+          >
+            <LinkOutlined fontSize={'small'} />
+          </IconButton>
+        </MQTooltip>
         <MQTooltip title={'Refresh'}>
           <IconButton
             sx={{ mr: 2 }}

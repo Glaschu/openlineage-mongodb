@@ -16,6 +16,7 @@ import {
   tableLevelNodeRenderer,
 } from './nodes'
 import { ZoomControls } from '../column-level/ZoomControls'
+import { buildEvidenceMarkdown, evidenceFilename } from './evidence'
 import { buildImpactCsv, buildImpactRows } from './impact'
 import { createElkNodes, findDownstreamNodes, findUpstreamNodes } from './layout'
 import { downloadBlob } from '@/shared/utils/download'
@@ -140,6 +141,23 @@ const ColumnLevel = () => {
     downloadBlob(
       new Blob([csv], { type: 'text/csv;charset=utf-8' }),
       `impact-${namespace ?? 'unknown'}-${name ?? 'unknown'}.csv`
+    )
+  })
+
+  const handleExportEvidence = useCallbackRef(() => {
+    const capturedAt = new Date()
+    const markdown = buildEvidenceMarkdown({
+      nodeType: nodeType ?? 'unknown',
+      namespace: namespace ?? 'unknown',
+      name: name ?? 'unknown',
+      depth,
+      url: window.location.href,
+      rows: impactRows,
+      capturedAt,
+    })
+    downloadBlob(
+      new Blob([markdown], { type: 'text/markdown;charset=utf-8' }),
+      evidenceFilename(namespace ?? 'unknown', name ?? 'unknown', capturedAt)
     )
   })
 
@@ -293,6 +311,7 @@ const ColumnLevel = () => {
             filter={impactFilter}
             onFilterChange={setImpactFilter}
             onExport={handleExportImpact}
+            onExportEvidence={handleExportEvidence}
           />
         ) : (
           <>

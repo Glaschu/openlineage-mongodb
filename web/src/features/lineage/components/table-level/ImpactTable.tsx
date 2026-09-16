@@ -15,6 +15,7 @@ import {
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '@mui/material/styles'
+import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined'
 import FileDownloadOutlined from '@mui/icons-material/FileDownloadOutlined'
 import React, { useMemo, useState } from 'react'
 
@@ -50,6 +51,7 @@ interface Props {
   filter: string
   onFilterChange: (filter: string) => void
   onExport?: () => void
+  onExportEvidence?: () => void
 }
 
 export const matchesFilter = (row: ImpactRow, filter: string) => {
@@ -78,7 +80,13 @@ export const sortRows = (rows: ImpactRow[], key: SortKey, ascending: boolean) =>
  * "what else is affected, and how far away is it", which is a list once the
  * answer runs past a few dozen rows.
  */
-export const ImpactTable = ({ rows, filter, onFilterChange, onExport }: Props) => {
+export const ImpactTable = ({
+  rows,
+  filter,
+  onFilterChange,
+  onExport,
+  onExportEvidence,
+}: Props) => {
   const theme = useTheme()
   const navigate = useNavigate()
   const [sortKey, setSortKey] = useState<SortKey>('hops')
@@ -121,6 +129,15 @@ export const ImpactTable = ({ rows, filter, onFilterChange, onExport }: Props) =
           onClick={() => onExport?.()}
         >
           Export CSV
+        </Button>
+        <Button
+          size={'small'}
+          variant={'outlined'}
+          startIcon={<DescriptionOutlined fontSize={'small'} />}
+          disabled={!onExportEvidence}
+          onClick={() => onExportEvidence?.()}
+        >
+          Evidence pack
         </Button>
       </Box>
 

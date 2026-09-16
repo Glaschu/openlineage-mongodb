@@ -115,4 +115,19 @@ describe('ImpactTable', () => {
     renderTable({ filter: 'no-such-thing' })
     expect(screen.getByText(/No impacted objects match this filter/)).toBeInTheDocument()
   })
+
+  it('offers the evidence pack whenever there is a view to describe', () => {
+    const onExportEvidence = vi.fn()
+    const { unmount } = renderTable({ onExportEvidence })
+
+    fireEvent.click(screen.getByRole('button', { name: /Evidence pack/ }))
+    expect(onExportEvidence).toHaveBeenCalled()
+    unmount()
+
+    // Unlike the CSV, an empty result is itself worth recording: "nothing
+    // downstream" is the finding a change ticket needs.
+    renderTable({ rows: [], onExportEvidence })
+    expect(screen.getByRole('button', { name: /Evidence pack/ })).toBeEnabled()
+    expect(screen.getByRole('button', { name: /Export CSV/ })).toBeDisabled()
+  })
 })
