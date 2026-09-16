@@ -1,4 +1,4 @@
-import { Autocomplete, Divider, FormControlLabel, Switch, TextField } from '@mui/material'
+import { Autocomplete, Chip, Divider, FormControlLabel, Switch, TextField } from '@mui/material'
 import { FEATURE_FLAGS } from '@/shared/config/featureFlags'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import ArrowBackIosRounded from '@mui/icons-material/ArrowBackIosRounded'
@@ -59,6 +59,20 @@ export const ActionBar = ({
   const { namespace, name } = useParams()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+
+  const expandedNamespaces = (searchParams.get('expandedNamespaces') ?? '')
+    .split(',')
+    .filter(Boolean)
+
+  // Expanding happens by clicking a namespace node; once expanded that node is
+  // gone, so collapsing back needs a handle of its own.
+  const collapseNamespace = (target: string) => {
+    const params = new URLSearchParams(searchParams)
+    const remaining = expandedNamespaces.filter((entry) => entry !== target)
+    if (remaining.length) params.set('expandedNamespaces', remaining.join(','))
+    else params.delete('expandedNamespaces')
+    setSearchParams(params)
+  }
   return (
     <Box
       sx={{
@@ -105,6 +119,21 @@ export const ActionBar = ({
         </Box>
       </Box>
       <Box display={'flex'} alignItems={'center'}>
+        {expandedNamespaces.length > 0 && (
+          <Box display={'flex'} alignItems={'center'} gap={1} mr={2}>
+            <MqText subdued>Expanded</MqText>
+            {expandedNamespaces.map((expanded) => (
+              <Chip
+                key={expanded}
+                size={'small'}
+                color={'primary'}
+                variant={'outlined'}
+                label={expanded}
+                onDelete={() => collapseNamespace(expanded)}
+              />
+            ))}
+          </Box>
+        )}
         <Autocomplete
           id='lineage-node-search'
           size='small'

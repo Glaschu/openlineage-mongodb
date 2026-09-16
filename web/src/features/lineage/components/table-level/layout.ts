@@ -111,63 +111,96 @@ interface NamespaceSummary {
 const NAMESPACE_NODE_WIDTH = 220
 const NAMESPACE_NODE_HEIGHT = 56
 
+export const namespaceNodeId = (namespace: string) => `namespace:${namespace}`
+
+export const parseNamespaceNodeId = (nodeId: string) =>
+  nodeId.startsWith('namespace:') ? nodeId.slice('namespace:'.length) : undefined
+
 /**
  * Reduces the graph to one node per namespace. Edges within a namespace
  * disappear — at this zoom the question is which domain feeds which — and
  * edges between two namespaces collapse into one, labelled with how many
  * underlying connections it stands for.
  */
-const collapseToNamespaces = (filteredGraph: LineageNode[], renderedNodeIds: Set<string>) => {
-  const namespaceOf = new Map<string, string>()
+/**
+ * Rewrites the graph at namespace resolution. Namespaces in `expanded` keep
+ * their real nodes; the rest become a single node each. Edges are remapped to
+ * whatever now represents their endpoints, so a link into a collapsed
+ * namespace lands on its summary node, and links that become duplicates are
+ * merged into one labelled connection. Links that end up inside a single
+ * collapsed namespace are dropped — at that resolution they are not the
+ * question being asked.
+ */
+const applyNamespaceView = (
+  nodes: ElkNode<JobOrDataset | 'GROUP' | 'NAMESPACE', TableLevelNodeData>[],
+  edges: Edge[],
+  namespaceOf: Map<string, string>,
+  expanded: Set<string>
+) => {
   const summaries = new Map<string, NamespaceSummary>()
+  const viewNodes: ElkNode<JobOrDataset | 'GROUP' | 'NAMESPACE', TableLevelNodeData>[] = []
 
-  for (const node of filteredGraph) {
-    const namespace = (node.data as LineageDataset | LineageJob).namespace
-    namespaceOf.set(node.id, namespace)
+  for (const node of nodes) {
+    const namespace = namespaceOf.get(node.id)
+    if (!namespace || expanded.has(namespace)) {
+      viewNodes.push(node)
+      continue
+    }
 
     const summary = summaries.get(namespace) ?? { namespace, datasetCount: 0, jobCount: 0 }
-    if (node.type === 'DATASET') summary.datasetCount += 1
+    if (node.kind === 'DATASET') summary.datasetCount += 1
     else summary.jobCount += 1
     summaries.set(namespace, summary)
   }
 
-  const connectionCounts = new Map<string, number>()
-  for (const node of filteredGraph) {
-    for (const edge of node.outEdges) {
-      if (!renderedNodeIds.has(edge.destination)) continue
-
-      const from = namespaceOf.get(edge.origin)
-      const to = namespaceOf.get(edge.destination)
-      if (!from || !to || from === to) continue
-
-      const key = `${from}\u0000${to}`
-      connectionCounts.set(key, (connectionCounts.get(key) ?? 0) + 1)
-    }
+  for (const summary of summaries.values()) {
+    viewNodes.push({
+      id: namespaceNodeId(summary.namespace),
+      kind: 'NAMESPACE',
+      width: NAMESPACE_NODE_WIDTH,
+      height: NAMESPACE_NODE_HEIGHT,
+      data: summary,
+    })
   }
 
-  const nodes: ElkNode<JobOrDataset | 'GROUP' | 'NAMESPACE', TableLevelNodeData>[] = [
-    ...summaries.values(),
-  ].map((summary) => ({
-    id: `namespace:${summary.namespace}`,
-    kind: 'NAMESPACE' as const,
-    width: NAMESPACE_NODE_WIDTH,
-    height: NAMESPACE_NODE_HEIGHT,
-    data: summary,
-  }))
+  const displayId = (nodeId: string) => {
+    const namespace = namespaceOf.get(nodeId)
+    return namespace && !expanded.has(namespace) ? namespaceNodeId(namespace) : nodeId
+  }
 
-  const edges: Edge[] = [...connectionCounts.entries()].map(([key, count]) => {
-    const [from, to] = key.split('\u0000')
+  const merged = new Map<string, { source: string; target: string; edges: Edge[] }>()
+  for (const edge of edges) {
+    const source = displayId(edge.sourceNodeId)
+    const target = displayId(edge.targetNodeId)
+    if (source === target) continue
+
+    const key = `${source}\u0000${target}`
+    const entry = merged.get(key) ?? { source, target, edges: [] }
+    entry.edges.push(edge)
+    merged.set(key, entry)
+  }
+
+  const viewEdges: Edge[] = [...merged.values()].map(({ source, target, edges: underlying }) => {
+    const isCollapsed =
+      source !== underlying[0].sourceNodeId || target !== underlying[0].targetNodeId
+
+    // An edge between two expanded nodes is still itself; keep its colouring.
+    if (!isCollapsed && underlying.length === 1) return underlying[0]
+
     return {
-      id: `namespace:${from}:${to}`,
-      sourceNodeId: `namespace:${from}`,
-      targetNodeId: `namespace:${to}`,
+      id: `${source}:${target}`,
+      sourceNodeId: source,
+      targetNodeId: target,
       color: theme.palette.primary.main,
       isAnimated: true,
-      label: count === 1 ? '1 connection' : `${count} connections`,
+      // Only a count above one tells the reader anything. Expanding a
+      // namespace of 76 tables otherwise draws 76 "1 connection" labels
+      // converging on whatever it feeds.
+      label: underlying.length > 1 ? `${underlying.length} connections` : undefined,
     }
   })
 
-  return { nodes, edges }
+  return { nodes: viewNodes, edges: viewEdges }
 }
 
 export const createElkNodes = (
@@ -182,7 +215,9 @@ export const createElkNodes = (
    * aggregated into a single labelled connection. At bank scale the useful
    * first question is which domains feed which, not which table feeds which.
    */
-  groupByNamespace = false
+  groupByNamespace = false,
+  /** Namespaces to show at full detail while the rest stay collapsed. */
+  expandedNamespaces: Nullable<string> = null
 ) => {
   const byId = indexById(lineageGraph)
   const downstream = traverse(lineageGraph, currentGraphNode, aggregateByParent, 'downstream', byId)
@@ -209,10 +244,6 @@ export const createElkNodes = (
   })
 
   const renderedNodeIds = new Set(filteredGraph.map((node) => node.id))
-
-  if (groupByNamespace) {
-    return collapseToNamespaces(filteredGraph, renderedNodeIds)
-  }
 
   const groupNodesMap = new Map<string, ElkNode<JobOrDataset | 'GROUP', TableLevelNodeData>>()
 
@@ -312,5 +343,18 @@ export const createElkNodes = (
       })
     }
   }
+
+  if (groupByNamespace) {
+    const namespaceOf = new Map(
+      filteredGraph.map((node) => [node.id, (node.data as LineageDataset | LineageJob).namespace])
+    )
+    return applyNamespaceView(
+      nodes,
+      edges,
+      namespaceOf,
+      new Set(expandedNamespaces?.split(',').filter(Boolean) ?? [])
+    )
+  }
+
   return { nodes, edges }
 }

@@ -59,6 +59,7 @@ const ColumnLevel = () => {
   const [groupByNamespace, setGroupByNamespace] = useState(
     searchParams.get('groupByNamespace') === 'true'
   )
+  const expandedNamespaces = searchParams.get('expandedNamespaces')
 
   const graphControls = useRef<ZoomPanControls>()
 
@@ -94,7 +95,8 @@ const ColumnLevel = () => {
         isFull,
         collapsedNodes,
         aggregateByParent,
-        groupByNamespace
+        groupByNamespace,
+        expandedNamespaces
       )
 
     const built = build(isCompact)
@@ -117,6 +119,7 @@ const ColumnLevel = () => {
     collapsedNodes,
     aggregateByParent,
     groupByNamespace,
+    expandedNamespaces,
   ])
 
   const focusedNodeId = hoveredNodeId ?? pinnedNodeId

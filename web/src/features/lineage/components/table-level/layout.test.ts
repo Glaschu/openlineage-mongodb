@@ -288,10 +288,14 @@ describe('collapsing to namespaces', () => {
     const { edges } = collapse(buildCrossNamespaceGraph())
 
     expect(edges).toHaveLength(2)
-    const rawToEtl = edges.find((edge) => edge.id === 'namespace:raw:etl')
+    // Ids compose the two display ids, which in mixed mode may be real nodes.
+    const rawToEtl = edges.find((edge) => edge.id === 'namespace:raw:namespace:etl')
     // raw-a -> job and raw-b -> job become a single connection.
     expect(rawToEtl?.label).toBe('2 connections')
-    expect(edges.find((edge) => edge.id === 'namespace:etl:curated')?.label).toBe('1 connection')
+    // A single underlying link carries no count: the number would say nothing.
+    expect(
+      edges.find((edge) => edge.id === 'namespace:etl:namespace:curated')?.label
+    ).toBeUndefined()
   })
 
   it('drops edges that stay inside one namespace', () => {
@@ -322,5 +326,71 @@ describe('collapsing to namespaces', () => {
 
     expect(nodes.some((node) => node.kind === 'NAMESPACE')).toBe(false)
     expect(nodes).toHaveLength(4)
+  })
+})
+
+describe('expanding one namespace while the rest stay collapsed', () => {
+  const buildGraph = (): LineageGraph => {
+    const rawA = makeDatasetNode('raw-a', 1, { namespace: 'raw' })
+    const rawB = makeDatasetNode('raw-b', 1, { namespace: 'raw' })
+    const jobA = makeJobNode('job-a', { namespace: 'etl' })
+    const jobB = makeJobNode('job-b', { namespace: 'etl' })
+
+    const link = (from: LineageNode, to: LineageNode) => {
+      const edge = { origin: from.id, destination: to.id }
+      from.outEdges.push(edge)
+      to.inEdges.push(edge)
+    }
+    link(rawA, jobA)
+    link(rawB, jobA)
+    link(jobA, jobB)
+
+    return { graph: [rawA, rawB, jobA, jobB] }
+  }
+
+  const view = (expanded: string | null) =>
+    createElkNodes(buildGraph(), 'raw-a', true, true, null, false, true, expanded)
+
+  it('keeps the expanded namespace at full detail and collapses the others', () => {
+    const { nodes } = view('etl')
+
+    expect(nodes.map((node) => node.id).sort()).toEqual(['job-a', 'job-b', 'namespace:raw'])
+  })
+
+  it('points edges from collapsed namespaces at their summary node', () => {
+    const { edges } = view('etl')
+
+    const intoEtl = edges.find((edge) => edge.targetNodeId === 'job-a')
+    expect(intoEtl?.sourceNodeId).toBe('namespace:raw')
+    // raw-a and raw-b both feed job-a, so the merged edge carries the count.
+    expect(intoEtl?.label).toBe('2 connections')
+  })
+
+  it('leaves edges between two expanded nodes exactly as they were', () => {
+    const ungrouped = createElkNodes(buildGraph(), 'raw-a', true, true, null, false, false, null)
+    const original = ungrouped.edges.find(
+      (edge) => edge.sourceNodeId === 'job-a' && edge.targetNodeId === 'job-b'
+    )
+
+    const { edges } = view('etl')
+    const kept = edges.find(
+      (edge) => edge.sourceNodeId === 'job-a' && edge.targetNodeId === 'job-b'
+    )
+
+    expect(kept).toEqual(original)
+    expect(kept?.label).toBeUndefined()
+  })
+
+  it('expands several namespaces at once', () => {
+    const { nodes } = view('etl,raw')
+
+    expect(nodes.some((node) => node.kind === 'NAMESPACE')).toBe(false)
+    expect(nodes).toHaveLength(4)
+  })
+
+  it('ignores blank entries in the expanded list', () => {
+    const { nodes } = view(',,etl,')
+
+    expect(nodes.map((node) => node.id).sort()).toEqual(['job-a', 'job-b', 'namespace:raw'])
   })
 })

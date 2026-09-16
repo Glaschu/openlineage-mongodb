@@ -1,6 +1,7 @@
 // Copyright 2018-2025 contributors to the Marquez project
 // SPDX-License-Identifier: Apache-2.0
 
+import { useSearchParams } from 'react-router-dom'
 import React from 'react'
 
 import { PositionedNode } from '@/features/lineage/components/graph'
@@ -26,10 +27,19 @@ const countLabel = (count: number, singular: string) =>
  * this zoom the namespace *is* the node — its contents are not on the canvas.
  */
 const TableLineageNamespaceNode = ({ node }: Props) => {
+  const [searchParams, setSearchParams] = useSearchParams()
   const { namespace, datasetCount, jobCount } = node.data
 
+  const expand = () => {
+    const params = new URLSearchParams(searchParams)
+    const expanded = new Set((params.get('expandedNamespaces') ?? '').split(',').filter(Boolean))
+    expanded.add(namespace)
+    params.set('expandedNamespaces', [...expanded].join(','))
+    setSearchParams(params)
+  }
+
   return (
-    <g>
+    <g onClick={expand} cursor={'pointer'}>
       <rect
         x={0}
         y={0}
