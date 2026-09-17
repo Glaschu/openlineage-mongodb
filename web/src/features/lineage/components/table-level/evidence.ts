@@ -2,6 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { ImpactRow } from './impact'
+import {
+  code,
+  countBy,
+  definitionTable,
+  evidenceFilename as formatEvidenceFilename,
+  markdownTable,
+  scopeLines,
+} from '../evidenceFormat'
 
 export interface EvidenceInput {
   /** The object the lineage was traced from. */
@@ -14,14 +22,6 @@ export interface EvidenceInput {
   url: string
   rows: ImpactRow[]
   capturedAt: Date
-}
-
-const escapeCell = (value: string) => value.replace(/\|/g, '\\|')
-
-const countByNamespace = (rows: ImpactRow[]) => {
-  const counts = new Map<string, number>()
-  for (const row of rows) counts.set(row.namespace, (counts.get(row.namespace) ?? 0) + 1)
-  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
 }
 
 /**
@@ -49,16 +49,16 @@ export const buildEvidenceMarkdown = ({
   const lines: string[] = [
     `# Lineage impact: ${name}`,
     '',
-    '| | |',
-    '| --- | --- |',
-    `| Object | \`${escapeCell(name)}\` |`,
-    `| Namespace | \`${escapeCell(namespace)}\` |`,
-    `| Type | ${nodeType.toUpperCase()} |`,
-    `| Captured | ${capturedAt.toISOString()} |`,
-    `| Depth requested | ${depth} |`,
-    `| Upstream objects | ${upstream.length} |`,
-    `| Downstream objects | ${downstream.length} |`,
-    `| Furthest hop | ${maxHops} |`,
+    ...definitionTable([
+      ['Object', code(name)],
+      ['Namespace', code(namespace)],
+      ['Type', nodeType.toUpperCase()],
+      ['Captured', capturedAt.toISOString()],
+      ['Depth requested', String(depth)],
+      ['Upstream objects', String(upstream.length)],
+      ['Downstream objects', String(downstream.length)],
+      ['Furthest hop', String(maxHops)],
+    ]),
     '',
     `Reproduce this view: ${url}`,
     '',
@@ -66,21 +66,29 @@ export const buildEvidenceMarkdown = ({
 
   if (rows.length) {
     lines.push('## Objects by namespace', '')
-    for (const [ns, count] of countByNamespace(rows)) {
-      lines.push(`- \`${escapeCell(ns)}\` — ${count}`)
+    for (const [ns, count] of countBy(rows, (row) => row.namespace)) {
+      lines.push(`- ${code(ns)} — ${count}`)
     }
     lines.push('')
 
     lines.push('## Impacted objects', '')
-    lines.push('| Direction | Type | Namespace | Name | Hops | Latest run | Updated |')
-    lines.push('| --- | --- | --- | --- | ---: | --- | --- |')
-    for (const row of [...rows].sort((a, b) => a.hops - b.hops)) {
-      lines.push(
-        `| ${row.direction} | ${row.type} | \`${escapeCell(row.namespace)}\` | \`${escapeCell(
-          row.name
-        )}\` | ${row.hops} | ${row.state || '—'} | ${row.updatedAt || '—'} |`
+    lines.push(
+      ...markdownTable(
+        ['Direction', 'Type', 'Namespace', 'Name', 'Hops', 'Latest run', 'Updated'],
+        ['---', '---', '---', '---', '---:', '---', '---'],
+        [...rows]
+          .sort((a, b) => a.hops - b.hops)
+          .map((row) => [
+            row.direction,
+            row.type,
+            code(row.namespace),
+            code(row.name),
+            String(row.hops),
+            row.state || '—',
+            row.updatedAt || '—',
+          ])
       )
-    }
+    )
     lines.push('')
   } else {
     lines.push(
@@ -91,19 +99,10 @@ export const buildEvidenceMarkdown = ({
     )
   }
 
-  lines.push(
-    '## Scope of this evidence',
-    '',
-    `- Covers lineage reachable within ${depth} hop${
-      depth === 1 ? '' : 's'
-    } of the object above, as recorded by OpenLineage events.`,
-    '- Objects beyond that depth are not listed here and their absence is not evidence that none exist.',
-    '- Hop counts are shortest paths; an object may also be reachable by longer routes.',
-    ''
-  )
+  lines.push(...scopeLines(depth))
 
   return lines.join('\n')
 }
 
 export const evidenceFilename = (namespace: string, name: string, capturedAt: Date) =>
-  `lineage-evidence-${namespace}-${name}-${capturedAt.toISOString().slice(0, 10)}.md`
+  formatEvidenceFilename('lineage-evidence', [namespace, name], capturedAt)

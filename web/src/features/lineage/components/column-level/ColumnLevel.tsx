@@ -4,6 +4,7 @@ import { ColumnLevelNodeData, ColumnLevelNodeKinds, columnLevelNodeRenderer } fr
 import { Graph, HoveredEdge, ZoomPanControls } from '@/features/lineage/components/graph'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import { ZoomControls } from './ZoomControls'
+import { buildColumnEvidenceMarkdown, columnEvidenceFilename } from './columnEvidence'
 import { buildColumnImpactCsv, buildColumnImpactRows } from './columnImpact'
 import {
   buildTransformationIndex,
@@ -67,6 +68,24 @@ const ColumnLevel: React.FC = () => {
     () => buildColumnImpactRows(columnLineage?.graph, column, transformations),
     [columnLineage, column, transformations]
   )
+
+  const handleExportColumnEvidence = useCallbackRef(() => {
+    const capturedAt = new Date()
+    const columnName = searchParams.get('columnName') ?? 'column'
+    const markdown = buildColumnEvidenceMarkdown({
+      namespace: namespace ?? 'unknown',
+      dataset: name ?? 'unknown',
+      column: columnName,
+      depth,
+      url: window.location.href,
+      rows: impactRows,
+      capturedAt,
+    })
+    downloadBlob(
+      new Blob([markdown], { type: 'text/markdown;charset=utf-8' }),
+      columnEvidenceFilename(namespace ?? 'unknown', name ?? 'unknown', columnName, capturedAt)
+    )
+  })
 
   const handleExportImpact = useCallbackRef(() => {
     const csv = buildColumnImpactCsv(impactRows)
@@ -193,6 +212,7 @@ const ColumnLevel: React.FC = () => {
             filter={impactFilter}
             onFilterChange={setImpactFilter}
             onExport={handleExportImpact}
+            onExportEvidence={handleExportColumnEvidence}
           />
         ) : (
           <>

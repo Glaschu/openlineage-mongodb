@@ -15,6 +15,7 @@ import {
 } from '@mui/material'
 import { useSearchParams } from 'react-router-dom'
 import { useTheme } from '@mui/material/styles'
+import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined'
 import FileDownloadOutlined from '@mui/icons-material/FileDownloadOutlined'
 import React, { useMemo, useState } from 'react'
 
@@ -58,6 +59,7 @@ interface Props {
   filter: string
   onFilterChange: (filter: string) => void
   onExport?: () => void
+  onExportEvidence?: () => void
 }
 
 /**
@@ -71,6 +73,7 @@ export const ColumnImpactTable = ({
   filter,
   onFilterChange,
   onExport,
+  onExportEvidence,
 }: Props) => {
   const theme = useTheme()
   const [, setSearchParams] = useSearchParams()
@@ -130,6 +133,15 @@ export const ColumnImpactTable = ({
           onClick={() => onExport?.()}
         >
           Export CSV
+        </Button>
+        <Button
+          size={'small'}
+          variant={'outlined'}
+          startIcon={<DescriptionOutlined fontSize={'small'} />}
+          disabled={!onExportEvidence}
+          onClick={() => onExportEvidence?.()}
+        >
+          Evidence pack
         </Button>
       </Box>
 
