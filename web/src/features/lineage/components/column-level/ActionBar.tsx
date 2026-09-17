@@ -150,11 +150,14 @@ export const ActionBar = ({
           isOptionEqualToValue={(option, value) => option.id === value.id}
           value={searchOptions.find((option) => option.id === searchParams.get('column')) ?? null}
           onChange={(_event, option) => selectColumn(option)}
-          renderOption={(props, option) => (
-            <li {...props} key={option.id}>
-              <MqText font={'mono'}>{option.column}</MqText>
-            </li>
-          )}
+          renderOption={(props, option) => {
+            const { key: _mUIKey, ...optionProps } = props
+            return (
+              <li {...optionProps} key={option.id}>
+                <MqText font={'mono'}>{option.column}</MqText>
+              </li>
+            )
+          }}
           renderInput={(params) => (
             <TextField {...params} label='Find column' variant='outlined' size='small' />
           )}

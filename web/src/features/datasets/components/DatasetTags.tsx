@@ -201,22 +201,27 @@ const DatasetTags = (props: DatasetTagsProps) => {
           value={selectedTags}
           onChange={handleTagChange}
           renderTags={(value: string[]) => formatTags(value, tagData)}
-          renderOption={(props, option: string, { selected }) => (
-            <li {...props}>
-              <Checkbox
-                icon={<CheckBoxOutlineBlankIcon fontSize='small' />}
-                checkedIcon={<CheckBoxIcon fontSize='small' />}
-                style={{ marginRight: 4 }}
-                checked={selected}
-              />
-              <div>
-                <MQText bold>{option}</MQText>
-                <MQText subdued overflowHidden>
-                  {tagData.find((tagItem: Tag) => tagItem.name === option)?.description || ''}
-                </MQText>
-              </div>
-            </li>
-          )}
+          renderOption={(props, option: string, { selected }) => {
+            // MUI supplies a key inside props; spreading it triggers React's
+            // key-in-spread warning, so it is pulled out and passed directly.
+            const { key, ...optionProps } = props
+            return (
+              <li {...optionProps} key={key}>
+                <Checkbox
+                  icon={<CheckBoxOutlineBlankIcon fontSize='small' />}
+                  checkedIcon={<CheckBoxIcon fontSize='small' />}
+                  style={{ marginRight: 4 }}
+                  checked={selected}
+                />
+                <div>
+                  <MQText bold>{option}</MQText>
+                  <MQText subdued overflowHidden>
+                    {tagData.find((tagItem: Tag) => tagItem.name === option)?.description || ''}
+                  </MQText>
+                </div>
+              </li>
+            )
+          }}
           renderInput={(params) => (
             <TextField
               variant={!datasetField ? 'outlined' : 'standard'}

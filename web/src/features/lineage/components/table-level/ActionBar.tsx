@@ -166,16 +166,21 @@ export const ActionBar = ({
           groupBy={(option) => option.kind}
           isOptionEqualToValue={(option, value) => option.id === value.id}
           onChange={(_event, option) => onSelectNode?.(option ? option.id : null)}
-          renderOption={(props, option) => (
-            <li {...props} key={option.id}>
-              <Box>
-                <MqText font={'mono'}>{option.name}</MqText>
-                <MqText subdued font={'mono'}>
-                  {option.namespace}
-                </MqText>
-              </Box>
-            </li>
-          )}
+          renderOption={(props, option) => {
+            // MUI supplies a key inside props; spreading it triggers React's
+            // key-in-spread warning, so it is pulled out and passed directly.
+            const { key: _mUIKey, ...optionProps } = props
+            return (
+              <li {...optionProps} key={option.id}>
+                <Box>
+                  <MqText font={'mono'}>{option.name}</MqText>
+                  <MqText subdued font={'mono'}>
+                    {option.namespace}
+                  </MqText>
+                </Box>
+              </li>
+            )
+          }}
           renderInput={(params) => (
             <TextField {...params} label='Find node' variant='outlined' size='small' />
           )}
