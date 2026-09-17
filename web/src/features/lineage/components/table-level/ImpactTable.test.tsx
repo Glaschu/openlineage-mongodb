@@ -133,7 +133,7 @@ describe('ImpactTable', () => {
 
     // Unlike the CSV, an empty result is itself worth recording: "nothing
     // downstream" is the finding a change ticket needs.
-    renderTable({ rows: [], onExportEvidence })
+    renderTable({ rows: [], onExportEvidence, onExport: () => {} })
     expect(screen.getByRole('button', { name: /Evidence pack/ })).toBeEnabled()
     expect(screen.getByRole('button', { name: /Export CSV/ })).toBeDisabled()
   })
@@ -159,5 +159,27 @@ describe('ImpactTable', () => {
     renderTable({ filter: 'payments' })
 
     expect(nameColumn()).toEqual(['near-job'])
+  })
+
+  it('leaves out export controls the caller cannot handle', () => {
+    renderTable()
+
+    expect(screen.queryByRole('button', { name: /Export CSV/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Evidence pack/ })).not.toBeInTheDocument()
+  })
+
+  it('renders an extra column when a caller has more to say about each row', () => {
+    renderTable({
+      extraColumn: {
+        label: 'In set',
+        render: (r) => <span>{r.name === 'near-job' ? 'moving' : '-'}</span>,
+      },
+    })
+
+    const headers = screen.getAllByRole('columnheader').map((h) => h.textContent)
+    expect(headers[0]).toContain('In set')
+
+    const firstRowCells = within(screen.getAllByRole('row')[1]).getAllByRole('cell')
+    expect(firstRowCells[0].textContent).toBe('moving')
   })
 })

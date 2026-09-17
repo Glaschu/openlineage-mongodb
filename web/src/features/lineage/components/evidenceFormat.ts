@@ -60,4 +60,4 @@ export const scopeLines = (depth: number, extra: string[] = []): string[] => [
 ]
 
 export const evidenceFilename = (kind: string, parts: string[], capturedAt: Date) =>
-  `${kind}-${parts.join('-')}-${capturedAt.toISOString().slice(0, 10)}.md`
+  [kind, ...parts.filter(Boolean), capturedAt.toISOString().slice(0, 10)].join('-') + '.md'

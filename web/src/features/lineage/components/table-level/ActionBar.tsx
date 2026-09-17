@@ -12,6 +12,8 @@ import { FEATURE_FLAGS } from '@/shared/config/featureFlags'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import ArrowBackIosRounded from '@mui/icons-material/ArrowBackIosRounded'
 import LinkOutlined from '@mui/icons-material/LinkOutlined'
+import PlaylistAdd from '@mui/icons-material/PlaylistAdd'
+import PlaylistAddCheck from '@mui/icons-material/PlaylistAddCheck'
 import Refresh from '@mui/icons-material/Refresh'
 
 import { truncateText } from '@/shared/utils/text'
@@ -47,8 +49,12 @@ interface ActionBarProps {
   /** Every node currently laid out, for the find-a-node box. */
   searchOptions?: GraphSearchOption[]
   onSelectNode?: (nodeId: string | null) => void
-  view: 'graph' | 'impact'
-  setView: (view: 'graph' | 'impact') => void
+  view: 'graph' | 'impact' | 'migration'
+  setView: (view: 'graph' | 'impact' | 'migration') => void
+  /** Whether the focused object is already part of the migration set. */
+  isInMigrationSet: boolean
+  onToggleMigrationMember: () => void
+  migrationSetSize: number
 }
 
 export const ActionBar = ({
@@ -69,6 +75,9 @@ export const ActionBar = ({
   onSelectNode,
   view,
   setView,
+  isInMigrationSet,
+  onToggleMigrationMember,
+  migrationSetSize,
 }: ActionBarProps) => {
   const { namespace, name } = useParams()
   const navigate = useNavigate()
@@ -177,7 +186,7 @@ export const ActionBar = ({
           value={view}
           sx={{ mr: 2 }}
           onChange={(_event, value) => {
-            if (value !== 'graph' && value !== 'impact') return
+            if (value !== 'graph' && value !== 'impact' && value !== 'migration') return
             setView(value)
             searchParams.set('view', value)
             setSearchParams(searchParams)
@@ -185,7 +194,31 @@ export const ActionBar = ({
         >
           <ToggleButton value={'graph'}>Graph</ToggleButton>
           <ToggleButton value={'impact'}>Impact</ToggleButton>
+          <ToggleButton value={'migration'}>
+            {migrationSetSize ? `Migration (${migrationSetSize})` : 'Migration'}
+          </ToggleButton>
         </ToggleButtonGroup>
+        <MQTooltip
+          title={
+            isInMigrationSet
+              ? 'Remove this object from the migration set'
+              : 'Add this object to the migration set to plan moving it with others'
+          }
+        >
+          <IconButton
+            size={'small'}
+            color={isInMigrationSet ? 'primary' : 'default'}
+            sx={{ mr: 1 }}
+            aria-label={isInMigrationSet ? 'remove from migration set' : 'add to migration set'}
+            onClick={onToggleMigrationMember}
+          >
+            {isInMigrationSet ? (
+              <PlaylistAddCheck fontSize={'small'} />
+            ) : (
+              <PlaylistAdd fontSize={'small'} />
+            )}
+          </IconButton>
+        </MQTooltip>
         <MQTooltip title={'Copy a shareable link to this exact view'}>
           <IconButton
             size={'small'}

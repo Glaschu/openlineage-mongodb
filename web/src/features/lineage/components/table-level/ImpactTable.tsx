@@ -55,13 +55,22 @@ const COLUMNS: Column[] = [
   { key: 'updatedAt', label: 'Updated' },
 ]
 
+interface ExtraColumn {
+  label: string
+  render: (row: ImpactRow) => React.ReactNode
+}
+
 interface Props {
   rows: ImpactRow[]
   /** Text the caller has already applied is not re-applied here. */
   filter: string
   onFilterChange: (filter: string) => void
+  /** Export controls appear only when the caller can handle them. */
   onExport?: () => void
   onExportEvidence?: () => void
+  title?: string
+  /** An extra leading column, for callers with something more to say per row. */
+  extraColumn?: ExtraColumn
 }
 
 export const matchesFilter = (row: ImpactRow, filter: string) => {
@@ -96,6 +105,8 @@ export const ImpactTable = ({
   onFilterChange,
   onExport,
   onExportEvidence,
+  title = 'Impact',
+  extraColumn,
 }: Props) => {
   const theme = useTheme()
   const navigate = useNavigate()
@@ -121,7 +132,7 @@ export const ImpactTable = ({
   return (
     <Box px={2} py={2} height={'100%'} overflow={'auto'}>
       <Box display={'flex'} alignItems={'center'} gap={2} mb={2}>
-        <MqText heading>Impact</MqText>
+        <MqText heading>{title}</MqText>
         <Chip size={'small'} variant={'outlined'} label={`${upstreamCount} upstream`} />
         <Chip size={'small'} variant={'outlined'} label={`${downstreamCount} downstream`} />
         <TextField
@@ -131,24 +142,27 @@ export const ImpactTable = ({
           onChange={(event) => onFilterChange(event.target.value)}
           sx={{ width: 260, ml: 'auto' }}
         />
-        <Button
-          size={'small'}
-          variant={'outlined'}
-          startIcon={<FileDownloadOutlined fontSize={'small'} />}
-          disabled={!onExport || rows.length === 0}
-          onClick={() => onExport?.()}
-        >
-          Export CSV
-        </Button>
-        <Button
-          size={'small'}
-          variant={'outlined'}
-          startIcon={<DescriptionOutlined fontSize={'small'} />}
-          disabled={!onExportEvidence}
-          onClick={() => onExportEvidence?.()}
-        >
-          Evidence pack
-        </Button>
+        {onExport && (
+          <Button
+            size={'small'}
+            variant={'outlined'}
+            startIcon={<FileDownloadOutlined fontSize={'small'} />}
+            disabled={rows.length === 0}
+            onClick={() => onExport()}
+          >
+            Export CSV
+          </Button>
+        )}
+        {onExportEvidence && (
+          <Button
+            size={'small'}
+            variant={'outlined'}
+            startIcon={<DescriptionOutlined fontSize={'small'} />}
+            onClick={() => onExportEvidence()}
+          >
+            Evidence pack
+          </Button>
+        )}
       </Box>
 
       {visibleRows.length === 0 ? (
@@ -163,6 +177,11 @@ export const ImpactTable = ({
         <Table size={'small'} aria-label={'Impacted objects'}>
           <TableHead>
             <TableRow>
+              {extraColumn && (
+                <TableCell>
+                  <MqText subdued>{extraColumn.label}</MqText>
+                </TableCell>
+              )}
               {COLUMNS.map((column) => (
                 <TableCell key={column.key} align={column.numeric ? 'right' : 'left'}>
                   <TableSortLabel
@@ -192,6 +211,7 @@ export const ImpactTable = ({
                   )
                 }
               >
+                {extraColumn && <TableCell>{extraColumn.render(row)}</TableCell>}
                 <TableCell>
                   <MqText
                     color={

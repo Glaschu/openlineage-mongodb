@@ -18,15 +18,25 @@ import {
 import { ZoomControls } from '../column-level/ZoomControls'
 import { buildEvidenceMarkdown, evidenceFilename } from './evidence'
 import { buildImpactCsv, buildImpactRows } from './impact'
+import { buildMigrationEvidenceMarkdown, migrationEvidenceFilename } from './migrationEvidence'
 import { buildOwnerIndex, ownerFor } from '@/features/namespaces/owners'
+import {
+  combineMigrationImpact,
+  parseMigrationSet,
+  serialiseMigrationSet,
+  summariseMigration,
+  toggleMember,
+} from './migrationSet'
 import { createElkNodes, findDownstreamNodes, findUpstreamNodes } from './layout'
 import { downloadBlob } from '@/shared/utils/download'
 import { useCallbackRef } from '@/shared/hooks/hooks'
 import { useLineage } from '@/features/lineage/api'
+import { useMigrationSetLineage } from '@/features/lineage/api/migration-queries'
 import { useNamespaces } from '@/features/namespaces/api'
 import { useParams, useSearchParams } from 'react-router-dom'
 import EdgeProvenance from './EdgeProvenance'
 import ImpactTable from './ImpactTable'
+import MigrationSetPanel from './MigrationSetPanel'
 import MqParentSize from '@/shared/components/MqParentSize/MqParentSize'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import TableLevelDrawer from './TableLevelDrawer'
@@ -66,8 +76,9 @@ const ColumnLevel = () => {
     searchParams.get('groupByNamespace') === 'true'
   )
   const expandedNamespaces = searchParams.get('expandedNamespaces')
-  const [view, setView] = useState<'graph' | 'impact'>(
-    searchParams.get('view') === 'impact' ? 'impact' : 'graph'
+  const viewParam = searchParams.get('view')
+  const [view, setView] = useState<'graph' | 'impact' | 'migration'>(
+    viewParam === 'impact' || viewParam === 'migration' ? viewParam : 'graph'
   )
   const [impactFilter, setImpactFilter] = useState('')
 
@@ -155,6 +166,68 @@ const ColumnLevel = () => {
     downloadBlob(
       new Blob([csv], { type: 'text/csv;charset=utf-8' }),
       `impact-${namespace ?? 'unknown'}-${name ?? 'unknown'}.csv`
+    )
+  })
+
+  // The set lives in the URL so a plan can be shared or reopened.
+  const migrationMembers = useMemo(
+    () => parseMigrationSet(searchParams.get('migrationSet')),
+    [searchParams]
+  )
+
+  const setMigrationMembers = useCallbackRef((members: string[]) => {
+    const params = new URLSearchParams(searchParams)
+    if (members.length) params.set('migrationSet', serialiseMigrationSet(members))
+    else params.delete('migrationSet')
+    setSearchParams(params)
+  })
+
+  const migrationQueries = useMigrationSetLineage(migrationMembers, depth)
+
+  // useQueries returns a new array each render, so memoise on when the data
+  // last changed rather than on the array identity.
+  const migrationDataStamp = migrationQueries.map((query) => query.dataUpdatedAt).join(',')
+
+  const migrationRows = useMemo(
+    () =>
+      combineMigrationImpact(
+        migrationMembers,
+        migrationMembers.map((member, index) => ({
+          member,
+          rows: buildImpactRows(migrationQueries[index]?.data, member).map((row) => ({
+            ...row,
+            owner: ownerFor(owners, row.namespace),
+          })),
+        }))
+      ),
+    [migrationMembers, owners, migrationDataStamp, migrationQueries]
+  )
+
+  const migrationSummary = useMemo(
+    () => summariseMigration(migrationMembers, migrationRows),
+    [migrationMembers, migrationRows]
+  )
+
+  const handleExportMigrationCsv = useCallbackRef(() => {
+    downloadBlob(
+      new Blob([buildImpactCsv(migrationRows)], { type: 'text/csv;charset=utf-8' }),
+      `migration-set-impact-${new Date().toISOString().slice(0, 10)}.csv`
+    )
+  })
+
+  const handleExportMigrationEvidence = useCallbackRef(() => {
+    const capturedAt = new Date()
+    const markdown = buildMigrationEvidenceMarkdown({
+      members: migrationMembers,
+      rows: migrationRows,
+      summary: migrationSummary,
+      depth,
+      url: window.location.href,
+      capturedAt,
+    })
+    downloadBlob(
+      new Blob([markdown], { type: 'text/markdown;charset=utf-8' }),
+      migrationEvidenceFilename(capturedAt)
     )
   })
 
@@ -280,6 +353,11 @@ const ColumnLevel = () => {
         onSelectNode={handleSelectNode}
         view={view}
         setView={setView}
+        isInMigrationSet={migrationMembers.includes(focusNodeId)}
+        onToggleMigrationMember={() =>
+          setMigrationMembers(toggleMember(migrationMembers, focusNodeId))
+        }
+        migrationSetSize={migrationMembers.length}
       />
       <Box height={`calc(100vh - ${HEADER_HEIGHT}px - ${HEADER_HEIGHT}px - 1px)`}>
         {isFetching && (
@@ -319,7 +397,21 @@ const ColumnLevel = () => {
             <TableLevelDrawer lineageGraph={lineage} />
           </Box>
         </Drawer>
-        {view === 'impact' ? (
+        {view === 'migration' ? (
+          <MigrationSetPanel
+            members={migrationMembers}
+            rows={migrationRows}
+            summary={migrationSummary}
+            isLoading={migrationQueries.some((query) => query.isLoading)}
+            filter={impactFilter}
+            onFilterChange={setImpactFilter}
+            onRemoveMember={(member) =>
+              setMigrationMembers(migrationMembers.filter((entry) => entry !== member))
+            }
+            onExportCsv={handleExportMigrationCsv}
+            onExportEvidence={handleExportMigrationEvidence}
+          />
+        ) : view === 'impact' ? (
           <ImpactTable
             rows={impactRows}
             filter={impactFilter}
