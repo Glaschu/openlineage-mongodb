@@ -8,6 +8,7 @@
 import {
   Autocomplete,
   Box,
+  Button,
   Chip,
   Container,
   Grid,
@@ -23,12 +24,21 @@ import {
 import { Namespace } from '@/shared/types/api'
 import { RootState } from '@/store/store'
 import { Link as RouterLink } from 'react-router-dom'
+import {
+  buildCoverageCsv,
+  buildCoverageEvidenceMarkdown,
+  coverageEvidenceFilename,
+} from './coverageEvidence'
+import { buildOwnerIndex, isUnclaimed, ownerFor } from '@/features/namespaces/owners'
+import { downloadBlob } from '@/shared/utils/download'
 import { formatUpdatedAt } from '@/shared/utils'
 import { theme } from '@/shared/theme/theme'
 import { useNamespaceCoverage } from './api/coverage'
 import { useNamespaces } from '@/features/namespaces/api'
+import { useSearchParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import { useState } from 'react'
+import DescriptionOutlined from '@mui/icons-material/DescriptionOutlined'
+import FileDownloadOutlined from '@mui/icons-material/FileDownloadOutlined'
 import MqEmpty from '@/shared/components/MqEmpty/MqEmpty'
 import MqText from '@/shared/components/MqText/MqText'
 import React from 'react'
@@ -58,7 +68,15 @@ const MetricCard = ({ title, value, hint, progress }: MetricCardProps) => (
       <LinearProgress
         variant={'determinate'}
         value={progress}
-        sx={{ my: 1, height: 8, borderRadius: 4 }}
+        sx={{
+          my: 1,
+          height: 8,
+          borderRadius: 4,
+          // The default track is a strong tint of the bar colour, so an empty
+          // bar reads as a full one — the opposite of the truth on a page whose
+          // job is to show gaps.
+          backgroundColor: theme.palette.action.disabledBackground,
+        }}
       />
     )}
     <MqText subdued small>
@@ -71,11 +89,54 @@ const GovernancePage = () => {
   const { data: namespacesData } = useNamespaces()
   const namespaces: Namespace[] = namespacesData?.namespaces || []
   const selectedNamespace = useSelector((state: RootState) => state.namespaces.selectedNamespace)
-  const [namespace, setNamespace] = useState<string | null>(selectedNamespace)
+  // The namespace lives in the URL so a coverage view can be linked to — and so
+  // the "reproduce this view" line in the evidence pack is true.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const namespace = searchParams.get('namespace') ?? selectedNamespace
+
+  const setNamespace = (value: string | null) =>
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      if (value) next.set('namespace', value)
+      else next.delete('namespace')
+      return next
+    })
 
   const { data: coverage, isLoading, isError } = useNamespaceCoverage(namespace)
 
   const missing = coverage?.datasets.filter((dataset) => !dataset.hasColumnLineage) ?? []
+
+  // Whoever owns the namespace owns its gaps; an attestation without a name on
+  // it leaves nobody accountable.
+  const owners = buildOwnerIndex(namespaces)
+  const owner = namespace ? ownerFor(owners, namespace) : ''
+
+  const exportCsv = () => {
+    if (!coverage) return
+    downloadBlob(
+      new Blob([buildCoverageCsv(coverage, owner)], { type: 'text/csv;charset=utf-8' }),
+      `coverage-${coverage.namespace}-${new Date().toISOString().slice(0, 10)}.csv`
+    )
+  }
+
+  const exportEvidence = () => {
+    if (!coverage) return
+    const capturedAt = new Date()
+    downloadBlob(
+      new Blob(
+        [
+          buildCoverageEvidenceMarkdown({
+            coverage,
+            owner,
+            url: window.location.href,
+            capturedAt,
+          }),
+        ],
+        { type: 'text/markdown;charset=utf-8' }
+      ),
+      coverageEvidenceFilename(coverage.namespace, capturedAt)
+    )
+  }
 
   return (
     <Container maxWidth={'lg'} disableGutters sx={{ pt: 3, pb: 6 }}>
@@ -86,14 +147,42 @@ const GovernancePage = () => {
             Column-lineage completeness per namespace — the evidence gap list for data governance.
           </MqText>
         </Box>
-        <Autocomplete
-          size={'small'}
-          sx={{ width: 320 }}
-          options={namespaces.map((item) => item.name)}
-          value={namespace}
-          onChange={(_event, value) => setNamespace(value)}
-          renderInput={(params) => <TextField {...params} label={'Namespace'} />}
-        />
+        <Box display={'flex'} alignItems={'center'} gap={2}>
+          {namespace && (
+            <Chip
+              size={'small'}
+              variant={'outlined'}
+              color={isUnclaimed(owner) ? 'warning' : 'default'}
+              label={owner || 'Unclaimed'}
+            />
+          )}
+          <Button
+            size={'small'}
+            variant={'outlined'}
+            startIcon={<FileDownloadOutlined fontSize={'small'} />}
+            disabled={!coverage}
+            onClick={exportCsv}
+          >
+            Export CSV
+          </Button>
+          <Button
+            size={'small'}
+            variant={'outlined'}
+            startIcon={<DescriptionOutlined fontSize={'small'} />}
+            disabled={!coverage}
+            onClick={exportEvidence}
+          >
+            Evidence pack
+          </Button>
+          <Autocomplete
+            size={'small'}
+            sx={{ width: 320 }}
+            options={namespaces.map((item) => item.name)}
+            value={namespace}
+            onChange={(_event, value) => setNamespace(value)}
+            renderInput={(params) => <TextField {...params} label={'Namespace'} />}
+          />
+        </Box>
       </Box>
 
       {isLoading && <LinearProgress />}
