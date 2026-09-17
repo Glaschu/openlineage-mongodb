@@ -199,8 +199,16 @@ const ColumnLevel: React.FC = () => {
         )}
         <Drawer
           anchor={'right'}
-          open={!!searchParams.get('dataset')}
-          onClose={() => setSearchParams({})}
+          open={searchParams.get('drawer') === 'open'}
+          onClose={() =>
+            setSearchParams((prev) => {
+              // Close the drawer and nothing else: the column stays selected,
+              // as do depth, direction and isolate.
+              const next = new URLSearchParams(prev)
+              next.delete('drawer')
+              return next
+            })
+          }
           PaperProps={{
             sx: {
               backgroundColor: theme.palette.background.default,

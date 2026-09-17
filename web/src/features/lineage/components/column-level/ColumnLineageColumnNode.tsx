@@ -16,20 +16,29 @@ export const encodeQueryString = (namespace: string, dataset: string, column: st
 }
 
 const ColumnLineageColumnNode = ({ node }: ColumnLineageColumnNodeProps) => {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [, setSearchParams] = useSearchParams()
   const [shine, setShine] = React.useState(false)
 
   const { selected, dimmed } = node.data
 
-  const handleSelect = () => {
-    setSearchParams({
-      ...Object.fromEntries(searchParams.entries()),
-      dataset: node.data.dataset,
-      namespace: node.data.namespace,
-      column: encodeQueryString(node.data.namespace, node.data.dataset, node.data.column),
-      columnName: node.data.column,
+  const select = (openDrawer: boolean) =>
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('dataset', node.data.dataset)
+      next.set('namespace', node.data.namespace)
+      next.set(
+        'column',
+        encodeQueryString(node.data.namespace, node.data.dataset, node.data.column)
+      )
+      next.set('columnName', node.data.column)
+      if (openDrawer) next.set('drawer', 'open')
+      return next
     })
-  }
+
+  // A click selects and nothing more. Opening the details drawer is a separate,
+  // deliberate act: the button in the action bar, or the dataset title. Binding
+  // it to selection is what made the drawer appear unbidden.
+  const handleSelect = () => select(false)
 
   return (
     <g opacity={dimmed && !shine ? 0.3 : 1}>

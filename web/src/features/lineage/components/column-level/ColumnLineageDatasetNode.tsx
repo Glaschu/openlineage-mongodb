@@ -54,6 +54,7 @@ export const ColumnLineageDatasetNode = ({ node }: ColumnLineageDatasetNodeProps
             const next = new URLSearchParams(prev)
             next.set('dataset', node.data.dataset)
             next.set('namespace', node.data.namespace)
+            next.set('drawer', 'open')
             return next
           })
         }

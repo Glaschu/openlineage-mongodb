@@ -64,6 +64,33 @@ const renderNode = (initialEntry = '/column-level/analytics/users') => {
 }
 
 describe('ColumnLineageColumnNode', () => {
+  it('selects the column without opening the details drawer', () => {
+    const { locationRef, container } = renderNode('/column-level/analytics/users?depth=3')
+
+    fireEvent.click(container.querySelector('rect') as Element)
+
+    const params = new URLSearchParams(locationRef.current?.search ?? '')
+    expect(params.get('columnName')).toBe('very_long_column_name_exceeding_limits')
+    expect(params.get('dataset')).toBe('users')
+    // Selecting is not a request to open the drawer: that is what made it
+    // appear unbidden on every click.
+    expect(params.get('drawer')).toBeNull()
+    // And unrelated view state survives.
+    expect(params.get('depth')).toBe('3')
+  })
+
+  it('leaves an already open drawer open when another column is selected', () => {
+    const { locationRef, container } = renderNode(
+      '/column-level/analytics/users?drawer=open&depth=3'
+    )
+
+    fireEvent.click(container.querySelector('rect') as Element)
+
+    const params = new URLSearchParams(locationRef.current?.search ?? '')
+    expect(params.get('drawer')).toBe('open')
+    expect(params.get('columnName')).toBe('very_long_column_name_exceeding_limits')
+  })
+
   beforeEach(() => {
     window.history.replaceState({}, '', '/column-level/analytics/users')
   })

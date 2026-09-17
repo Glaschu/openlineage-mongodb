@@ -11,6 +11,7 @@ import {
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import ArrowBackIosRounded from '@mui/icons-material/ArrowBackIosRounded'
 import FileDownloadOutlined from '@mui/icons-material/FileDownloadOutlined'
+import InfoOutlined from '@mui/icons-material/InfoOutlined'
 import LinkOutlined from '@mui/icons-material/LinkOutlined'
 import Refresh from '@mui/icons-material/Refresh'
 
@@ -226,6 +227,26 @@ export const ActionBar = ({
               onClick={() => onExportCsv?.()}
             >
               <FileDownloadOutlined fontSize={'small'} />
+            </IconButton>
+          </span>
+        </MQTooltip>
+        <MQTooltip
+          title={
+            selectedColumn
+              ? 'Show details and derivation for the selected column'
+              : 'Select a column to see its details'
+          }
+        >
+          <span>
+            <IconButton
+              size={'small'}
+              color={'primary'}
+              sx={{ mr: 1 }}
+              aria-label={'show details'}
+              disabled={!selectedColumn}
+              onClick={() => updateParams((params) => params.set('drawer', 'open'))}
+            >
+              <InfoOutlined fontSize={'small'} />
             </IconButton>
           </span>
         </MQTooltip>
