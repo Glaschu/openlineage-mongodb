@@ -3,9 +3,17 @@ import { CircularProgress, Drawer } from '@mui/material'
 import { ColumnLevelNodeData, ColumnLevelNodeKinds, columnLevelNodeRenderer } from './nodes'
 import { Graph, HoveredEdge, ZoomPanControls } from '@/features/lineage/components/graph'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
+import { RootState } from '@/store/store'
 import { ZoomControls } from './ZoomControls'
 import { buildColumnEvidenceMarkdown, columnEvidenceFilename } from './columnEvidence'
 import { buildColumnImpactCsv, buildColumnImpactRows } from './columnImpact'
+import {
+  buildColumnMigrationEvidenceMarkdown,
+  columnMigrationEvidenceFilename,
+  combineColumnMigrationImpact,
+  describeColumnMember,
+  summariseColumnMigration,
+} from './columnMigration'
 import { buildOwnerIndex, ownerFor } from '@/features/namespaces/owners'
 import {
   buildTransformationIndex,
@@ -14,14 +22,21 @@ import {
 } from './columnLineageUtils'
 import { createElkNodes } from './layout'
 import { downloadBlob } from '@/shared/utils/download'
+import {
+  removeColumnMigrationMember,
+  toggleColumnMigrationMember,
+} from '@/features/lineage/migrationSlice'
 import { useCallbackRef } from '@/shared/hooks/hooks'
 import { useColumnLineage } from '@/features/lineage/api'
+import { useColumnMigrationLineage } from '@/features/lineage/api/column-migration-queries'
 import { useDataset } from '@/features/datasets/api'
+import { useDispatch, useSelector } from 'react-redux'
 import { useNamespaces } from '@/features/namespaces/api'
 import { useParams, useSearchParams } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import ColumnImpactTable from './ColumnImpactTable'
 import ColumnLevelDrawer from './ColumnLevelDrawer'
+import ColumnMigrationPanel from './ColumnMigrationPanel'
 import EdgeProvenance from './EdgeProvenance'
 import MqParentSize from '@/shared/components/MqParentSize/MqParentSize'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
@@ -61,8 +76,9 @@ const ColumnLevel: React.FC = () => {
   const [hoveredEdge, setHoveredEdge] = useState<HoveredEdge | null>(null)
   const transformations = useMemo(() => buildTransformationIndex(centerDataset), [centerDataset])
 
-  const [view, setView] = useState<'graph' | 'impact'>(
-    searchParams.get('view') === 'impact' ? 'impact' : 'graph'
+  const viewParam = searchParams.get('view')
+  const [view, setView] = useState<'graph' | 'impact' | 'migration'>(
+    viewParam === 'impact' || viewParam === 'migration' ? viewParam : 'graph'
   )
   const [impactFilter, setImpactFilter] = useState('')
 
@@ -77,6 +93,68 @@ const ColumnLevel: React.FC = () => {
       })),
     [columnLineage, column, transformations, owners]
   )
+
+  const dispatch = useDispatch()
+  const columnMembers = useSelector((state: RootState) => state.migration.columnMembers)
+  const { datasets: migrationDatasets, queries: migrationQueries } = useColumnMigrationLineage(
+    columnMembers,
+    depth
+  )
+  const migrationStamp = migrationQueries.map((query) => query.dataUpdatedAt).join(',')
+
+  const migrationRows = useMemo(
+    () =>
+      combineColumnMigrationImpact(
+        columnMembers,
+        columnMembers.map((member) => {
+          const { namespace, dataset } = describeColumnMember(member)
+          const index = migrationDatasets.findIndex(
+            (entry) => entry.namespace === namespace && entry.dataset === dataset
+          )
+          const graph = migrationQueries[index]?.data?.graph
+          return {
+            member,
+            rows: buildColumnImpactRows(graph, member, transformations).map((row) => ({
+              ...row,
+              owner: ownerFor(owners, row.namespace),
+            })),
+          }
+        })
+      ),
+    [columnMembers, migrationDatasets, migrationQueries, migrationStamp, transformations, owners]
+  )
+
+  const migrationSummary = useMemo(
+    () => summariseColumnMigration(columnMembers, migrationRows),
+    [columnMembers, migrationRows]
+  )
+
+  const handleExportColumnMigration = useCallbackRef(() => {
+    const capturedAt = new Date()
+    downloadBlob(
+      new Blob(
+        [
+          buildColumnMigrationEvidenceMarkdown({
+            members: columnMembers,
+            rows: migrationRows,
+            summary: migrationSummary,
+            depth,
+            url: window.location.href,
+            capturedAt,
+          }),
+        ],
+        { type: 'text/markdown;charset=utf-8' }
+      ),
+      columnMigrationEvidenceFilename(capturedAt)
+    )
+  })
+
+  const handleExportColumnMigrationCsv = useCallbackRef(() => {
+    downloadBlob(
+      new Blob([buildColumnImpactCsv(migrationRows)], { type: 'text/csv;charset=utf-8' }),
+      `column-change-impact-${new Date().toISOString().slice(0, 10)}.csv`
+    )
+  })
 
   const handleExportColumnEvidence = useCallbackRef(() => {
     const capturedAt = new Date()
@@ -175,6 +253,9 @@ const ColumnLevel: React.FC = () => {
         searchOptions={searchOptions}
         view={view}
         setView={setView}
+        isInMigrationSet={!!column && columnMembers.includes(column)}
+        onToggleMigrationMember={() => column && dispatch(toggleColumnMigrationMember(column))}
+        migrationSetSize={columnMembers.length}
       />
       <Box height={`calc(100vh - ${HEADER_HEIGHT}px - 64px)`}>
         {isFetching && (
@@ -222,7 +303,19 @@ const ColumnLevel: React.FC = () => {
             <ColumnLevelDrawer columnLineage={columnLineage} />
           </Box>
         </Drawer>
-        {view === 'impact' ? (
+        {view === 'migration' ? (
+          <ColumnMigrationPanel
+            members={columnMembers}
+            rows={migrationRows}
+            summary={migrationSummary}
+            isLoading={migrationQueries.some((query) => query.isLoading)}
+            filter={impactFilter}
+            onFilterChange={setImpactFilter}
+            onRemoveMember={(member) => dispatch(removeColumnMigrationMember(member))}
+            onExportCsv={handleExportColumnMigrationCsv}
+            onExportEvidence={handleExportColumnMigration}
+          />
+        ) : view === 'impact' ? (
           <ColumnImpactTable
             rows={impactRows}
             selectedColumn={column}

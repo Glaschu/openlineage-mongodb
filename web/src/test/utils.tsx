@@ -10,7 +10,7 @@ import React, { ReactElement } from 'react'
  * undefined branch, which says nothing about the behaviour under test.
  */
 const DEFAULT_STATE = {
-  migration: { members: [] },
+  migration: { members: [], columnMembers: [] },
 }
 
 const createMockStore = (initialState: any) => {

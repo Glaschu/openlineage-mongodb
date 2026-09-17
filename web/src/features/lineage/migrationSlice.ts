@@ -13,10 +13,14 @@ import { PayloadAction, createSlice } from '@reduxjs/toolkit'
  * session lasts.
  */
 export interface MigrationState {
+  /** Datasets and jobs, as `{type}:{namespace}:{name}`. */
   members: string[]
+  /** Columns, as `datasetField:{namespace}:{dataset}:{column}`. */
+  columnMembers: string[]
 }
 
 const STORAGE_KEY = 'marquez.migrationSet'
+const COLUMN_STORAGE_KEY = 'marquez.migrationSet.columns'
 
 /**
  * A plan under construction should survive a refresh. sessionStorage rather
@@ -26,9 +30,9 @@ const STORAGE_KEY = 'marquez.migrationSet'
  * Both accessors can throw — private browsing, blocked storage — and a lost
  * set is an inconvenience, not a reason to fail the page.
  */
-export const loadPersistedMembers = (): string[] => {
+export const loadPersistedMembers = (key: string = STORAGE_KEY): string[] => {
   try {
-    const raw = window.sessionStorage?.getItem(STORAGE_KEY)
+    const raw = window.sessionStorage?.getItem(key)
     const parsed = raw ? JSON.parse(raw) : null
     return Array.isArray(parsed) ? parsed.filter((entry) => typeof entry === 'string') : []
   } catch {
@@ -36,17 +40,18 @@ export const loadPersistedMembers = (): string[] => {
   }
 }
 
-export const persistMembers = (members: string[]) => {
+export const persistMembers = (members: string[], key: string = STORAGE_KEY) => {
   try {
-    if (members.length) window.sessionStorage?.setItem(STORAGE_KEY, JSON.stringify(members))
-    else window.sessionStorage?.removeItem(STORAGE_KEY)
+    if (members.length) window.sessionStorage?.setItem(key, JSON.stringify(members))
+    else window.sessionStorage?.removeItem(key)
   } catch {
     // Persisting is best effort; the set still works for this page view.
   }
 }
 
 const initialState: MigrationState = {
-  members: loadPersistedMembers(),
+  members: loadPersistedMembers(STORAGE_KEY),
+  columnMembers: loadPersistedMembers(COLUMN_STORAGE_KEY),
 }
 
 const migrationSlice = createSlice({
@@ -66,6 +71,18 @@ const migrationSlice = createSlice({
     },
     clearMigrationSet: (state) => {
       state.members = []
+      state.columnMembers = []
+    },
+    setColumnMigrationMembers: (state, action: PayloadAction<string[]>) => {
+      state.columnMembers = [...new Set(action.payload.filter(Boolean))]
+    },
+    toggleColumnMigrationMember: (state, action: PayloadAction<string>) => {
+      state.columnMembers = state.columnMembers.includes(action.payload)
+        ? state.columnMembers.filter((member) => member !== action.payload)
+        : [...state.columnMembers, action.payload]
+    },
+    removeColumnMigrationMember: (state, action: PayloadAction<string>) => {
+      state.columnMembers = state.columnMembers.filter((member) => member !== action.payload)
     },
   },
 })
@@ -75,6 +92,11 @@ export const {
   toggleMigrationMember,
   removeMigrationMember,
   clearMigrationSet,
+  setColumnMigrationMembers,
+  toggleColumnMigrationMember,
+  removeColumnMigrationMember,
 } = migrationSlice.actions
+
+export const COLUMN_MIGRATION_STORAGE_KEY = COLUMN_STORAGE_KEY
 
 export default migrationSlice.reducer

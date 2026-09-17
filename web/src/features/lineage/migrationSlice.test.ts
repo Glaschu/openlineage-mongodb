@@ -7,26 +7,26 @@ import reducer, {
   clearMigrationSet,
   loadPersistedMembers,
   persistMembers,
+  removeColumnMigrationMember,
   removeMigrationMember,
   setMigrationMembers,
+  toggleColumnMigrationMember,
   toggleMigrationMember,
 } from './migrationSlice'
 
-const state = (members: string[]) => ({ members })
+const state = (members: string[], columnMembers: string[] = []) => ({ members, columnMembers })
 
 describe('migration slice', () => {
   it('starts empty', () => {
-    expect(reducer(undefined, { type: 'init' })).toEqual({ members: [] })
+    expect(reducer(undefined, { type: 'init' })).toEqual({ members: [], columnMembers: [] })
   })
 
   it('adopts a set wholesale, as a shared link does', () => {
-    expect(reducer(state([]), setMigrationMembers(['a', 'b']))).toEqual({ members: ['a', 'b'] })
+    expect(reducer(state([]), setMigrationMembers(['a', 'b'])).members).toEqual(['a', 'b'])
   })
 
   it('drops duplicates and blanks from an adopted set', () => {
-    expect(reducer(state([]), setMigrationMembers(['a', '', 'a', 'b']))).toEqual({
-      members: ['a', 'b'],
-    })
+    expect(reducer(state([]), setMigrationMembers(['a', '', 'a', 'b'])).members).toEqual(['a', 'b'])
   })
 
   it('toggles a member in and out', () => {
@@ -39,8 +39,34 @@ describe('migration slice', () => {
     expect(reducer(state(['a', 'b', 'c']), removeMigrationMember('b')).members).toEqual(['a', 'c'])
   })
 
-  it('clears the whole set', () => {
-    expect(reducer(state(['a', 'b']), clearMigrationSet()).members).toEqual([])
+  it('clears both halves of the set', () => {
+    const cleared = reducer(state(['a', 'b'], ['datasetField:ns:ds:c']), clearMigrationSet())
+    expect(cleared.members).toEqual([])
+    expect(cleared.columnMembers).toEqual([])
+  })
+
+  it('keeps objects and columns apart', () => {
+    const withColumn = reducer(
+      state(['job:etl:a']),
+      toggleColumnMigrationMember('datasetField:ns:orders:total')
+    )
+
+    expect(withColumn.members).toEqual(['job:etl:a'])
+    expect(withColumn.columnMembers).toEqual(['datasetField:ns:orders:total'])
+
+    const toggledOff = reducer(
+      withColumn,
+      toggleColumnMigrationMember('datasetField:ns:orders:total')
+    )
+    expect(toggledOff.columnMembers).toEqual([])
+    expect(toggledOff.members).toEqual(['job:etl:a'])
+  })
+
+  it('removes a named column without touching the rest', () => {
+    const start = state([], ['datasetField:ns:a:x', 'datasetField:ns:a:y'])
+    expect(
+      reducer(start, removeColumnMigrationMember('datasetField:ns:a:x')).columnMembers
+    ).toEqual(['datasetField:ns:a:y'])
   })
 })
 

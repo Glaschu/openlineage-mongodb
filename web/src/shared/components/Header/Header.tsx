@@ -33,7 +33,9 @@ const Header = (): ReactElement => {
             width: 'calc(100% - 97px)',
           }}
         >
-          <Box display={'flex'} alignItems={'center'}>
+          {/* minWidth 0 lets the search shrink; without it its content sets a
+              floor that pushes whatever follows off the right of the screen. */}
+          <Box display={'flex'} alignItems={'center'} sx={{ minWidth: 0, overflow: 'hidden' }}>
             <Search />
             <Chip
               size={'small'}
@@ -43,7 +45,9 @@ const Header = (): ReactElement => {
             />
             <OmniSearch />
           </Box>
-          <MigrationSetIndicator />
+          <Box sx={{ flexShrink: 0 }}>
+            <MigrationSetIndicator />
+          </Box>
         </Box>
       </Toolbar>
     </AppBar>

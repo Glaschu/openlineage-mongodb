@@ -21,9 +21,9 @@ vi.mock('@/features/search/components/omni-search/OmniSearch', () => ({
 
 // The header carries the migration set indicator, so it needs the store and a
 // router.
-const renderHeader = (members: string[] = []) => {
+const renderHeader = (members: string[] = [], columnMembers: string[] = []) => {
   const theme = createTheme()
-  const store = createStore(() => ({ migration: { members } }))
+  const store = createStore(() => ({ migration: { members, columnMembers } }))
 
   return render(
     <Provider store={store}>
@@ -54,5 +54,21 @@ describe('Header', () => {
     renderHeader(['job:etl:a', 'dataset:raw:b'])
 
     expect(screen.getByText('Migration set (2)')).toBeInTheDocument()
+  })
+
+  // Columns are counted apart from objects because their plan lives on a
+  // different page; one combined count would lead half of it to the wrong one.
+  it('counts column changes separately from objects', () => {
+    renderHeader(['dataset:raw:b'], ['datasetField:raw:b:id', 'datasetField:raw:b:total'])
+
+    expect(screen.getByText('Migration set (1)')).toBeInTheDocument()
+    expect(screen.getByText('Columns (2)')).toBeInTheDocument()
+  })
+
+  it('shows the column chip even when no objects are in the set', () => {
+    renderHeader([], ['datasetField:raw:b:id'])
+
+    expect(screen.queryByText(/Migration set/)).not.toBeInTheDocument()
+    expect(screen.getByText('Columns (1)')).toBeInTheDocument()
   })
 })

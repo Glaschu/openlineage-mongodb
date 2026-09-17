@@ -13,6 +13,8 @@ import ArrowBackIosRounded from '@mui/icons-material/ArrowBackIosRounded'
 import FileDownloadOutlined from '@mui/icons-material/FileDownloadOutlined'
 import InfoOutlined from '@mui/icons-material/InfoOutlined'
 import LinkOutlined from '@mui/icons-material/LinkOutlined'
+import PlaylistAdd from '@mui/icons-material/PlaylistAdd'
+import PlaylistAddCheck from '@mui/icons-material/PlaylistAddCheck'
 import Refresh from '@mui/icons-material/Refresh'
 
 import { LineageDirection, isLineageDirection } from './columnLineageUtils'
@@ -38,8 +40,12 @@ interface ActionBarProps {
   onExportCsv?: () => void
   /** Every column in the current graph, for the find-a-column box. */
   searchOptions?: ColumnSearchOption[]
-  view: 'graph' | 'impact'
-  setView: (view: 'graph' | 'impact') => void
+  view: 'graph' | 'impact' | 'migration'
+  setView: (view: 'graph' | 'impact' | 'migration') => void
+  /** Whether the selected column is already part of the column change set. */
+  isInMigrationSet: boolean
+  onToggleMigrationMember: () => void
+  migrationSetSize: number
 }
 
 export const ActionBar = ({
@@ -50,6 +56,9 @@ export const ActionBar = ({
   searchOptions = [],
   view,
   setView,
+  isInMigrationSet,
+  onToggleMigrationMember,
+  migrationSetSize,
 }: ActionBarProps) => {
   const { namespace, name } = useParams()
   const navigate = useNavigate()
@@ -169,13 +178,16 @@ export const ActionBar = ({
           value={view}
           sx={{ mr: 2 }}
           onChange={(_event, value) => {
-            if (value !== 'graph' && value !== 'impact') return
+            if (value !== 'graph' && value !== 'impact' && value !== 'migration') return
             setView(value)
             updateParams((params) => params.set('view', value))
           }}
         >
           <ToggleButton value={'graph'}>Graph</ToggleButton>
           <ToggleButton value={'impact'}>Impact</ToggleButton>
+          <ToggleButton value={'migration'}>
+            {migrationSetSize ? `Change (${migrationSetSize})` : 'Change'}
+          </ToggleButton>
         </ToggleButtonGroup>
         <MQTooltip
           title={
@@ -216,6 +228,32 @@ export const ActionBar = ({
             }
             label={<MqText subdued>Isolate</MqText>}
           />
+        </MQTooltip>
+        <MQTooltip
+          title={
+            !selectedColumn
+              ? 'Select a column to add it to the change set'
+              : isInMigrationSet
+              ? 'Remove this column from the change set'
+              : 'Add this column to the change set to plan the change with others'
+          }
+        >
+          <span>
+            <IconButton
+              size={'small'}
+              color={isInMigrationSet ? 'primary' : 'default'}
+              sx={{ mr: 1 }}
+              disabled={!selectedColumn}
+              aria-label={isInMigrationSet ? 'remove from change set' : 'add to change set'}
+              onClick={onToggleMigrationMember}
+            >
+              {isInMigrationSet ? (
+                <PlaylistAddCheck fontSize={'small'} />
+              ) : (
+                <PlaylistAdd fontSize={'small'} />
+              )}
+            </IconButton>
+          </span>
         </MQTooltip>
         <MQTooltip title={'Export visible lineage as CSV (edge list with transformations)'}>
           <span>

@@ -2,7 +2,10 @@ import { configureStore } from '@reduxjs/toolkit'
 
 import displayReducer from './slices/displaySlice'
 import lineageReducer from '@/features/lineage/slice'
-import migrationReducer, { persistMembers } from '@/features/lineage/migrationSlice'
+import migrationReducer, {
+  COLUMN_MIGRATION_STORAGE_KEY,
+  persistMembers,
+} from '@/features/lineage/migrationSlice'
 import namespacesReducer from '@/features/namespaces/slice'
 
 const store = configureStore({
@@ -16,11 +19,17 @@ const store = configureStore({
 
 // A migration plan under construction outlives a refresh.
 let lastPersistedMembers = store.getState().migration.members
+let lastPersistedColumns = store.getState().migration.columnMembers
 store.subscribe(() => {
-  const { members } = store.getState().migration
-  if (members === lastPersistedMembers) return
-  lastPersistedMembers = members
-  persistMembers(members)
+  const { members, columnMembers } = store.getState().migration
+  if (members !== lastPersistedMembers) {
+    lastPersistedMembers = members
+    persistMembers(members)
+  }
+  if (columnMembers !== lastPersistedColumns) {
+    lastPersistedColumns = columnMembers
+    persistMembers(columnMembers, COLUMN_MIGRATION_STORAGE_KEY)
+  }
 })
 
 export type RootState = ReturnType<typeof store.getState>
