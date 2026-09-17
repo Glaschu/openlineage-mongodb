@@ -9,6 +9,7 @@ import {
 } from '@/features/lineage/components/graph'
 import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import { JobOrDataset } from '@/shared/types/lineage'
+import { RootState } from '@/store/store'
 import {
   TableLevelNodeData,
   TableLineageDatasetNodeData,
@@ -25,11 +26,16 @@ import {
   parseMigrationSet,
   serialiseMigrationSet,
   summariseMigration,
-  toggleMember,
 } from './migrationSet'
 import { createElkNodes, findDownstreamNodes, findUpstreamNodes } from './layout'
 import { downloadBlob } from '@/shared/utils/download'
+import {
+  removeMigrationMember,
+  setMigrationMembers,
+  toggleMigrationMember,
+} from '@/features/lineage/migrationSlice'
 import { useCallbackRef } from '@/shared/hooks/hooks'
+import { useDispatch, useSelector } from 'react-redux'
 import { useLineage } from '@/features/lineage/api'
 import { useMigrationSetLineage } from '@/features/lineage/api/migration-queries'
 import { useNamespaces } from '@/features/namespaces/api'
@@ -169,18 +175,39 @@ const ColumnLevel = () => {
     )
   })
 
-  // The set lives in the URL so a plan can be shared or reopened.
-  const migrationMembers = useMemo(
-    () => parseMigrationSet(searchParams.get('migrationSet')),
-    [searchParams]
-  )
+  // The set is held in the store so it survives navigating between objects —
+  // building one means visiting each in turn. The URL mirrors it so a plan can
+  // still be shared, and a shared link seeds the store on arrival.
+  const dispatch = useDispatch()
+  const migrationMembers = useSelector((state: RootState) => state.migration.members)
+  const migrationSetParam = searchParams.get('migrationSet')
 
-  const setMigrationMembers = useCallbackRef((members: string[]) => {
-    const params = new URLSearchParams(searchParams)
-    if (members.length) params.set('migrationSet', serialiseMigrationSet(members))
-    else params.delete('migrationSet')
-    setSearchParams(params)
-  })
+  useEffect(() => {
+    const fromUrl = parseMigrationSet(migrationSetParam)
+    if (
+      fromUrl.length &&
+      serialiseMigrationSet(fromUrl) !== serialiseMigrationSet(migrationMembers)
+    ) {
+      dispatch(setMigrationMembers(fromUrl))
+    }
+    // Only when the link itself changes: otherwise editing the set would be
+    // undone by the URL it just wrote.
+  }, [migrationSetParam, dispatch])
+
+  useEffect(() => {
+    const serialised = serialiseMigrationSet(migrationMembers)
+    if (serialised === (migrationSetParam ?? '')) return
+
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (serialised) next.set('migrationSet', serialised)
+        else next.delete('migrationSet')
+        return next
+      },
+      { replace: true }
+    )
+  }, [migrationMembers, migrationSetParam, setSearchParams])
 
   const migrationQueries = useMigrationSetLineage(migrationMembers, depth)
 
@@ -354,9 +381,7 @@ const ColumnLevel = () => {
         view={view}
         setView={setView}
         isInMigrationSet={migrationMembers.includes(focusNodeId)}
-        onToggleMigrationMember={() =>
-          setMigrationMembers(toggleMember(migrationMembers, focusNodeId))
-        }
+        onToggleMigrationMember={() => dispatch(toggleMigrationMember(focusNodeId))}
         migrationSetSize={migrationMembers.length}
       />
       <Box height={`calc(100vh - ${HEADER_HEIGHT}px - ${HEADER_HEIGHT}px - 1px)`}>
@@ -405,9 +430,7 @@ const ColumnLevel = () => {
             isLoading={migrationQueries.some((query) => query.isLoading)}
             filter={impactFilter}
             onFilterChange={setImpactFilter}
-            onRemoveMember={(member) =>
-              setMigrationMembers(migrationMembers.filter((entry) => entry !== member))
-            }
+            onRemoveMember={(member) => dispatch(removeMigrationMember(member))}
             onExportCsv={handleExportMigrationCsv}
             onExportEvidence={handleExportMigrationEvidence}
           />

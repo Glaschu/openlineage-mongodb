@@ -92,7 +92,11 @@ vi.mock('../../../store/actionCreators', async () => {
   }
 })
 
-const renderTableLevel = (lineage: LineageGraph | null, initialEntry?: string) => {
+const renderTableLevel = (
+  lineage: LineageGraph | null,
+  initialEntry?: string,
+  initialState: Record<string, unknown> = {}
+) => {
   const mockRefetch = vi.fn()
 
   vi.spyOn(useLineageHook, 'useLineage').mockReturnValue({
@@ -119,10 +123,7 @@ const renderTableLevel = (lineage: LineageGraph | null, initialEntry?: string) =
           <Route path='/table-level/:nodeType/:namespace/:name' element={<TableLevel />} />
         </Routes>
       </MemoryRouter>,
-      {
-        // Redux state if needed for other things?
-        // TableLevel uses local state for view options.
-      }
+      { initialState }
     ),
     mockRefetch,
   }
@@ -315,5 +316,33 @@ describe('TableLevel node search', () => {
     fireEvent.click(options[1])
 
     expect(zoomControls[0].centerOnPositionedNode).toHaveBeenCalledWith('job:etl:nightly', 2)
+  })
+})
+
+describe('TableLevel migration set', () => {
+  beforeEach(() => {
+    createElkNodesMock.mockClear()
+    createElkNodesMock.mockReturnValue({ nodes: [], edges: [] } as never)
+  })
+
+  it('takes the set from the store, so it survives navigating between objects', () => {
+    renderTableLevel(
+      { graph: [] } as unknown as LineageGraph,
+      '/table-level/DATASET/analytics/daily-table?view=migration',
+      { migration: { members: ['job:etl:a', 'dataset:raw:b'] } }
+    )
+
+    // Both members are listed even though the URL mentions neither.
+    expect(screen.getByText('etl.a')).toBeInTheDocument()
+    expect(screen.getByText('raw.b')).toBeInTheDocument()
+  })
+
+  it('shows an empty set when the store has none, whatever the page', () => {
+    renderTableLevel(
+      { graph: [] } as unknown as LineageGraph,
+      '/table-level/DATASET/analytics/daily-table?view=migration'
+    )
+
+    expect(screen.getByText('No migration set')).toBeInTheDocument()
   })
 })

@@ -4,8 +4,17 @@ import { RenderOptions, render } from '@testing-library/react'
 import { legacy_createStore as createStore } from '@reduxjs/toolkit'
 import React, { ReactElement } from 'react'
 
+/**
+ * Slices a rendered component may read even when a test says nothing about
+ * them. Without these a component that selects from a slice crashes on an
+ * undefined branch, which says nothing about the behaviour under test.
+ */
+const DEFAULT_STATE = {
+  migration: { members: [] },
+}
+
 const createMockStore = (initialState: any) => {
-  return createStore(() => initialState)
+  return createStore(() => ({ ...DEFAULT_STATE, ...initialState }))
 }
 
 const createTestQueryClient = () =>
