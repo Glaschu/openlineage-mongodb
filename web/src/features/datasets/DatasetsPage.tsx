@@ -33,6 +33,7 @@ import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress/CircularProgress'
 import IconButton from '@mui/material/IconButton'
 import MQTooltip from '@/shared/components/MqTooltip/MQTooltip'
+import MigrationSetButton from '@/features/lineage/components/MigrationSetButton'
 import MqEmpty from '@/shared/components/MqEmpty/MqEmpty'
 import MqPaging from '@/shared/components/Paging/MqPaging'
 import MqStatus from '@/shared/components/MqStatus/MqStatus'
@@ -158,6 +159,11 @@ const Datasets: React.FC = () => {
                         COLUMN LINEAGE
                       </MqText>
                     </TableCell>
+                    <TableCell key={'migration-set'} align='right'>
+                      <MqText inline subheading>
+                        SET
+                      </MqText>
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -219,6 +225,12 @@ const Datasets: React.FC = () => {
                             ) : (
                               <MqText subdued>N/A</MqText>
                             )}
+                          </TableCell>
+                          <TableCell align='right'>
+                            <MigrationSetButton
+                              nodeId={`dataset:${dataset.namespace}:${dataset.name}`}
+                              label={dataset.name}
+                            />
                           </TableCell>
                         </TableRow>
                       )

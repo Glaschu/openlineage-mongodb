@@ -16,8 +16,37 @@ export interface MigrationState {
   members: string[]
 }
 
+const STORAGE_KEY = 'marquez.migrationSet'
+
+/**
+ * A plan under construction should survive a refresh. sessionStorage rather
+ * than localStorage: the set belongs to the piece of work in this tab, not to
+ * the browser forever.
+ *
+ * Both accessors can throw — private browsing, blocked storage — and a lost
+ * set is an inconvenience, not a reason to fail the page.
+ */
+export const loadPersistedMembers = (): string[] => {
+  try {
+    const raw = window.sessionStorage?.getItem(STORAGE_KEY)
+    const parsed = raw ? JSON.parse(raw) : null
+    return Array.isArray(parsed) ? parsed.filter((entry) => typeof entry === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+export const persistMembers = (members: string[]) => {
+  try {
+    if (members.length) window.sessionStorage?.setItem(STORAGE_KEY, JSON.stringify(members))
+    else window.sessionStorage?.removeItem(STORAGE_KEY)
+  } catch {
+    // Persisting is best effort; the set still works for this page view.
+  }
+}
+
 const initialState: MigrationState = {
-  members: [],
+  members: loadPersistedMembers(),
 }
 
 const migrationSlice = createSlice({

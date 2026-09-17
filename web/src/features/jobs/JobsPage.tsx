@@ -31,6 +31,7 @@ import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress/CircularProgress'
 import IconButton from '@mui/material/IconButton'
 import MQTooltip from '@/shared/components/MqTooltip/MQTooltip'
+import MigrationSetButton from '@/features/lineage/components/MigrationSetButton'
 import MqEmpty from '@/shared/components/MqEmpty/MqEmpty'
 import MqPaging from '@/shared/components/Paging/MqPaging'
 import MqStatus from '@/shared/components/MqStatus/MqStatus'
@@ -170,6 +171,11 @@ const Jobs = () => {
                     <TableCell key={t('jobs_route.latest_run_state_col')} align='left'>
                       <MqText subheading>{t('jobs_route.latest_run_state_col')}</MqText>
                     </TableCell>
+                    <TableCell key={'migration-set'} align='right'>
+                      <MqText inline subheading>
+                        SET
+                      </MqText>
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -203,6 +209,12 @@ const Jobs = () => {
                             label={
                               job.latestRun && job.latestRun.state ? job.latestRun.state : 'N/A'
                             }
+                          />
+                        </TableCell>
+                        <TableCell align='right'>
+                          <MigrationSetButton
+                            nodeId={`job:${job.namespace}:${job.name}`}
+                            label={job.name}
                           />
                         </TableCell>
                       </TableRow>

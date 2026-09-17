@@ -5,6 +5,7 @@ import { AppBar, Chip, Toolbar } from '@mui/material'
 import { DRAWER_WIDTH } from '@/shared/theme/theme'
 import { useTheme } from '@mui/material/styles'
 import Box from '@mui/material/Box'
+import MigrationSetIndicator from '@/features/lineage/components/MigrationSetIndicator'
 import OmniSearch from '@/features/search/components/omni-search/OmniSearch'
 import React, { ReactElement } from 'react'
 import Search from '@/features/search/SearchPage'
@@ -42,6 +43,7 @@ const Header = (): ReactElement => {
             />
             <OmniSearch />
           </Box>
+          <MigrationSetIndicator />
         </Box>
       </Toolbar>
     </AppBar>
