@@ -120,8 +120,10 @@ describe('buildColumnImpactCsv', () => {
     const csv = buildColumnImpactCsv(buildColumnImpactRows(graph, id('orders', 'total')))
     const lines = csv.split('\n')
 
-    expect(lines[0]).toBe('direction,namespace,dataset,column,hops,via_column,transformation_type')
-    expect(lines[1]).toBe('downstream,analytics,summary,revenue,1,total,')
+    expect(lines[0]).toBe(
+      'direction,namespace,owner,dataset,column,hops,via_column,transformation_type'
+    )
+    expect(lines[1]).toBe('downstream,analytics,,summary,revenue,1,total,')
     expect(lines).toHaveLength(3)
   })
 })

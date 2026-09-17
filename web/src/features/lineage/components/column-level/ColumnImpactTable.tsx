@@ -20,14 +20,23 @@ import FileDownloadOutlined from '@mui/icons-material/FileDownloadOutlined'
 import React, { useMemo, useState } from 'react'
 
 import { ColumnImpactRow } from './columnImpact'
+import { UNCLAIMED_OWNER, isUnclaimed } from '@/features/namespaces/owners'
 import MqEmpty from '@/shared/components/MqEmpty/MqEmpty'
 import MqText from '@/shared/components/MqText/MqText'
 
-type SortKey = 'direction' | 'namespace' | 'dataset' | 'column' | 'hops' | 'transformation'
+type SortKey =
+  | 'direction'
+  | 'namespace'
+  | 'owner'
+  | 'dataset'
+  | 'column'
+  | 'hops'
+  | 'transformation'
 
 const COLUMNS: { key: SortKey; label: string; numeric?: boolean }[] = [
   { key: 'direction', label: 'Direction' },
   { key: 'namespace', label: 'Namespace' },
+  { key: 'owner', label: 'Owner' },
   { key: 'dataset', label: 'Dataset' },
   { key: 'column', label: 'Column' },
   { key: 'hops', label: 'Hops', numeric: true },
@@ -48,7 +57,7 @@ export const sortColumnRows = (rows: ColumnImpactRow[], key: SortKey, ascending:
 
   return [...rows].sort((a, b) => {
     if (key === 'hops') return (a.hops - b.hops) * direction
-    return String(a[key]).localeCompare(String(b[key])) * direction
+    return String(a[key] ?? '').localeCompare(String(b[key] ?? '')) * direction
   })
 }
 
@@ -200,6 +209,13 @@ export const ColumnImpactTable = ({
                 </TableCell>
                 <TableCell>
                   <MqText font={'mono'}>{row.namespace}</MqText>
+                </TableCell>
+                <TableCell>
+                  {isUnclaimed(row.owner ?? '') ? (
+                    <MqText subdued>{UNCLAIMED_OWNER}</MqText>
+                  ) : (
+                    <MqText font={'mono'}>{row.owner}</MqText>
+                  )}
                 </TableCell>
                 <TableCell>
                   <MqText font={'mono'}>{row.dataset}</MqText>

@@ -116,9 +116,10 @@ describe('buildImpactCsv', () => {
     const csv = buildImpactCsv(buildImpactRows(graph, 'd:staged'))
     const lines = csv.split('\n')
 
-    expect(lines[0]).toBe('direction,type,namespace,name,hops,latest_run_state,updated_at')
+    expect(lines[0]).toBe('direction,type,namespace,owner,name,hops,latest_run_state,updated_at')
     expect(lines).toHaveLength(5)
-    expect(lines[1]).toBe('upstream,JOB,etl,loader,1,COMPLETED,')
+    // Owner is empty until the page resolves it from the namespace list.
+    expect(lines[1]).toBe('upstream,JOB,etl,,loader,1,COMPLETED,')
   })
 
   it('quotes values containing commas, which bank object names do', () => {

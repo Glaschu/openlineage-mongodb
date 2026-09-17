@@ -10,6 +10,7 @@ import {
   markdownTable,
   scopeLines,
 } from '../evidenceFormat'
+import { isUnclaimed, summariseOwners } from '@/features/namespaces/owners'
 
 export interface ColumnEvidenceInput {
   namespace: string
@@ -42,6 +43,8 @@ export const buildColumnEvidenceMarkdown = ({
   const downstream = rows.filter((row) => row.direction === 'downstream')
   const maxHops = rows.reduce((furthest, row) => Math.max(furthest, row.hops), 0)
   const described = rows.filter((row) => row.transformation).length
+  const ownerCounts = summariseOwners(rows.map((row) => row.owner ?? ''))
+  const unclaimedCount = rows.filter((row) => isUnclaimed(row.owner ?? '')).length
 
   const lines: string[] = [
     `# Column lineage: ${dataset}.${column}`,
@@ -56,6 +59,8 @@ export const buildColumnEvidenceMarkdown = ({
       ['Consumed by', `${downstream.length} column${downstream.length === 1 ? '' : 's'}`],
       ['Furthest hop', String(maxHops)],
       ['Transformations recorded', `${described} of ${rows.length}`],
+      ['Owning teams', String(ownerCounts.filter(([owner]) => !isUnclaimed(owner)).length)],
+      ['Columns in unclaimed namespaces', String(unclaimedCount)],
     ]),
     '',
     `Reproduce this view: ${url}`,
@@ -71,12 +76,13 @@ export const buildColumnEvidenceMarkdown = ({
 
     lines.push(
       ...markdownTable(
-        ['Namespace', 'Dataset', 'Column', 'Hops', 'Via column', 'Transformation'],
-        ['---', '---', '---', '---:', '---', '---'],
+        ['Namespace', 'Owner', 'Dataset', 'Column', 'Hops', 'Via column', 'Transformation'],
+        ['---', '---', '---', '---', '---:', '---', '---'],
         [...sectionRows]
           .sort((a, b) => a.hops - b.hops)
           .map((row) => [
             code(row.namespace),
+            code(row.owner || 'Unclaimed'),
             code(row.dataset),
             code(row.column),
             String(row.hops),
@@ -100,6 +106,18 @@ export const buildColumnEvidenceMarkdown = ({
   )
 
   if (rows.length) {
+    lines.push('## Ownership', '')
+    for (const [owner, count] of ownerCounts) {
+      lines.push(`- ${code(owner)} — ${count}`)
+    }
+    if (unclaimedCount) {
+      lines.push(
+        '',
+        `${unclaimedCount} of ${rows.length} related columns sit in namespaces nobody has claimed.`
+      )
+    }
+    lines.push('')
+
     lines.push('## Columns by dataset', '')
     for (const [name, count] of countBy(rows, (row) => `${row.namespace}.${row.dataset}`)) {
       lines.push(`- ${code(name)} — ${count}`)

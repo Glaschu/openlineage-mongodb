@@ -22,8 +22,15 @@ const row = (overrides: Partial<ImpactRow>): ImpactRow => ({
 })
 
 const rows: ImpactRow[] = [
-  row({ name: 'far-table', hops: 9, direction: 'downstream' }),
-  row({ name: 'near-job', hops: 1, type: 'JOB', direction: 'upstream', state: 'FAILED' }),
+  row({ name: 'far-table', hops: 9, direction: 'downstream', owner: 'Unclaimed' }),
+  row({
+    name: 'near-job',
+    hops: 1,
+    type: 'JOB',
+    direction: 'upstream',
+    state: 'FAILED',
+    owner: 'payments-data-eng',
+  }),
   row({ name: 'mid-table', hops: 4, direction: 'upstream', namespace: 'warehouse' }),
 ]
 
@@ -38,7 +45,7 @@ const nameColumn = () =>
   screen
     .getAllByRole('row')
     .slice(1)
-    .map((tableRow) => within(tableRow).getAllByRole('cell')[3].textContent)
+    .map((tableRow) => within(tableRow).getAllByRole('cell')[4].textContent)
 
 describe('impact list helpers', () => {
   it('matches the filter against every field a reader would search', () => {
@@ -129,5 +136,28 @@ describe('ImpactTable', () => {
     renderTable({ rows: [], onExportEvidence })
     expect(screen.getByRole('button', { name: /Evidence pack/ })).toBeEnabled()
     expect(screen.getByRole('button', { name: /Export CSV/ })).toBeDisabled()
+  })
+
+  it('shows who owns each impacted object', () => {
+    renderTable()
+
+    const ownerCells = screen
+      .getAllByRole('row')
+      .slice(1)
+      .map((tableRow) => within(tableRow).getAllByRole('cell')[3].textContent)
+
+    expect(ownerCells).toEqual(['payments-data-eng', 'Unclaimed', 'Unclaimed'])
+  })
+
+  it('shows unclaimed for a namespace with no owner rather than an empty cell', () => {
+    renderTable({ rows: [row({ name: 'orphan', owner: '' })] })
+
+    expect(screen.getByText('Unclaimed')).toBeInTheDocument()
+  })
+
+  it('filters on owner, so a reader can isolate the objects one team holds', () => {
+    renderTable({ filter: 'payments' })
+
+    expect(nameColumn()).toEqual(['near-job'])
   })
 })

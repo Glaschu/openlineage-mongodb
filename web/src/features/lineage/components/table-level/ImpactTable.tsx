@@ -21,13 +21,22 @@ import React, { useMemo, useState } from 'react'
 
 import { ImpactRow } from './impact'
 import { RunState } from '@/shared/types/api'
+import { UNCLAIMED_OWNER, isUnclaimed } from '@/features/namespaces/owners'
 import { encodeNode, runStateColor } from '@/shared/utils/nodes'
 import { formatUpdatedAt } from '@/shared/utils'
 import MqEmpty from '@/shared/components/MqEmpty/MqEmpty'
 import MqStatus from '@/shared/components/MqStatus/MqStatus'
 import MqText from '@/shared/components/MqText/MqText'
 
-type SortKey = 'direction' | 'type' | 'namespace' | 'name' | 'hops' | 'state' | 'updatedAt'
+type SortKey =
+  | 'direction'
+  | 'type'
+  | 'namespace'
+  | 'owner'
+  | 'name'
+  | 'hops'
+  | 'state'
+  | 'updatedAt'
 
 interface Column {
   key: SortKey
@@ -39,6 +48,7 @@ const COLUMNS: Column[] = [
   { key: 'direction', label: 'Direction' },
   { key: 'type', label: 'Type' },
   { key: 'namespace', label: 'Namespace' },
+  { key: 'owner', label: 'Owner' },
   { key: 'name', label: 'Name' },
   { key: 'hops', label: 'Hops', numeric: true },
   { key: 'state', label: 'Latest run' },
@@ -58,8 +68,8 @@ export const matchesFilter = (row: ImpactRow, filter: string) => {
   const needle = filter.trim().toLowerCase()
   if (!needle) return true
 
-  return [row.namespace, row.name, row.type, row.direction, row.state].some((value) =>
-    value.toLowerCase().includes(needle)
+  return [row.namespace, row.owner ?? '', row.name, row.type, row.direction, row.state].some(
+    (value) => value.toLowerCase().includes(needle)
   )
 }
 
@@ -68,7 +78,7 @@ export const sortRows = (rows: ImpactRow[], key: SortKey, ascending: boolean) =>
 
   return [...rows].sort((a, b) => {
     if (key === 'hops') return (a.hops - b.hops) * direction
-    return String(a[key]).localeCompare(String(b[key])) * direction
+    return String(a[key] ?? '').localeCompare(String(b[key] ?? '')) * direction
   })
 }
 
@@ -198,6 +208,13 @@ export const ImpactTable = ({
                 </TableCell>
                 <TableCell>
                   <MqText font={'mono'}>{row.namespace}</MqText>
+                </TableCell>
+                <TableCell>
+                  {isUnclaimed(row.owner ?? '') ? (
+                    <MqText subdued>{UNCLAIMED_OWNER}</MqText>
+                  ) : (
+                    <MqText font={'mono'}>{row.owner}</MqText>
+                  )}
                 </TableCell>
                 <TableCell>
                   <MqText font={'mono'}>{row.name}</MqText>

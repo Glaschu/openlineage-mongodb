@@ -44,7 +44,7 @@ const datasetColumn = () =>
   screen
     .getAllByRole('row')
     .slice(1)
-    .map((tableRow) => within(tableRow).getAllByRole('cell')[2].textContent)
+    .map((tableRow) => within(tableRow).getAllByRole('cell')[3].textContent)
 
 describe('column impact helpers', () => {
   it('filters on the fields an auditor would type', () => {

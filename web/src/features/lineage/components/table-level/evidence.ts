@@ -10,6 +10,7 @@ import {
   markdownTable,
   scopeLines,
 } from '../evidenceFormat'
+import { isUnclaimed, summariseOwners } from '@/features/namespaces/owners'
 
 export interface EvidenceInput {
   /** The object the lineage was traced from. */
@@ -45,6 +46,8 @@ export const buildEvidenceMarkdown = ({
   const upstream = rows.filter((row) => row.direction === 'upstream')
   const downstream = rows.filter((row) => row.direction === 'downstream')
   const maxHops = rows.reduce((furthest, row) => Math.max(furthest, row.hops), 0)
+  const ownerCounts = summariseOwners(rows.map((row) => row.owner ?? ''))
+  const unclaimedCount = rows.filter((row) => isUnclaimed(row.owner ?? '')).length
 
   const lines: string[] = [
     `# Lineage impact: ${name}`,
@@ -58,6 +61,8 @@ export const buildEvidenceMarkdown = ({
       ['Upstream objects', String(upstream.length)],
       ['Downstream objects', String(downstream.length)],
       ['Furthest hop', String(maxHops)],
+      ['Owning teams', String(ownerCounts.filter(([owner]) => !isUnclaimed(owner)).length)],
+      ['Objects in unclaimed namespaces', String(unclaimedCount)],
     ]),
     '',
     `Reproduce this view: ${url}`,
@@ -71,17 +76,30 @@ export const buildEvidenceMarkdown = ({
     }
     lines.push('')
 
+    lines.push('## Ownership', '')
+    for (const [owner, count] of ownerCounts) {
+      lines.push(`- ${code(owner)} — ${count}`)
+    }
+    if (unclaimedCount) {
+      lines.push(
+        '',
+        `${unclaimedCount} of ${rows.length} impacted objects sit in namespaces nobody has claimed; a change here has no owner to consult.`
+      )
+    }
+    lines.push('')
+
     lines.push('## Impacted objects', '')
     lines.push(
       ...markdownTable(
-        ['Direction', 'Type', 'Namespace', 'Name', 'Hops', 'Latest run', 'Updated'],
-        ['---', '---', '---', '---', '---:', '---', '---'],
+        ['Direction', 'Type', 'Namespace', 'Owner', 'Name', 'Hops', 'Latest run', 'Updated'],
+        ['---', '---', '---', '---', '---', '---:', '---', '---'],
         [...rows]
           .sort((a, b) => a.hops - b.hops)
           .map((row) => [
             row.direction,
             row.type,
             code(row.namespace),
+            code(row.owner || 'Unclaimed'),
             code(row.name),
             String(row.hops),
             row.state || '—',

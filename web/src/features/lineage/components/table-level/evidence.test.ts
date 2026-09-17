@@ -100,6 +100,41 @@ describe('buildEvidenceMarkdown', () => {
   })
 })
 
+describe('ownership in the evidence pack', () => {
+  it('counts the teams involved and the objects nobody owns', () => {
+    const doc = build([
+      row({ owner: 'retail-data-eng' }),
+      row({ owner: 'retail-data-eng' }),
+      row({ owner: 'Unclaimed' }),
+      row({ owner: '' }),
+    ])
+
+    expect(doc).toContain('| Owning teams | 1 |')
+    expect(doc).toContain('| Objects in unclaimed namespaces | 2 |')
+  })
+
+  it('lists real teams before unclaimed, and says why unclaimed matters', () => {
+    const doc = build([row({ owner: 'Unclaimed' }), row({ owner: 'markets-data-eng' })])
+
+    const section = doc.slice(doc.indexOf('## Ownership'))
+    expect(section.indexOf('`markets-data-eng`')).toBeLessThan(section.indexOf('`Unclaimed`'))
+    expect(doc).toContain('a change here has no owner to consult')
+  })
+
+  it('says nothing about unclaimed objects when every object has an owner', () => {
+    const doc = build([row({ owner: 'retail-data-eng' })])
+
+    expect(doc).toContain('| Objects in unclaimed namespaces | 0 |')
+    expect(doc).not.toContain('no owner to consult')
+  })
+
+  it('names the owner on every row of the table', () => {
+    const doc = build([row({ owner: 'payments-data-eng', name: 'ledger' })])
+
+    expect(doc).toContain('| `payments-data-eng` | `ledger` |')
+  })
+})
+
 describe('evidenceFilename', () => {
   it('names the file after the object and the capture date', () => {
     expect(evidenceFilename('spark-jobs', 'transform_task_9_4', capturedAt)).toBe(

@@ -18,10 +18,12 @@ import {
 import { ZoomControls } from '../column-level/ZoomControls'
 import { buildEvidenceMarkdown, evidenceFilename } from './evidence'
 import { buildImpactCsv, buildImpactRows } from './impact'
+import { buildOwnerIndex, ownerFor } from '@/features/namespaces/owners'
 import { createElkNodes, findDownstreamNodes, findUpstreamNodes } from './layout'
 import { downloadBlob } from '@/shared/utils/download'
 import { useCallbackRef } from '@/shared/hooks/hooks'
 import { useLineage } from '@/features/lineage/api'
+import { useNamespaces } from '@/features/namespaces/api'
 import { useParams, useSearchParams } from 'react-router-dom'
 import EdgeProvenance from './EdgeProvenance'
 import ImpactTable from './ImpactTable'
@@ -134,7 +136,19 @@ const ColumnLevel = () => {
 
   const focusNodeId = `${nodeType}:${namespace}:${name}`
 
-  const impactRows = useMemo(() => buildImpactRows(lineage, focusNodeId), [lineage, focusNodeId])
+  // Ownership lives on the namespace, not on the lineage graph, so it is
+  // resolved here and carried on the rows the table, CSV and pack all read.
+  const { data: namespacesData } = useNamespaces()
+  const owners = useMemo(() => buildOwnerIndex(namespacesData?.namespaces), [namespacesData])
+
+  const impactRows = useMemo(
+    () =>
+      buildImpactRows(lineage, focusNodeId).map((row) => ({
+        ...row,
+        owner: ownerFor(owners, row.namespace),
+      })),
+    [lineage, focusNodeId, owners]
+  )
 
   const handleExportImpact = useCallbackRef(() => {
     const csv = buildImpactCsv(impactRows)

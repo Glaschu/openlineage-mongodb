@@ -18,6 +18,8 @@ export interface ImpactRow {
   updatedAt: string
   /** Latest run state, for jobs. */
   state: string
+  /** Owning team of the namespace, resolved separately from the lineage graph. */
+  owner?: string
 }
 
 const rowFor = (node: LineageNode, direction: ImpactDirection, hops: number): ImpactRow => {
@@ -96,6 +98,7 @@ export const IMPACT_CSV_HEADER = [
   'direction',
   'type',
   'namespace',
+  'owner',
   'name',
   'hops',
   'latest_run_state',
@@ -107,7 +110,16 @@ export const buildImpactCsv = (rows: ImpactRow[]): string =>
   [
     IMPACT_CSV_HEADER,
     ...rows.map((row) =>
-      [row.direction, row.type, row.namespace, row.name, String(row.hops), row.state, row.updatedAt]
+      [
+        row.direction,
+        row.type,
+        row.namespace,
+        row.owner ?? '',
+        row.name,
+        String(row.hops),
+        row.state,
+        row.updatedAt,
+      ]
         .map(csvEscape)
         .join(',')
     ),

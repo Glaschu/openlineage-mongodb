@@ -6,6 +6,7 @@ import { HEADER_HEIGHT, theme } from '@/shared/theme/theme'
 import { ZoomControls } from './ZoomControls'
 import { buildColumnEvidenceMarkdown, columnEvidenceFilename } from './columnEvidence'
 import { buildColumnImpactCsv, buildColumnImpactRows } from './columnImpact'
+import { buildOwnerIndex, ownerFor } from '@/features/namespaces/owners'
 import {
   buildTransformationIndex,
   downloadColumnLineageCsv,
@@ -16,6 +17,7 @@ import { downloadBlob } from '@/shared/utils/download'
 import { useCallbackRef } from '@/shared/hooks/hooks'
 import { useColumnLineage } from '@/features/lineage/api'
 import { useDataset } from '@/features/datasets/api'
+import { useNamespaces } from '@/features/namespaces/api'
 import { useParams, useSearchParams } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import ColumnImpactTable from './ColumnImpactTable'
@@ -64,9 +66,16 @@ const ColumnLevel: React.FC = () => {
   )
   const [impactFilter, setImpactFilter] = useState('')
 
+  const { data: namespacesData } = useNamespaces()
+  const owners = useMemo(() => buildOwnerIndex(namespacesData?.namespaces), [namespacesData])
+
   const impactRows = useMemo(
-    () => buildColumnImpactRows(columnLineage?.graph, column, transformations),
-    [columnLineage, column, transformations]
+    () =>
+      buildColumnImpactRows(columnLineage?.graph, column, transformations).map((row) => ({
+        ...row,
+        owner: ownerFor(owners, row.namespace),
+      })),
+    [columnLineage, column, transformations, owners]
   )
 
   const handleExportColumnEvidence = useCallbackRef(() => {

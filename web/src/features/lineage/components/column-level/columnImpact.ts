@@ -20,6 +20,8 @@ export interface ColumnImpactRow {
   transformation: string
   /** The column on the other end of that edge. */
   via: string
+  /** Owning team of the namespace, resolved separately from the lineage graph. */
+  owner?: string
 }
 
 /**
@@ -98,6 +100,7 @@ const csvEscape = (value: string) =>
 export const COLUMN_IMPACT_CSV_HEADER = [
   'direction',
   'namespace',
+  'owner',
   'dataset',
   'column',
   'hops',
@@ -112,6 +115,7 @@ export const buildColumnImpactCsv = (rows: ColumnImpactRow[]): string =>
       [
         row.direction,
         row.namespace,
+        row.owner ?? '',
         row.dataset,
         row.column,
         String(row.hops),
